@@ -66,6 +66,45 @@ export const translations = {
     inProgress: 'قيد التنفيذ',
     completed: 'مكتمل',
     cancelled: 'ملغى',
+    
+    // Users & Roles
+    users: 'المستخدمين',
+    addUser: 'إضافة مستخدم',
+    role: 'الدور',
+    roles: 'الأدوار',
+    selectRole: 'اختر الدور',
+    selectHospital: 'اختر المستشفى',
+    
+    // Roles
+    globalAdmin: 'مدير النظام',
+    hospitalAdmin: 'مدير المستشفى',
+    facilityManager: 'مدير المرافق',
+    maintenanceManager: 'مدير الصيانة',
+    supervisor: 'مشرف',
+    technician: 'فني',
+    reporter: 'مبلغ',
+    
+    // Hospitals
+    addHospital: 'إضافة مستشفى',
+    hospitalName: 'اسم المستشفى',
+    hospitalNameAr: 'اسم المستشفى بالعربية',
+    hospitalType: 'نوع المستشفى',
+    address: 'العنوان',
+    
+    // Actions
+    submit: 'إرسال',
+    close: 'إغلاق',
+    back: 'رجوع',
+    next: 'التالي',
+    confirm: 'تأكيد',
+    success: 'نجح',
+    error: 'خطأ',
+    
+    // Messages
+    userAdded: 'تم إضافة المستخدم بنجاح',
+    hospitalAdded: 'تم إضافة المستشفى بنجاح',
+    errorOccurred: 'حدث خطأ',
+    fillRequired: 'يرجى ملء جميع الحقول المطلوبة',
   },
   en: {
     // Common
@@ -129,6 +168,45 @@ export const translations = {
     inProgress: 'In Progress',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    
+    // Users & Roles
+    users: 'Users',
+    addUser: 'Add User',
+    role: 'Role',
+    roles: 'Roles',
+    selectRole: 'Select Role',
+    selectHospital: 'Select Hospital',
+    
+    // Roles
+    globalAdmin: 'Global Admin',
+    hospitalAdmin: 'Hospital Admin',
+    facilityManager: 'Facility Manager',
+    maintenanceManager: 'Maintenance Manager',
+    supervisor: 'Supervisor',
+    technician: 'Technician',
+    reporter: 'Reporter',
+    
+    // Hospitals
+    addHospital: 'Add Hospital',
+    hospitalName: 'Hospital Name',
+    hospitalNameAr: 'Hospital Name (Arabic)',
+    hospitalType: 'Hospital Type',
+    address: 'Address',
+    
+    // Actions
+    submit: 'Submit',
+    close: 'Close',
+    back: 'Back',
+    next: 'Next',
+    confirm: 'Confirm',
+    success: 'Success',
+    error: 'Error',
+    
+    // Messages
+    userAdded: 'User added successfully',
+    hospitalAdded: 'Hospital added successfully',
+    errorOccurred: 'An error occurred',
+    fillRequired: 'Please fill all required fields',
   },
 };
 

@@ -1,0 +1,349 @@
+import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Plus, User } from 'lucide-react';
+
+interface UserData {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  hospital_id: string | null;
+  hospital_name?: string;
+  roles: string[];
+}
+
+interface Hospital {
+  id: string;
+  name: string;
+  name_ar: string;
+}
+
+const rolesList = [
+  { value: 'global_admin', labelEn: 'Global Admin', labelAr: 'مدير النظام' },
+  { value: 'hospital_admin', labelEn: 'Hospital Admin', labelAr: 'مدير المستشفى' },
+  { value: 'facility_manager', labelEn: 'Facility Manager', labelAr: 'مدير المرافق' },
+  { value: 'maintenance_manager', labelEn: 'Maintenance Manager', labelAr: 'مدير الصيانة' },
+  { value: 'supervisor', labelEn: 'Supervisor', labelAr: 'مشرف' },
+  { value: 'technician', labelEn: 'Technician', labelAr: 'فني' },
+  { value: 'reporter', labelEn: 'Reporter', labelAr: 'مبلغ' },
+];
+
+export default function Users() {
+  const { language, t } = useLanguage();
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    phone: '',
+    hospitalId: '',
+    role: '',
+  });
+
+  useEffect(() => {
+    Promise.all([loadUsers(), loadHospitals()]);
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          hospital_id,
+          hospitals(name, name_ar)
+        `);
+
+      if (profilesError) throw profilesError;
+
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      const usersWithRoles = (profilesData || []).map((profile: any) => ({
+        id: profile.id,
+        full_name: profile.full_name,
+        email: profile.email,
+        phone: profile.phone,
+        hospital_id: profile.hospital_id,
+        hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
+        roles: (rolesData || [])
+          .filter((r: any) => r.user_id === profile.id)
+          .map((r: any) => r.role),
+      }));
+
+      setUsers(usersWithRoles);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error(t('errorOccurred'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadHospitals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('id, name, name_ar')
+        .order('name');
+
+      if (error) throw error;
+      setHospitals(data || []);
+    } catch (error) {
+      console.error('Error loading hospitals:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.email || !formData.password || !formData.fullName || !formData.role) {
+      toast.error(t('fillRequired'));
+      return;
+    }
+
+    try {
+      // Create user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          phone: formData.phone || null,
+          hospital_id: formData.hospitalId || null,
+        })
+        .eq('id', authData.user.id);
+
+      if (profileError) throw profileError;
+
+      // Assign role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          user_id: authData.user.id,
+          role: formData.role as any,
+          hospital_id: formData.hospitalId || null,
+        }]);
+
+      if (roleError) throw roleError;
+
+      toast.success(t('userAdded'));
+      setIsDialogOpen(false);
+      setFormData({
+        email: '',
+        password: '',
+        fullName: '',
+        phone: '',
+        hospitalId: '',
+        role: '',
+      });
+      loadUsers();
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast.error(error.message || t('errorOccurred'));
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    const roleObj = rolesList.find((r) => r.value === role);
+    return language === 'ar' ? roleObj?.labelAr : roleObj?.labelEn;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold">{t('users')}</h1>
+          <p className="text-muted-foreground mt-1">
+            {language === 'ar' ? 'إدارة المستخدمين والأدوار' : 'Manage users and roles'}
+          </p>
+        </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              {t('addUser')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('addUser')}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('password')}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  minLength={6}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fullName">{t('fullName')}</Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">{t('phone')}</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role">{t('role')}</Label>
+                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectRole')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rolesList.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {language === 'ar' ? role.labelAr : role.labelEn}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.role !== 'global_admin' && (
+                <div className="space-y-2">
+                  <Label htmlFor="hospital">{t('hospital')}</Label>
+                  <Select value={formData.hospitalId} onValueChange={(value) => setFormData({ ...formData, hospitalId: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('selectHospital')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hospitals.map((hospital) => (
+                        <SelectItem key={hospital.id} value={hospital.id}>
+                          {language === 'ar' ? hospital.name_ar : hospital.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  {t('cancel')}
+                </Button>
+                <Button type="submit">{t('submit')}</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {users.map((user) => (
+          <Card key={user.id}>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="bg-primary/5 p-3 rounded-lg border border-border">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg truncate">{user.full_name}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate" dir="ltr">{user.email}</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {user.phone && (
+                <p className="text-sm text-muted-foreground" dir="ltr">{user.phone}</p>
+              )}
+              {user.hospital_name && (
+                <p className="text-sm text-muted-foreground">{user.hospital_name}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {user.roles.map((role) => (
+                  <Badge key={role} variant="secondary">
+                    {getRoleLabel(role)}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {users.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستخدمين' : 'No users yet'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

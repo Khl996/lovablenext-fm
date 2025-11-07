@@ -108,42 +108,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/5 p-2 rounded-lg border border-border">
-              <Building2 className="h-6 w-6 text-primary" />
-            </div>
-            <h1 className="text-xl font-semibold">{t('dashboard')}</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleLanguage}
-              className="gap-2"
-            >
-              <Globe className="h-4 w-4" />
-              {language === 'ar' ? 'EN' : 'ع'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              {t('logout')}
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8 space-y-8">
+    <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -245,7 +210,6 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
-      </main>
     </div>
   );
 }
