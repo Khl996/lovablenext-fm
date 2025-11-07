@@ -180,7 +180,6 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
                   <SelectValue placeholder={language === 'ar' ? 'جميع المستشفيات' : 'All hospitals'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{language === 'ar' ? 'جميع المستشفيات' : 'All hospitals'}</SelectItem>
                   {hospitals.map((hospital) => (
                     <SelectItem key={hospital.id} value={hospital.id}>
                       {language === 'ar' ? hospital.name_ar : hospital.name}
@@ -188,6 +187,9 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' ? 'اتركها فارغة لتطبيق الصلاحية على جميع المستشفيات' : 'Leave empty to apply permission to all hospitals'}
+              </p>
             </div>
           )}
 

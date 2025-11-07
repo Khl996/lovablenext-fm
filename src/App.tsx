@@ -90,10 +90,46 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
-              <Route path="/admin/hospitals" element={<ProtectedRoute><AppLayout><Hospitals /></AppLayout></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute><AppLayout><Users /></AppLayout></ProtectedRoute>} />
-              <Route path="/admin/permissions" element={<ProtectedRoute><AppLayout><RolePermissions /></AppLayout></ProtectedRoute>} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/hospitals" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Hospitals />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/users" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Users />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/permissions" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <RolePermissions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

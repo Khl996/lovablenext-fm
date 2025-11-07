@@ -264,14 +264,14 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                       <div className="space-y-2">
                         <Label htmlFor="hospital_id">{t('hospital')}</Label>
                         <Select
-                          value={profileForm.hospital_id}
-                          onValueChange={(value) => setProfileForm({ ...profileForm, hospital_id: value })}
+                          value={profileForm.hospital_id || 'none'}
+                          onValueChange={(value) => setProfileForm({ ...profileForm, hospital_id: value === 'none' ? '' : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder={t('selectHospital')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">{language === 'ar' ? 'بدون مستشفى' : 'No Hospital'}</SelectItem>
+                            <SelectItem value="none">{language === 'ar' ? 'بدون مستشفى' : 'No Hospital'}</SelectItem>
                             {hospitals.map((hospital) => (
                               <SelectItem key={hospital.id} value={hospital.id}>
                                 {language === 'ar' ? hospital.name_ar : hospital.name}
