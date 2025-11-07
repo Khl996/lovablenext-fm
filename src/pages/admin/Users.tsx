@@ -16,6 +16,7 @@ import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
 interface UserData {
   id: string;
   full_name: string;
+  full_name_ar: string | null;
   email: string;
   phone: string | null;
   hospital_id: string | null;
@@ -72,6 +73,7 @@ export default function Users() {
         .select(`
           id,
           full_name,
+          full_name_ar,
           email,
           phone,
           hospital_id,
@@ -105,6 +107,7 @@ export default function Users() {
         return {
           id: profile.id,
           full_name: profile.full_name,
+          full_name_ar: profile.full_name_ar,
           email: profile.email,
           phone: profile.phone,
           hospital_id: profile.hospital_id,

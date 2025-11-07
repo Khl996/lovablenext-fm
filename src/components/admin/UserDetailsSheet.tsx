@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Trash2, Plus } from 'lucide-react';
@@ -24,6 +25,7 @@ import {
 interface UserData {
   id: string;
   full_name: string;
+  full_name_ar: string | null;
   email: string;
   phone: string | null;
   hospital_id: string | null;
@@ -62,11 +64,29 @@ interface UserDetailsSheetProps {
 
 export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate }: UserDetailsSheetProps) {
   const { language, t } = useLanguage();
-  const { isGlobalAdmin, hospitalId } = useCurrentUser();
+  const currentUser = useCurrentUser();
   const [newRole, setNewRole] = useState('');
   const [newRoleHospital, setNewRoleHospital] = useState('');
   const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    full_name_ar: '',
+    phone: '',
+    hospital_id: '',
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        full_name: user.full_name || '',
+        full_name_ar: user.full_name_ar || '',
+        phone: user.phone || '',
+        hospital_id: user.hospital_id || '',
+      });
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -76,7 +96,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
   };
 
   const canAssignRole = (role: string) => {
-    if (isGlobalAdmin) return true;
+    if (currentUser.isGlobalAdmin) return true;
     if (role === 'global_admin' || role === 'hospital_admin') return false;
     return true;
   };
@@ -94,7 +114,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
 
     setLoading(true);
     try {
-      const roleHospitalId = newRole === 'global_admin' ? null : (newRoleHospital || hospitalId);
+      const roleHospitalId = newRole === 'global_admin' ? null : (newRoleHospital || currentUser.hospitalId);
 
       const { error } = await supabase
         .from('user_roles')
@@ -106,13 +126,45 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
 
       if (error) throw error;
 
-      toast.success(language === 'ar' ? 'تم إضافة الدور بنجاح' : 'Role added successfully');
+      toast.success(t('roleAdded'));
       setNewRole('');
       setNewRoleHospital('');
       onUpdate();
     } catch (error: any) {
       console.error('Error adding role:', error);
       toast.error(error.message || t('errorOccurred'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user?.id || !profileForm.full_name || !profileForm.full_name_ar) {
+      toast.error(t('fillRequired'));
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileForm.full_name,
+          full_name_ar: profileForm.full_name_ar,
+          phone: profileForm.phone || null,
+          hospital_id: profileForm.hospital_id || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success(t('profileUpdated'));
+      setIsEditingProfile(false);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(t('errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +180,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
 
       if (error) throw error;
 
-      toast.success(language === 'ar' ? 'تم حذف الدور بنجاح' : 'Role removed successfully');
+      toast.success(t('roleDeleted'));
       setRoleToDelete(null);
       onUpdate();
     } catch (error: any) {
@@ -146,113 +198,204 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{language === 'ar' ? 'تفاصيل المستخدم' : 'User Details'}</SheetTitle>
+            <SheetTitle>{t('userDetails')}</SheetTitle>
           </SheetHeader>
 
           <div className="space-y-6 mt-6">
             {/* User Info */}
-            <div className="space-y-4">
-              <div>
-                <Label className="text-muted-foreground">{t('fullName')}</Label>
-                <p className="font-medium">{user.full_name}</p>
-              </div>
-
-              <div>
-                <Label className="text-muted-foreground">{t('email')}</Label>
-                <p className="font-medium" dir="ltr">{user.email}</p>
-              </div>
-
-              {user.phone && (
-                <div>
-                  <Label className="text-muted-foreground">{t('phone')}</Label>
-                  <p className="font-medium" dir="ltr">{user.phone}</p>
-                </div>
-              )}
-
-              {user.hospital_name && (
-                <div>
-                  <Label className="text-muted-foreground">{t('hospital')}</Label>
-                  <p className="font-medium">{user.hospital_name}</p>
-                </div>
-              )}
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-lg">{language === 'ar' ? 'معلومات المستخدم' : 'User Information'}</CardTitle>
+                {(currentUser.isGlobalAdmin || currentUser.isHospitalAdmin) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                  >
+                    {isEditingProfile ? t('cancel') : t('editProfile')}
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isEditingProfile ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">{t('fullName')}</Label>
+                      <Input
+                        id="full_name"
+                        value={profileForm.full_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name_ar">{t('fullNameAr')}</Label>
+                      <Input
+                        id="full_name_ar"
+                        value={profileForm.full_name_ar}
+                        onChange={(e) => setProfileForm({ ...profileForm, full_name_ar: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">{t('phone')}</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      />
+                    </div>
+                    {currentUser.isGlobalAdmin && (
+                      <div className="space-y-2">
+                        <Label htmlFor="hospital_id">{t('hospital')}</Label>
+                        <Select
+                          value={profileForm.hospital_id}
+                          onValueChange={(value) => setProfileForm({ ...profileForm, hospital_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectHospital')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">{language === 'ar' ? 'بدون مستشفى' : 'No Hospital'}</SelectItem>
+                            {hospitals.map((hospital) => (
+                              <SelectItem key={hospital.id} value={hospital.id}>
+                                {language === 'ar' ? hospital.name_ar : hospital.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-2">
+                      <Button onClick={handleUpdateProfile} disabled={loading}>
+                        {t('save')}
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                        {t('cancel')}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Label className="text-muted-foreground">{t('fullName')}</Label>
+                      <p className="font-medium">{user.full_name}</p>
+                    </div>
+                    {user.full_name_ar && (
+                      <div>
+                        <Label className="text-muted-foreground">{t('fullNameAr')}</Label>
+                        <p className="font-medium">{user.full_name_ar}</p>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="text-muted-foreground">{t('email')}</Label>
+                      <p className="font-medium" dir="ltr">{user.email}</p>
+                    </div>
+                    {user.phone && (
+                      <div>
+                        <Label className="text-muted-foreground">{t('phone')}</Label>
+                        <p className="font-medium" dir="ltr">{user.phone}</p>
+                      </div>
+                    )}
+                    {user.hospital_name && (
+                      <div>
+                        <Label className="text-muted-foreground">{t('hospital')}</Label>
+                        <p className="font-medium">{user.hospital_name}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Roles Section */}
-            <div className="space-y-4 pt-4 border-t">
-              <Label className="text-base">{language === 'ar' ? 'الأدوار' : 'Roles'}</Label>
-              
-              {/* Current Roles */}
-              <div className="space-y-2">
-                {user.roles.map((role) => (
-                  <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <Badge variant="secondary" className="mb-1">
-                        {getRoleLabel(role.role)}
-                      </Badge>
-                      {role.hospital_name && (
-                        <p className="text-xs text-muted-foreground mt-1">{role.hospital_name}</p>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-lg">{t('roles')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Current Roles */}
+                <div className="space-y-2">
+                  {user.roles.map((role) => (
+                    <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <Badge variant="secondary" className="mb-1">
+                          {getRoleLabel(role.role)}
+                        </Badge>
+                        {role.hospital_name && (
+                          <p className="text-xs text-muted-foreground mt-1">{role.hospital_name}</p>
+                        )}
+                      </div>
+                      {canAssignRole(role.role) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setRoleToDelete(role.id)}
+                          disabled={loading}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       )}
                     </div>
-                    {canAssignRole(role.role) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setRoleToDelete(role.id)}
-                        disabled={loading}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                  ))}
+                </div>
+
+                {/* Add Role Form */}
+                {(currentUser.isGlobalAdmin || currentUser.isHospitalAdmin) && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-medium mb-3">{t('addRole')}</h4>
+                    
+                    {availableRoles.length > 0 ? (
+                      <div className="space-y-3">
+                        <Select value={newRole} onValueChange={setNewRole}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectRole')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableRoles.map((role) => (
+                              <SelectItem key={role.value} value={role.value}>
+                                {language === 'ar' ? role.labelAr : role.labelEn}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {newRole && newRole !== 'global_admin' && (
+                          <Select value={newRoleHospital} onValueChange={setNewRoleHospital}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('selectHospital')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {hospitals.map((hospital) => (
+                                <SelectItem key={hospital.id} value={hospital.id}>
+                                  {language === 'ar' ? hospital.name_ar : hospital.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        <Button
+                          onClick={handleAddRole}
+                          disabled={loading || !newRole || (newRole !== 'global_admin' && !newRoleHospital && !currentUser.hospitalId)}
+                          className="w-full gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          {language === 'ar' ? 'إضافة الدور' : 'Add Role'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'لا توجد أدوار متاحة للإضافة' : 'No roles available to add'}
+                      </p>
                     )}
                   </div>
-                ))}
-              </div>
-
-              {/* Add Role Form */}
-              {availableRoles.length > 0 && (
-                <div className="space-y-3 pt-4 border-t">
-                  <Label>{language === 'ar' ? 'إضافة دور جديد' : 'Add New Role'}</Label>
-                  
-                  <Select value={newRole} onValueChange={setNewRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('selectRole')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableRoles.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {language === 'ar' ? role.labelAr : role.labelEn}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {newRole && newRole !== 'global_admin' && (
-                    <Select value={newRoleHospital} onValueChange={setNewRoleHospital}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('selectHospital')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {hospitals.map((hospital) => (
-                          <SelectItem key={hospital.id} value={hospital.id}>
-                            {language === 'ar' ? hospital.name_ar : hospital.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  <Button
-                    onClick={handleAddRole}
-                    disabled={loading || !newRole || (newRole !== 'global_admin' && !newRoleHospital && !hospitalId)}
-                    className="w-full gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {language === 'ar' ? 'إضافة الدور' : 'Add Role'}
-                  </Button>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </SheetContent>
       </Sheet>
@@ -261,11 +404,9 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
       <AlertDialog open={!!roleToDelete} onOpenChange={() => setRoleToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{language === 'ar' ? 'تأكيد الحذف' : 'Confirm Deletion'}</AlertDialogTitle>
+            <AlertDialogTitle>{language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}</AlertDialogTitle>
             <AlertDialogDescription>
-              {language === 'ar' 
-                ? 'هل أنت متأكد من حذف هذا الدور؟ لا يمكن التراجع عن هذا الإجراء.'
-                : 'Are you sure you want to remove this role? This action cannot be undone.'}
+              {t('confirmDeleteRole')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

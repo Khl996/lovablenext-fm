@@ -24,6 +24,7 @@ export default function Hospitals() {
   const [hospitals, setHospitals] = useState<HospitalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingHospital, setEditingHospital] = useState<HospitalData | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
@@ -63,14 +64,27 @@ export default function Hospitals() {
     }
 
     try {
-      const { error } = await supabase
-        .from('hospitals')
-        .insert([formData]);
+      if (editingHospital) {
+        // Update existing hospital
+        const { error } = await supabase
+          .from('hospitals')
+          .update(formData)
+          .eq('id', editingHospital.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success(t('hospitalUpdated'));
+      } else {
+        // Insert new hospital
+        const { error } = await supabase
+          .from('hospitals')
+          .insert([formData]);
 
-      toast.success(t('hospitalAdded'));
+        if (error) throw error;
+        toast.success(t('hospitalAdded'));
+      }
+
       setIsDialogOpen(false);
+      setEditingHospital(null);
       setFormData({
         name: '',
         name_ar: '',
@@ -81,8 +95,36 @@ export default function Hospitals() {
       });
       loadHospitals();
     } catch (error) {
-      console.error('Error adding hospital:', error);
+      console.error('Error saving hospital:', error);
       toast.error(t('errorOccurred'));
+    }
+  };
+
+  const handleEdit = (hospital: HospitalData) => {
+    setEditingHospital(hospital);
+    setFormData({
+      name: hospital.name,
+      name_ar: hospital.name_ar,
+      type: hospital.type || '',
+      address: hospital.address || '',
+      phone: hospital.phone || '',
+      email: hospital.email || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setEditingHospital(null);
+      setFormData({
+        name: '',
+        name_ar: '',
+        type: '',
+        address: '',
+        phone: '',
+        email: '',
+      });
     }
   };
 
@@ -104,7 +146,7 @@ export default function Hospitals() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -113,7 +155,7 @@ export default function Hospitals() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('addHospital')}</DialogTitle>
+              <DialogTitle>{editingHospital ? t('editHospital') : t('addHospital')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -175,10 +217,10 @@ export default function Hospitals() {
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>
                   {t('cancel')}
                 </Button>
-                <Button type="submit">{t('submit')}</Button>
+                <Button type="submit">{editingHospital ? t('save') : t('submit')}</Button>
               </div>
             </form>
           </DialogContent>
@@ -187,7 +229,7 @@ export default function Hospitals() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {hospitals.map((hospital) => (
-          <Card key={hospital.id}>
+          <Card key={hospital.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleEdit(hospital)}>
             <CardHeader>
               <div className="flex items-start gap-3">
                 <div className="bg-primary/5 p-3 rounded-lg border border-border">

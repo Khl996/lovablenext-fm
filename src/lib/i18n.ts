@@ -103,8 +103,19 @@ export const translations = {
     // Messages
     userAdded: 'تم إضافة المستخدم بنجاح',
     hospitalAdded: 'تم إضافة المستشفى بنجاح',
+    hospitalUpdated: 'تم تحديث المستشفى بنجاح',
+    profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
+    roleAdded: 'تم إضافة الدور بنجاح',
+    roleDeleted: 'تم حذف الدور بنجاح',
     errorOccurred: 'حدث خطأ',
     fillRequired: 'يرجى ملء جميع الحقول المطلوبة',
+    confirmDeleteRole: 'هل أنت متأكد من حذف هذا الدور؟',
+    userDetails: 'تفاصيل المستخدم',
+    editProfile: 'تعديل البيانات',
+    editHospital: 'تعديل المستشفى',
+    fullNameAr: 'الاسم بالعربية',
+    addRole: 'إضافة دور',
+    noPermission: 'ليس لديك صلاحية للوصول',
   },
   en: {
     // Common
@@ -205,8 +216,19 @@ export const translations = {
     // Messages
     userAdded: 'User added successfully',
     hospitalAdded: 'Hospital added successfully',
+    hospitalUpdated: 'Hospital updated successfully',
+    profileUpdated: 'Profile updated successfully',
+    roleAdded: 'Role added successfully',
+    roleDeleted: 'Role deleted successfully',
     errorOccurred: 'An error occurred',
     fillRequired: 'Please fill all required fields',
+    confirmDeleteRole: 'Are you sure you want to delete this role?',
+    userDetails: 'User Details',
+    editProfile: 'Edit Profile',
+    editHospital: 'Edit Hospital',
+    fullNameAr: 'Full Name (Arabic)',
+    addRole: 'Add Role',
+    noPermission: 'You do not have permission to access this',
   },
 };
 
