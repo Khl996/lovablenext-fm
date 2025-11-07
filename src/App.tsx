@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Languages } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { useLanguage } from "./contexts/LanguageContext";
@@ -63,9 +64,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-              <Route path="/admin/hospitals" element={<AppLayout><Hospitals /></AppLayout>} />
-              <Route path="/admin/users" element={<AppLayout><Users /></AppLayout>} />
+              <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+              <Route path="/admin/hospitals" element={<ProtectedRoute><AppLayout><Hospitals /></AppLayout></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute><AppLayout><Users /></AppLayout></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
