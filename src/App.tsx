@@ -3,12 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { Languages } from "lucide-react";
+import { useCurrentUser } from "./hooks/useCurrentUser";
+import { Languages, LogOut } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { useLanguage } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
@@ -22,6 +23,8 @@ const queryClient = new QueryClient();
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { language, setLanguage, direction } = useLanguage();
+  const { signOut, user } = useAuth();
+  const { profile } = useCurrentUser();
 
   return (
     <SidebarProvider>
@@ -29,9 +32,18 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <AppSidebar side={direction === 'rtl' ? 'right' : 'left'} />
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-14 border-b flex items-center px-4 bg-card sticky top-0 z-10">
+          <header className="h-14 border-b flex items-center px-4 bg-card sticky top-0 z-10 gap-4">
             <SidebarTrigger />
             <div className="flex-1"></div>
+            
+            {/* User Info */}
+            {profile && (
+              <div className="text-sm text-muted-foreground hidden sm:block">
+                {language === 'ar' ? 'مرحباً' : 'Welcome'}, {profile.full_name}
+              </div>
+            )}
+
+            {/* Language Toggle */}
             <Button
               variant="ghost"
               size="sm"
@@ -40,6 +52,19 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <Languages className="h-4 w-4" />
               {language === 'ar' ? 'EN' : 'ع'}
+            </Button>
+
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+              </span>
             </Button>
           </header>
 
