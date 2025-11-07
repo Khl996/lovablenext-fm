@@ -14,16 +14,1033 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assets: {
+        Row: {
+          building_id: string | null
+          category: Database["public"]["Enums"]["asset_category"]
+          code: string
+          coordinates_x: number | null
+          coordinates_y: number | null
+          created_at: string
+          criticality: Database["public"]["Enums"]["criticality_level"]
+          department_id: string | null
+          depreciation_annual: number | null
+          expected_lifespan_years: number | null
+          floor_id: string | null
+          hospital_id: string
+          id: string
+          installation_date: string | null
+          manufacture_year: number | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          name_ar: string
+          purchase_cost: number | null
+          purchase_date: string | null
+          qr_code: string | null
+          room_id: string | null
+          serial_number: string | null
+          specifications: Json | null
+          status: Database["public"]["Enums"]["asset_status"]
+          subcategory: string | null
+          supplier: string | null
+          type: string | null
+          updated_at: string
+          warranty_expiry: string | null
+          warranty_provider: string | null
+        }
+        Insert: {
+          building_id?: string | null
+          category: Database["public"]["Enums"]["asset_category"]
+          code: string
+          coordinates_x?: number | null
+          coordinates_y?: number | null
+          created_at?: string
+          criticality?: Database["public"]["Enums"]["criticality_level"]
+          department_id?: string | null
+          depreciation_annual?: number | null
+          expected_lifespan_years?: number | null
+          floor_id?: string | null
+          hospital_id: string
+          id?: string
+          installation_date?: string | null
+          manufacture_year?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          name_ar: string
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          qr_code?: string | null
+          room_id?: string | null
+          serial_number?: string | null
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          subcategory?: string | null
+          supplier?: string | null
+          type?: string | null
+          updated_at?: string
+          warranty_expiry?: string | null
+          warranty_provider?: string | null
+        }
+        Update: {
+          building_id?: string | null
+          category?: Database["public"]["Enums"]["asset_category"]
+          code?: string
+          coordinates_x?: number | null
+          coordinates_y?: number | null
+          created_at?: string
+          criticality?: Database["public"]["Enums"]["criticality_level"]
+          department_id?: string | null
+          depreciation_annual?: number | null
+          expected_lifespan_years?: number | null
+          floor_id?: string | null
+          hospital_id?: string
+          id?: string
+          installation_date?: string | null
+          manufacture_year?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          name_ar?: string
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          qr_code?: string | null
+          room_id?: string | null
+          serial_number?: string | null
+          specifications?: Json | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          subcategory?: string | null
+          supplier?: string | null
+          type?: string | null
+          updated_at?: string
+          warranty_expiry?: string | null
+          warranty_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buildings: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          hospital_id: string
+          id: string
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          hospital_id: string
+          id?: string
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          hospital_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buildings_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          code: string
+          created_at: string
+          floor_id: string
+          id: string
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          floor_id: string
+          id?: string
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          floor_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floors: {
+        Row: {
+          building_id: string
+          code: string
+          created_at: string
+          id: string
+          level: number
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          building_id: string
+          code: string
+          created_at?: string
+          id?: string
+          level: number
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          building_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          level?: number
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floors_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          name_ar: string
+          phone: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          name_ar: string
+          phone?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          name_ar?: string
+          phone?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_plans: {
+        Row: {
+          budget: number | null
+          budget_utilization: number | null
+          code: string
+          completion_rate: number | null
+          created_at: string
+          department: string | null
+          hospital_id: string
+          id: string
+          name: string
+          name_ar: string
+          on_time_rate: number | null
+          quality_score: number | null
+          status: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          budget?: number | null
+          budget_utilization?: number | null
+          code: string
+          completion_rate?: number | null
+          created_at?: string
+          department?: string | null
+          hospital_id: string
+          id?: string
+          name: string
+          name_ar: string
+          on_time_rate?: number | null
+          quality_score?: number | null
+          status?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          budget?: number | null
+          budget_utilization?: number | null
+          code?: string
+          completion_rate?: number | null
+          created_at?: string
+          department?: string | null
+          hospital_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          on_time_rate?: number | null
+          quality_score?: number | null
+          status?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_plans_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tasks: {
+        Row: {
+          assigned_to: string | null
+          checklist: Json | null
+          code: string
+          created_at: string
+          depends_on: string | null
+          duration_days: number
+          end_date: string
+          frequency: string
+          id: string
+          is_critical: boolean | null
+          name: string
+          name_ar: string
+          plan_id: string
+          progress: number | null
+          start_date: string
+          status: string
+          type: Database["public"]["Enums"]["maintenance_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          checklist?: Json | null
+          code: string
+          created_at?: string
+          depends_on?: string | null
+          duration_days: number
+          end_date: string
+          frequency: string
+          id?: string
+          is_critical?: boolean | null
+          name: string
+          name_ar: string
+          plan_id: string
+          progress?: number | null
+          start_date: string
+          status?: string
+          type: Database["public"]["Enums"]["maintenance_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          checklist?: Json | null
+          code?: string
+          created_at?: string
+          depends_on?: string | null
+          duration_days?: number
+          end_date?: string
+          frequency?: string
+          id?: string
+          is_critical?: boolean | null
+          name?: string
+          name_ar?: string
+          plan_id?: string
+          progress?: number | null
+          start_date?: string
+          status?: string
+          type?: Database["public"]["Enums"]["maintenance_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tasks_depends_on_fkey"
+            columns: ["depends_on"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tasks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operations_log: {
+        Row: {
+          actual_duration: number | null
+          affected_areas: string[] | null
+          approval_notes: string | null
+          approval_required: boolean | null
+          approved_at: string | null
+          approved_by: string | null
+          asset_id: string | null
+          asset_name: string
+          category: string | null
+          code: string
+          created_at: string
+          description: string | null
+          emergency_measures: string | null
+          end_time: string | null
+          estimated_duration: number | null
+          hospital_id: string
+          id: string
+          location: string
+          new_status: string | null
+          notes: string | null
+          notified_parties: string[] | null
+          performed_by: string
+          photos: string[] | null
+          previous_status: string | null
+          reason: string
+          related_work_order: string | null
+          start_time: string | null
+          status: string
+          system_type: string
+          team: string | null
+          technician_name: string
+          timestamp: string
+          type: Database["public"]["Enums"]["operation_type"]
+        }
+        Insert: {
+          actual_duration?: number | null
+          affected_areas?: string[] | null
+          approval_notes?: string | null
+          approval_required?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id?: string | null
+          asset_name: string
+          category?: string | null
+          code: string
+          created_at?: string
+          description?: string | null
+          emergency_measures?: string | null
+          end_time?: string | null
+          estimated_duration?: number | null
+          hospital_id: string
+          id?: string
+          location: string
+          new_status?: string | null
+          notes?: string | null
+          notified_parties?: string[] | null
+          performed_by: string
+          photos?: string[] | null
+          previous_status?: string | null
+          reason: string
+          related_work_order?: string | null
+          start_time?: string | null
+          status?: string
+          system_type: string
+          team?: string | null
+          technician_name: string
+          timestamp?: string
+          type: Database["public"]["Enums"]["operation_type"]
+        }
+        Update: {
+          actual_duration?: number | null
+          affected_areas?: string[] | null
+          approval_notes?: string | null
+          approval_required?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id?: string | null
+          asset_name?: string
+          category?: string | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          emergency_measures?: string | null
+          end_time?: string | null
+          estimated_duration?: number | null
+          hospital_id?: string
+          id?: string
+          location?: string
+          new_status?: string | null
+          notes?: string | null
+          notified_parties?: string[] | null
+          performed_by?: string
+          photos?: string[] | null
+          previous_status?: string | null
+          reason?: string
+          related_work_order?: string | null
+          start_time?: string | null
+          status?: string
+          system_type?: string
+          team?: string | null
+          technician_name?: string
+          timestamp?: string
+          type?: Database["public"]["Enums"]["operation_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operations_log_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operations_log_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operations_log_related_work_order_fkey"
+            columns: ["related_work_order"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          full_name_ar: string | null
+          hospital_id: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          full_name_ar?: string | null
+          hospital_id?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          full_name_ar?: string | null
+          hospital_id?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          code: string
+          coordinates_x: number | null
+          coordinates_y: number | null
+          created_at: string
+          department_id: string
+          id: string
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          coordinates_x?: number | null
+          coordinates_y?: number | null
+          created_at?: string
+          department_id: string
+          id?: string
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          coordinates_x?: number | null
+          coordinates_y?: number | null
+          created_at?: string
+          department_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          certifications: Json | null
+          created_at: string
+          id: string
+          role: string
+          specialization: string[] | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          certifications?: Json | null
+          created_at?: string
+          id?: string
+          role: string
+          specialization?: string[] | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          certifications?: Json | null
+          created_at?: string
+          id?: string
+          role?: string
+          specialization?: string[] | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          code: string
+          created_at: string
+          department: string | null
+          hospital_id: string
+          id: string
+          name: string
+          name_ar: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          department?: string | null
+          hospital_id: string
+          id?: string
+          name: string
+          name_ar: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          department?: string | null
+          hospital_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          hospital_id: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          actions_taken: Json | null
+          actual_duration: number | null
+          asset_id: string | null
+          assigned_at: string | null
+          assigned_team: string | null
+          assigned_to: string | null
+          building_id: string | null
+          code: string
+          created_at: string
+          customer_feedback: string | null
+          customer_rating: number | null
+          customer_reviewed_at: string | null
+          customer_reviewed_by: string | null
+          department_id: string | null
+          description: string
+          due_date: string | null
+          end_time: string | null
+          estimated_duration: number | null
+          floor_id: string | null
+          hospital_id: string
+          id: string
+          is_redirected: boolean | null
+          issue_type: string
+          labor_time: number | null
+          original_issue_type: string | null
+          parts_used: Json | null
+          photos: string[] | null
+          priority: Database["public"]["Enums"]["work_order_priority"]
+          redirect_reason: string | null
+          redirected_by: string | null
+          redirected_to: string | null
+          reported_at: string
+          reported_by: string
+          resolution_time: number | null
+          response_time: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          room_id: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["work_order_status"]
+          supervisor_approved_at: string | null
+          supervisor_approved_by: string | null
+          supervisor_notes: string | null
+          total_cost: number | null
+          updated_at: string
+          urgency: string | null
+          work_notes: string | null
+          work_photos: string[] | null
+        }
+        Insert: {
+          actions_taken?: Json | null
+          actual_duration?: number | null
+          asset_id?: string | null
+          assigned_at?: string | null
+          assigned_team?: string | null
+          assigned_to?: string | null
+          building_id?: string | null
+          code: string
+          created_at?: string
+          customer_feedback?: string | null
+          customer_rating?: number | null
+          customer_reviewed_at?: string | null
+          customer_reviewed_by?: string | null
+          department_id?: string | null
+          description: string
+          due_date?: string | null
+          end_time?: string | null
+          estimated_duration?: number | null
+          floor_id?: string | null
+          hospital_id: string
+          id?: string
+          is_redirected?: boolean | null
+          issue_type: string
+          labor_time?: number | null
+          original_issue_type?: string | null
+          parts_used?: Json | null
+          photos?: string[] | null
+          priority?: Database["public"]["Enums"]["work_order_priority"]
+          redirect_reason?: string | null
+          redirected_by?: string | null
+          redirected_to?: string | null
+          reported_at?: string
+          reported_by: string
+          resolution_time?: number | null
+          response_time?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          room_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          supervisor_approved_at?: string | null
+          supervisor_approved_by?: string | null
+          supervisor_notes?: string | null
+          total_cost?: number | null
+          updated_at?: string
+          urgency?: string | null
+          work_notes?: string | null
+          work_photos?: string[] | null
+        }
+        Update: {
+          actions_taken?: Json | null
+          actual_duration?: number | null
+          asset_id?: string | null
+          assigned_at?: string | null
+          assigned_team?: string | null
+          assigned_to?: string | null
+          building_id?: string | null
+          code?: string
+          created_at?: string
+          customer_feedback?: string | null
+          customer_rating?: number | null
+          customer_reviewed_at?: string | null
+          customer_reviewed_by?: string | null
+          department_id?: string | null
+          description?: string
+          due_date?: string | null
+          end_time?: string | null
+          estimated_duration?: number | null
+          floor_id?: string | null
+          hospital_id?: string
+          id?: string
+          is_redirected?: boolean | null
+          issue_type?: string
+          labor_time?: number | null
+          original_issue_type?: string | null
+          parts_used?: Json | null
+          photos?: string[] | null
+          priority?: Database["public"]["Enums"]["work_order_priority"]
+          redirect_reason?: string | null
+          redirected_by?: string | null
+          redirected_to?: string | null
+          reported_at?: string
+          reported_by?: string
+          resolution_time?: number | null
+          response_time?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          room_id?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          supervisor_approved_at?: string | null
+          supervisor_approved_by?: string | null
+          supervisor_notes?: string | null
+          total_cost?: number | null
+          updated_at?: string
+          urgency?: string | null
+          work_notes?: string | null
+          work_photos?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_assigned_team_fkey"
+            columns: ["assigned_team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_hospital: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "global_admin"
+        | "hospital_admin"
+        | "facility_manager"
+        | "maintenance_manager"
+        | "supervisor"
+        | "technician"
+        | "reporter"
+      asset_category:
+        | "mechanical"
+        | "electrical"
+        | "medical"
+        | "safety"
+        | "plumbing"
+        | "other"
+      asset_status: "active" | "inactive" | "maintenance" | "retired"
+      criticality_level: "critical" | "essential" | "non_essential"
+      maintenance_type: "preventive" | "corrective" | "predictive" | "routine"
+      operation_type: "shutdown" | "startup" | "adjustment" | "transfer"
+      work_order_priority: "low" | "medium" | "high" | "urgent"
+      work_order_status:
+        | "pending"
+        | "assigned"
+        | "in_progress"
+        | "needs_redirection"
+        | "awaiting_approval"
+        | "customer_approved"
+        | "customer_rejected"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +1167,40 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "global_admin",
+        "hospital_admin",
+        "facility_manager",
+        "maintenance_manager",
+        "supervisor",
+        "technician",
+        "reporter",
+      ],
+      asset_category: [
+        "mechanical",
+        "electrical",
+        "medical",
+        "safety",
+        "plumbing",
+        "other",
+      ],
+      asset_status: ["active", "inactive", "maintenance", "retired"],
+      criticality_level: ["critical", "essential", "non_essential"],
+      maintenance_type: ["preventive", "corrective", "predictive", "routine"],
+      operation_type: ["shutdown", "startup", "adjustment", "transfer"],
+      work_order_priority: ["low", "medium", "high", "urgent"],
+      work_order_status: [
+        "pending",
+        "assigned",
+        "in_progress",
+        "needs_redirection",
+        "awaiting_approval",
+        "customer_approved",
+        "customer_rejected",
+        "completed",
+        "cancelled",
+      ],
+    },
   },
 } as const
