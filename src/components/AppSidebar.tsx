@@ -37,9 +37,10 @@ const mainItems = [
 ];
 
 const adminItems = [
-  { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital },
-  { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
-  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield },
+  { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital, permission: 'manage_hospitals' },
+  { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
+  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield, permission: 'manage_users' },
+  { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
   { title: 'settings', titleAr: 'الإعدادات', url: '/admin/settings', icon: Settings },
 ];
 
@@ -48,17 +49,17 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { canManageUsers, canManageHospitals, isGlobalAdmin, loading } = useCurrentUser();
+  const { permissions, loading } = useCurrentUser();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
 
   // Filter admin items based on permissions
   const visibleAdminItems = adminItems.filter(item => {
-    if (item.url === '/admin/hospitals') return canManageHospitals;
-    if (item.url === '/admin/users') return canManageUsers;
-    if (item.url === '/admin/permissions') return isGlobalAdmin;
-    return true; // settings is visible to all
+    if (item.permission) {
+      return permissions.hasPermission(item.permission as any);
+    }
+    return true; // items without permission (like settings) are visible to all
   });
 
   if (loading) {

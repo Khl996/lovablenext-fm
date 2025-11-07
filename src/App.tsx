@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
+import Locations from "./pages/admin/Locations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -126,6 +127,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <RolePermissions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/locations" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Locations />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
