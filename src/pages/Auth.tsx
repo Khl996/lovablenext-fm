@@ -61,7 +61,7 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">{t('loading')}</p>
@@ -71,12 +71,12 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
-      <div className="w-full max-w-md space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-6">
         {/* Language Toggle */}
         <div className="flex justify-end">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={toggleLanguage}
             className="gap-2"
@@ -86,27 +86,21 @@ export default function Auth() {
           </Button>
         </div>
 
-        {/* Logo and Title */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="bg-primary/10 p-4 rounded-2xl">
-              <Building2 className="h-12 w-12 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold">
-            {language === 'ar' ? 'نظام إدارة المرافق' : 'Facility Management System'}
-          </h1>
-          <p className="text-muted-foreground">
-            {language === 'ar' ? 'إدارة شاملة للمرافق والصيانة' : 'Comprehensive Facility and Maintenance Management'}
-          </p>
-        </div>
-
         {/* Auth Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{language === 'ar' ? 'مرحباً بك' : 'Welcome'}</CardTitle>
+        <Card className="border">
+          <CardHeader className="space-y-2 text-center">
+            <div className="flex justify-center mb-2">
+              <div className="bg-primary/5 p-4 rounded-xl border border-border">
+                <Building2 className="h-10 w-10 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-semibold">
+              {t('login')}
+            </CardTitle>
             <CardDescription>
-              {language === 'ar' ? 'سجل الدخول أو أنشئ حساباً جديداً' : 'Login or create a new account'}
+              {language === 'ar' 
+                ? 'الوصول إلى النظام' 
+                : 'Access the system'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -192,12 +186,6 @@ export default function Auth() {
             </Tabs>
           </CardContent>
         </Card>
-
-        <p className="text-center text-sm text-muted-foreground">
-          {language === 'ar' 
-            ? 'للدعم الفني، تواصل مع فريق الدعم' 
-            : 'For technical support, contact support team'}
-        </p>
       </div>
     </div>
   );

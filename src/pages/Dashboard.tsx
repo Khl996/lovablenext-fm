@@ -9,7 +9,6 @@ import {
   Building2, 
   Package, 
   ClipboardList, 
-  AlertTriangle, 
   CheckCircle2, 
   Globe,
   LogOut 
@@ -108,183 +107,143 @@ export default function Dashboard() {
     );
   }
 
-  const statCards = [
-    {
-      title: t('totalAssets'),
-      value: stats.totalAssets,
-      icon: Package,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
-    {
-      title: t('activeWorkOrders'),
-      value: stats.activeWorkOrders,
-      icon: ClipboardList,
-      color: 'text-info',
-      bgColor: 'bg-info/10',
-    },
-    {
-      title: t('criticalAssets'),
-      value: stats.criticalAssets,
-      icon: AlertTriangle,
-      color: 'text-warning',
-      bgColor: 'bg-warning/10',
-    },
-    {
-      title: t('completedToday'),
-      value: stats.completedToday,
-      icon: CheckCircle2,
-      color: 'text-success',
-      bgColor: 'bg-success/10',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Building2 className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">
-                  {language === 'ar' ? 'نظام إدارة المرافق' : 'Facility Management System'}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {t('welcome')}, {user.user_metadata?.full_name || user.email}
-                </p>
-              </div>
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/5 p-2 rounded-lg border border-border">
+              <Building2 className="h-6 w-6 text-primary" />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleLanguage}
-                className="gap-2"
-              >
-                <Globe className="h-4 w-4" />
-                {language === 'ar' ? 'English' : 'العربية'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                {t('logout')}
-              </Button>
-            </div>
+            <h1 className="text-xl font-semibold">{t('dashboard')}</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="gap-2"
+            >
+              <Globe className="h-4 w-4" />
+              {language === 'ar' ? 'EN' : 'ع'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              {t('logout')}
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
-          {/* Welcome Message */}
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold">
-              {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {language === 'ar' 
-                ? 'مرحباً بك في نظام إدارة المرافق الشامل. تتبع الأصول وأوامر العمل وإدارة الصيانة بكفاءة.' 
-                : 'Welcome to the comprehensive Facility Management System. Track assets, work orders, and manage maintenance efficiently.'}
-            </p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {statCards.map((card, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      {card.title}
-                    </CardTitle>
-                    <div className={`${card.bgColor} p-2 rounded-lg`}>
-                      <card.icon className={`h-5 w-5 ${card.color}`} />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {loadingStats ? (
-                    <div className="h-10 bg-muted animate-pulse rounded"></div>
-                  ) : (
-                    <div className="text-3xl font-bold">{card.value}</div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Quick Actions */}
+      <main className="container mx-auto px-6 py-8 space-y-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle>
-                {language === 'ar' ? 'الإجراءات السريعة' : 'Quick Actions'}
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t('totalAssets')}
               </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Button variant="outline" className="h-auto py-6 flex-col gap-2" disabled>
-                  <Package className="h-6 w-6" />
-                  <span>{language === 'ar' ? 'إدارة الأصول' : 'Manage Assets'}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {language === 'ar' ? 'قريباً' : 'Coming Soon'}
-                  </span>
-                </Button>
-                
-                <Button variant="outline" className="h-auto py-6 flex-col gap-2" disabled>
-                  <ClipboardList className="h-6 w-6" />
-                  <span>{language === 'ar' ? 'أوامر العمل' : 'Work Orders'}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {language === 'ar' ? 'قريباً' : 'Coming Soon'}
-                  </span>
-                </Button>
-                
-                <Button variant="outline" className="h-auto py-6 flex-col gap-2" disabled>
-                  <Building2 className="h-6 w-6" />
-                  <span>{language === 'ar' ? 'المرافق' : 'Facilities'}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {language === 'ar' ? 'قريباً' : 'Coming Soon'}
-                  </span>
-                </Button>
-                
-                <Button variant="outline" className="h-auto py-6 flex-col gap-2" disabled>
-                  <CheckCircle2 className="h-6 w-6" />
-                  <span>{language === 'ar' ? 'التقارير' : 'Reports'}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {language === 'ar' ? 'قريباً' : 'Coming Soon'}
-                  </span>
-                </Button>
-              </div>
+              {loadingStats ? (
+                <div className="h-8 bg-muted animate-pulse rounded"></div>
+              ) : (
+                <div className="text-2xl font-semibold">{stats.totalAssets}</div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Info Message */}
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-2">
-                <p className="font-medium">
-                  {language === 'ar' 
-                    ? '🚀 النظام جاهز للاستخدام!' 
-                    : '🚀 System Ready!'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {language === 'ar' 
-                    ? 'قاعدة البيانات تم إنشاؤها بنجاح. يمكنك الآن البدء في إضافة المستشفيات والأصول وأوامر العمل.' 
-                    : 'Database created successfully. You can now start adding hospitals, assets, and work orders.'}
-                </p>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t('activeWorkOrders')}
+              </CardTitle>
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {loadingStats ? (
+                <div className="h-8 bg-muted animate-pulse rounded"></div>
+              ) : (
+                <div className="text-2xl font-semibold">{stats.activeWorkOrders}</div>
+              )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t('criticalAssets')}
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {loadingStats ? (
+                <div className="h-8 bg-muted animate-pulse rounded"></div>
+              ) : (
+                <div className="text-2xl font-semibold">{stats.criticalAssets}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t('completedToday')}
+              </CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {loadingStats ? (
+                <div className="h-8 bg-muted animate-pulse rounded"></div>
+              ) : (
+                <div className="text-2xl font-semibold">{stats.completedToday}</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">
+            {language === 'ar' ? 'الوحدات' : 'Modules'}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="hover:border-primary transition-colors cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Package className="h-4 w-4" />
+                  {t('assets')}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+
+            <Card className="hover:border-primary transition-colors cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ClipboardList className="h-4 w-4" />
+                  {t('workOrders')}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+
+            <Card className="hover:border-primary transition-colors cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t('maintenance')}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
         </div>
       </main>
     </div>
