@@ -20,12 +20,12 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, direction } = useLanguage();
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        <AppSidebar side={direction === 'rtl' ? 'right' : 'left'} />
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="h-14 border-b flex items-center px-4 bg-card sticky top-0 z-10">

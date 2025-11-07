@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, User } from 'lucide-react';
+import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
 
 interface UserData {
   id: string;
@@ -18,7 +20,12 @@ interface UserData {
   phone: string | null;
   hospital_id: string | null;
   hospital_name?: string;
-  roles: string[];
+  roles: Array<{
+    id: string;
+    role: string;
+    hospital_id: string | null;
+    hospital_name?: string;
+  }>;
 }
 
 interface Hospital {
@@ -39,10 +46,12 @@ const rolesList = [
 
 export default function Users() {
   const { language, t } = useLanguage();
+  const { isGlobalAdmin, hospitalId: currentUserHospitalId, canManageUsers } = useCurrentUser();
   const [users, setUsers] = useState<UserData[]>([]);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -73,23 +82,43 @@ export default function Users() {
 
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role');
+        .select(`
+          id,
+          user_id,
+          role,
+          hospital_id,
+          hospitals(name, name_ar)
+        `);
 
       if (rolesError) throw rolesError;
 
-      const usersWithRoles = (profilesData || []).map((profile: any) => ({
-        id: profile.id,
-        full_name: profile.full_name,
-        email: profile.email,
-        phone: profile.phone,
-        hospital_id: profile.hospital_id,
-        hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
-        roles: (rolesData || [])
+      const usersWithRoles = (profilesData || []).map((profile: any) => {
+        const userRoles = (rolesData || [])
           .filter((r: any) => r.user_id === profile.id)
-          .map((r: any) => r.role),
-      }));
+          .map((r: any) => ({
+            id: r.id,
+            role: r.role,
+            hospital_id: r.hospital_id,
+            hospital_name: r.hospitals ? (language === 'ar' ? r.hospitals.name_ar : r.hospitals.name) : null,
+          }));
 
-      setUsers(usersWithRoles);
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          email: profile.email,
+          phone: profile.phone,
+          hospital_id: profile.hospital_id,
+          hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
+          roles: userRoles,
+        };
+      });
+
+      // Filter users based on permissions
+      const filteredUsers = isGlobalAdmin 
+        ? usersWithRoles 
+        : usersWithRoles.filter((u: any) => u.hospital_id === currentUserHospitalId);
+
+      setUsers(filteredUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error(t('errorOccurred'));
@@ -179,6 +208,20 @@ export default function Users() {
     const roleObj = rolesList.find((r) => r.value === role);
     return language === 'ar' ? roleObj?.labelAr : roleObj?.labelEn;
   };
+
+  if (!canManageUsers) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="max-w-md">
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -303,7 +346,11 @@ export default function Users() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {users.map((user) => (
-          <Card key={user.id}>
+          <Card 
+            key={user.id} 
+            className="cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => setSelectedUser(user)}
+          >
             <CardHeader>
               <div className="flex items-start gap-3">
                 <div className="bg-primary/5 p-3 rounded-lg border border-border">
@@ -324,8 +371,8 @@ export default function Users() {
               )}
               <div className="flex flex-wrap gap-2">
                 {user.roles.map((role) => (
-                  <Badge key={role} variant="secondary">
-                    {getRoleLabel(role)}
+                  <Badge key={role.id} variant="secondary">
+                    {getRoleLabel(role.role)}
                   </Badge>
                 ))}
               </div>
@@ -333,6 +380,14 @@ export default function Users() {
           </Card>
         ))}
       </div>
+
+      <UserDetailsSheet
+        user={selectedUser}
+        open={!!selectedUser}
+        onOpenChange={(open) => !open && setSelectedUser(null)}
+        hospitals={hospitals}
+        onUpdate={loadUsers}
+      />
 
       {users.length === 0 && (
         <Card>

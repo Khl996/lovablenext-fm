@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   Building2,
   Users,
@@ -40,17 +41,37 @@ const adminItems = [
   { title: 'settings', titleAr: 'الإعدادات', url: '/admin/settings', icon: Settings },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { state } = useSidebar();
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
+  const { canManageUsers, canManageHospitals, loading } = useCurrentUser();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
 
+  // Filter admin items based on permissions
+  const visibleAdminItems = adminItems.filter(item => {
+    if (item.url === '/admin/hospitals') return canManageHospitals;
+    if (item.url === '/admin/users') return canManageUsers;
+    return true; // settings is visible to all
+  });
+
+  if (loading) {
+    return (
+      <Sidebar side={side} className={isCollapsed ? 'w-14' : 'w-60'}>
+        <SidebarContent>
+          <div className="p-4 border-b">
+            <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
   return (
-    <Sidebar className={isCollapsed ? 'w-14' : 'w-60'}>
+    <Sidebar side={side} className={isCollapsed ? 'w-14' : 'w-60'}>
       <SidebarContent>
         {/* Logo */}
         <div className="p-4 border-b flex items-center gap-3">
@@ -90,27 +111,29 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Admin Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'الإدارة' : 'Administration')}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-muted text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{language === 'ar' ? item.titleAr : t(item.title as any)}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {visibleAdminItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'الإدارة' : 'Administration')}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-muted/50"
+                        activeClassName="bg-muted text-primary font-medium"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{language === 'ar' ? item.titleAr : t(item.title as any)}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
