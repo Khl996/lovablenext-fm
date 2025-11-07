@@ -102,6 +102,13 @@ export const translations = {
     
     // Messages
     userAdded: 'تم إضافة المستخدم بنجاح',
+    permissions: 'الصلاحيات',
+    rolePermissions: 'صلاحيات الأدوار',
+    userPermissions: 'صلاحيات المستخدمين',
+    effect: 'التأثير',
+    grant: 'منح',
+    deny: 'منع',
+    accessControl: 'التحكم في الوصول',
     hospitalAdded: 'تم إضافة المستشفى بنجاح',
     hospitalUpdated: 'تم تحديث المستشفى بنجاح',
     profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
@@ -215,6 +222,13 @@ export const translations = {
     
     // Messages
     userAdded: 'User added successfully',
+    permissions: 'Permissions',
+    rolePermissions: 'Role Permissions',
+    userPermissions: 'User Permissions',
+    effect: 'Effect',
+    grant: 'Grant',
+    deny: 'Deny',
+    accessControl: 'Access Control',
     hospitalAdded: 'Hospital added successfully',
     hospitalUpdated: 'Hospital updated successfully',
     profileUpdated: 'Profile updated successfully',

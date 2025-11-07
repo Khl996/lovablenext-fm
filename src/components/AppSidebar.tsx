@@ -11,6 +11,7 @@ import {
   Settings,
   Hospital,
   LayoutDashboard,
+  Shield,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const mainItems = [
 const adminItems = [
   { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
+  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield },
   { title: 'settings', titleAr: 'الإعدادات', url: '/admin/settings', icon: Settings },
 ];
 
@@ -46,7 +48,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { canManageUsers, canManageHospitals, loading } = useCurrentUser();
+  const { canManageUsers, canManageHospitals, isGlobalAdmin, loading } = useCurrentUser();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
@@ -55,6 +57,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const visibleAdminItems = adminItems.filter(item => {
     if (item.url === '/admin/hospitals') return canManageHospitals;
     if (item.url === '/admin/users') return canManageUsers;
+    if (item.url === '/admin/permissions') return isGlobalAdmin;
     return true; // settings is visible to all
   });
 

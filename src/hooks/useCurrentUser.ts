@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { usePermissions, type UserPermissionsInfo } from './usePermissions';
 
 type Profile = {
   id: string;
@@ -35,6 +36,7 @@ export type CurrentUserInfo = {
   isFacilityManager: boolean;
   canManageUsers: boolean;
   canManageHospitals: boolean;
+  permissions: UserPermissionsInfo;
   refetch: () => Promise<void>;
 };
 
@@ -136,6 +138,10 @@ export function useCurrentUser(): CurrentUserInfo {
   const canManageUsers = isGlobalAdmin || isHospitalAdmin || isFacilityManager;
   const canManageHospitals = isGlobalAdmin;
 
+  // Use permissions hook
+  const userRoleNames = roles.map(r => r.role);
+  const permissions = usePermissions(user?.id || null, userRoleNames);
+
   return {
     user,
     profile,
@@ -149,6 +155,7 @@ export function useCurrentUser(): CurrentUserInfo {
     isFacilityManager,
     canManageUsers,
     canManageHospitals,
+    permissions,
     refetch: loadUserData,
   };
 }

@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
+import RolePermissions from "./pages/admin/RolePermissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
               <Route path="/admin/hospitals" element={<ProtectedRoute><AppLayout><Hospitals /></AppLayout></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AppLayout><Users /></AppLayout></ProtectedRoute>} />
+              <Route path="/admin/permissions" element={<ProtectedRoute><AppLayout><RolePermissions /></AppLayout></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Trash2, Plus } from 'lucide-react';
+import { Save, X, Plus, Shield, Trash2 } from 'lucide-react';
+import { UserPermissionsSection } from './UserPermissionsSection';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +67,7 @@ interface UserDetailsSheetProps {
 
 export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate }: UserDetailsSheetProps) {
   const { language, t } = useLanguage();
+  const { isGlobalAdmin } = useCurrentUser();
   const currentUser = useCurrentUser();
   const [newRole, setNewRole] = useState('');
   const [newRoleHospital, setNewRoleHospital] = useState('');
@@ -203,8 +207,16 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
             <SheetTitle>{t('userDetails')}</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-6 mt-6">
-            {/* User Info */}
+          <Tabs defaultValue="profile" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">{language === 'ar' ? 'الملف الشخصي' : 'Profile'}</TabsTrigger>
+              <TabsTrigger value="permissions">
+                <Shield className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'الصلاحيات' : 'Permissions'}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="space-y-6">{/* User Info */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <CardTitle className="text-lg">{language === 'ar' ? 'معلومات المستخدم' : 'User Information'}</CardTitle>
@@ -396,7 +408,19 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                 )}
               </CardContent>
             </Card>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="permissions">
+              {user && (
+                <UserPermissionsSection
+                  userId={user.id}
+                  hospitals={hospitals}
+                  userHospitalId={user.hospital_id}
+                  isGlobalAdmin={isGlobalAdmin}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </SheetContent>
       </Sheet>
 
