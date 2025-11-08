@@ -307,14 +307,14 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                   {language === 'ar' ? 'الأصل الرئيسي' : 'Parent Asset'}
                 </Label>
                 <Select
-                  value={formData.parent_asset_id}
-                  onValueChange={(value) => setFormData({ ...formData, parent_asset_id: value })}
+                  value={formData.parent_asset_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, parent_asset_id: value === "none" ? '' : value })}
                 >
                   <SelectTrigger id="parent_asset">
                     <SelectValue placeholder={language === 'ar' ? 'لا يوجد (أصل رئيسي)' : 'None (Root Asset)'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{language === 'ar' ? 'لا يوجد (أصل رئيسي)' : 'None (Root Asset)'}</SelectItem>
+                    <SelectItem value="none">{language === 'ar' ? 'لا يوجد (أصل رئيسي)' : 'None (Root Asset)'}</SelectItem>
                     {availableParentAssets
                       .filter(a => a.id !== asset?.id)
                       .map((parentAsset) => (
