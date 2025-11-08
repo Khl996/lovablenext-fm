@@ -15,6 +15,8 @@ import { useLanguage } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Install from "./pages/Install";
+import NotificationsSettings from "./pages/NotificationsSettings";
 import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
@@ -92,8 +94,17 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/install" element={<Install />} />
               <Route 
-                path="/dashboard" 
+                path="/notifications-settings" 
+                element={
+                  <ProtectedRoute>
+                    <NotificationsSettings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
