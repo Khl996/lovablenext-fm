@@ -3,16 +3,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -21,31 +20,30 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Asset {
   id: string;
   code: string;
   name: string;
   name_ar: string;
+  hospital_id: string;
   category: string;
-  subcategory?: string;
-  type?: string;
   status: string;
   criticality: string;
-  manufacturer?: string;
-  model?: string;
-  serial_number?: string;
-  purchase_date?: string;
-  purchase_cost?: number;
-  installation_date?: string;
-  warranty_expiry?: string;
-  warranty_provider?: string;
-  supplier?: string;
   building_id?: string;
   floor_id?: string;
   department_id?: string;
   room_id?: string;
-  specifications?: any;
+  manufacturer?: string;
+  model?: string;
+  serial_number?: string;
+  purchase_date?: string;
+  installation_date?: string;
 }
 
 interface AssetFormDialogProps {
@@ -61,42 +59,23 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState<{
-    code: string;
-    name: string;
-    name_ar: string;
-    category: 'medical' | 'electrical' | 'mechanical' | 'plumbing' | 'safety' | 'other';
-    subcategory: string;
-    type: string;
-    status: 'active' | 'inactive' | 'maintenance' | 'retired';
-    criticality: 'essential' | 'critical' | 'non_essential';
-    manufacturer: string;
-    model: string;
-    serial_number: string;
-    purchase_date: string;
-    purchase_cost: string;
-    installation_date: string;
-    warranty_expiry: string;
-    warranty_provider: string;
-    supplier: string;
-  }>({
-    code: '',
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [availableParentAssets, setAvailableParentAssets] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
-    category: 'medical',
-    subcategory: '',
-    type: '',
+    parent_asset_id: '',
+    category: 'medical_equipment',
     status: 'active',
     criticality: 'non_essential',
     manufacturer: '',
     model: '',
     serial_number: '',
-    purchase_date: '',
-    purchase_cost: '',
-    installation_date: '',
-    warranty_expiry: '',
-    warranty_provider: '',
     supplier: '',
+    purchase_date: null as Date | null,
+    installation_date: null as Date | null,
+    warranty_expiry: null as Date | null,
+    purchase_cost: '',
   });
 
   const [location, setLocation] = useState<LocationValue>({
@@ -107,118 +86,156 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     roomId: null,
   });
 
-  useEffect(() => {
-    if (asset) {
-      setForm({
-        code: asset.code,
-        name: asset.name,
-        name_ar: asset.name_ar,
-        category: asset.category as any,
-        subcategory: asset.subcategory || '',
-        type: asset.type || '',
-        status: asset.status as any,
-        criticality: asset.criticality as any,
-        manufacturer: asset.manufacturer || '',
-        model: asset.model || '',
-        serial_number: asset.serial_number || '',
-        purchase_date: asset.purchase_date || '',
-        purchase_cost: asset.purchase_cost?.toString() || '',
-        installation_date: asset.installation_date || '',
-        warranty_expiry: asset.warranty_expiry || '',
-        warranty_provider: asset.warranty_provider || '',
-        supplier: asset.supplier || '',
-      });
-      setLocation({
-        hospitalId: hospitalId,
-        buildingId: asset.building_id || null,
-        floorId: asset.floor_id || null,
-        departmentId: asset.department_id || null,
-        roomId: asset.room_id || null,
-      });
-    } else {
-      setForm({
-        code: '',
-        name: '',
-        name_ar: '',
-        category: 'medical',
-        subcategory: '',
-        type: '',
-        status: 'active',
-        criticality: 'non_essential',
-        manufacturer: '',
-        model: '',
-        serial_number: '',
-        purchase_date: '',
-        purchase_cost: '',
-        installation_date: '',
-        warranty_expiry: '',
-        warranty_provider: '',
-        supplier: '',
-      });
-      setLocation({
-        hospitalId: hospitalId,
-        buildingId: null,
-        floorId: null,
-        departmentId: null,
-        roomId: null,
-      });
+  // Generate asset code
+  const generateAssetCode = async () => {
+    if (!hospitalId) return '';
+
+    try {
+      const { data, error } = await supabase
+        .from('assets')
+        .select('code')
+        .eq('hospital_id', hospitalId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      let nextNumber = 1;
+      if (data && data.length > 0) {
+        const lastCode = data[0].code;
+        const match = lastCode.match(/AST-(\d+)/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+
+      return `AST-${nextNumber.toString().padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Error generating code:', error);
+      return `AST-${Date.now().toString().slice(-4)}`;
     }
-  }, [asset, hospitalId]);
+  };
+
+  // Load available parent assets
+  const loadParentAssets = async () => {
+    if (!hospitalId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('assets')
+        .select('id, code, name, name_ar')
+        .eq('hospital_id', hospitalId)
+        .order('name');
+
+      if (error) throw error;
+      setAvailableParentAssets(data || []);
+    } catch (error) {
+      console.error('Error loading parent assets:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadParentAssets();
+      
+      if (asset) {
+        setFormData({
+          name: asset.name,
+          name_ar: asset.name_ar,
+          parent_asset_id: (asset as any).parent_asset_id || '',
+          category: asset.category,
+          status: asset.status,
+          criticality: asset.criticality,
+          manufacturer: asset.manufacturer || '',
+          model: asset.model || '',
+          serial_number: asset.serial_number || '',
+          supplier: (asset as any).supplier || '',
+          purchase_date: asset.purchase_date ? new Date(asset.purchase_date) : null,
+          installation_date: asset.installation_date ? new Date(asset.installation_date) : null,
+          warranty_expiry: (asset as any).warranty_expiry ? new Date((asset as any).warranty_expiry) : null,
+          purchase_cost: (asset as any).purchase_cost?.toString() || '',
+        });
+        setGeneratedCode(asset.code);
+        setLocation({
+          hospitalId: asset.hospital_id,
+          buildingId: asset.building_id || null,
+          floorId: asset.floor_id || null,
+          departmentId: asset.department_id || null,
+          roomId: asset.room_id || null,
+        });
+      } else {
+        generateAssetCode().then(code => setGeneratedCode(code));
+        setFormData({
+          name: '',
+          name_ar: '',
+          parent_asset_id: '',
+          category: 'medical_equipment',
+          status: 'active',
+          criticality: 'non_essential',
+          manufacturer: '',
+          model: '',
+          serial_number: '',
+          supplier: '',
+          purchase_date: null,
+          installation_date: null,
+          warranty_expiry: null,
+          purchase_cost: '',
+        });
+        setLocation({
+          hospitalId,
+          buildingId: null,
+          floorId: null,
+          departmentId: null,
+          roomId: null,
+        });
+      }
+    }
+  }, [open, asset, hospitalId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!form.code || !form.name || !form.name_ar || !hospitalId) {
-      toast({
-        title: t('error'),
-        description: t('fillRequired'),
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!hospitalId) return;
 
     setLoading(true);
     try {
-      const assetData = {
-        code: form.code,
-        name: form.name,
-        name_ar: form.name_ar,
+      const payload: any = {
+        name: formData.name,
+        name_ar: formData.name_ar,
         hospital_id: hospitalId,
-        category: form.category,
-        subcategory: form.subcategory || null,
-        type: form.type || null,
-        status: form.status,
-        criticality: form.criticality,
-        manufacturer: form.manufacturer || null,
-        model: form.model || null,
-        serial_number: form.serial_number || null,
-        purchase_date: form.purchase_date || null,
-        purchase_cost: form.purchase_cost ? parseFloat(form.purchase_cost) : null,
-        installation_date: form.installation_date || null,
-        warranty_expiry: form.warranty_expiry || null,
-        warranty_provider: form.warranty_provider || null,
-        supplier: form.supplier || null,
-        building_id: location.buildingId,
-        floor_id: location.floorId,
-        department_id: location.departmentId,
-        room_id: location.roomId,
+        category: formData.category,
+        status: formData.status,
+        criticality: formData.criticality,
+        building_id: location.buildingId || null,
+        floor_id: location.floorId || null,
+        department_id: location.departmentId || null,
+        room_id: location.roomId || null,
+        parent_asset_id: formData.parent_asset_id || null,
+        manufacturer: formData.manufacturer || null,
+        model: formData.model || null,
+        serial_number: formData.serial_number || null,
+        supplier: formData.supplier || null,
+        purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
+        installation_date: formData.installation_date ? format(formData.installation_date, 'yyyy-MM-dd') : null,
+        warranty_expiry: formData.warranty_expiry ? format(formData.warranty_expiry, 'yyyy-MM-dd') : null,
+        purchase_cost: formData.purchase_cost ? parseFloat(formData.purchase_cost) : null,
       };
 
-      let error;
       if (asset) {
-        const result = await supabase
+        const { error } = await supabase
           .from('assets')
-          .update(assetData)
+          .update(payload)
           .eq('id', asset.id);
-        error = result.error;
-      } else {
-        const result = await supabase
-          .from('assets')
-          .insert([assetData]);
-        error = result.error;
-      }
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        payload.code = generatedCode;
+        const { error } = await supabase
+          .from('assets')
+          .insert([payload]);
+
+        if (error) throw error;
+      }
 
       toast({
         title: t('success'),
@@ -242,64 +259,92 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {asset 
-              ? (language === 'ar' ? 'تعديل أصل' : 'Edit Asset')
-              : t('addAsset')}
+            {asset ? t('editAsset') : t('addAsset')}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="font-semibold">{language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}</h3>
+            <h3 className="font-semibold">{t('basicInformation')}</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="code">{t('code')} *</Label>
-                <Input
-                  id="code"
-                  value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  required
-                />
+                <Label>{language === 'ar' ? 'الكود' : 'Asset Code'}</Label>
+                <div className="px-3 py-2 bg-muted rounded-md text-sm font-mono">
+                  {asset ? asset.code : generatedCode || 'AST-0001'}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {language === 'ar' ? 'يتم إنشاؤه تلقائياً' : 'Auto-generated'}
+                </p>
               </div>
-              
+
               <div>
                 <Label htmlFor="name">{t('name')} *</Label>
                 <Input
                   id="name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="name_ar">{t('nameArabic')} *</Label>
+                <Label htmlFor="name_ar">{language === 'ar' ? 'الاسم بالعربية' : 'Name (Arabic)'}</Label>
                 <Input
                   id="name_ar"
-                  value={form.name_ar}
-                  onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
+                  value={formData.name_ar}
+                  onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
                   required
-                  dir="rtl"
                 />
               </div>
 
               <div>
+                <Label htmlFor="parent_asset">
+                  {language === 'ar' ? 'الأصل الرئيسي' : 'Parent Asset'}
+                </Label>
+                <Select
+                  value={formData.parent_asset_id}
+                  onValueChange={(value) => setFormData({ ...formData, parent_asset_id: value })}
+                >
+                  <SelectTrigger id="parent_asset">
+                    <SelectValue placeholder={language === 'ar' ? 'لا يوجد (أصل رئيسي)' : 'None (Root Asset)'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{language === 'ar' ? 'لا يوجد (أصل رئيسي)' : 'None (Root Asset)'}</SelectItem>
+                    {availableParentAssets
+                      .filter(a => a.id !== asset?.id)
+                      .map((parentAsset) => (
+                        <SelectItem key={parentAsset.id} value={parentAsset.id}>
+                          {language === 'ar' ? parentAsset.name_ar : parentAsset.name} ({parentAsset.code})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {language === 'ar' ? 'اختياري - لإنشاء هيكل هرمي' : 'Optional - for hierarchical structure'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
                 <Label htmlFor="category">{t('category')}</Label>
-                <Select value={form.category} onValueChange={(value: any) => setForm({ ...form, category: value })}>
+                <Select value={formData.category} onValueChange={(value: any) => setFormData({ ...formData, category: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="medical">{language === 'ar' ? 'طبي' : 'Medical'}</SelectItem>
+                    <SelectItem value="medical_equipment">{language === 'ar' ? 'معدات طبية' : 'Medical Equipment'}</SelectItem>
+                    <SelectItem value="hvac">{language === 'ar' ? 'تكييف وتهوية' : 'HVAC'}</SelectItem>
                     <SelectItem value="electrical">{language === 'ar' ? 'كهربائي' : 'Electrical'}</SelectItem>
-                    <SelectItem value="mechanical">{language === 'ar' ? 'ميكانيكي' : 'Mechanical'}</SelectItem>
                     <SelectItem value="plumbing">{language === 'ar' ? 'سباكة' : 'Plumbing'}</SelectItem>
-                    <SelectItem value="safety">{language === 'ar' ? 'السلامة' : 'Safety'}</SelectItem>
+                    <SelectItem value="fire_safety">{language === 'ar' ? 'السلامة من الحريق' : 'Fire Safety'}</SelectItem>
+                    <SelectItem value="it_equipment">{language === 'ar' ? 'معدات تقنية' : 'IT Equipment'}</SelectItem>
+                    <SelectItem value="furniture">{language === 'ar' ? 'أثاث' : 'Furniture'}</SelectItem>
                     <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -307,7 +352,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
 
               <div>
                 <Label htmlFor="status">{t('status')}</Label>
-                <Select value={form.status} onValueChange={(value: any) => setForm({ ...form, status: value })}>
+                <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -322,7 +367,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
 
               <div>
                 <Label htmlFor="criticality">{t('criticality')}</Label>
-                <Select value={form.criticality} onValueChange={(value: any) => setForm({ ...form, criticality: value })}>
+                <Select value={formData.criticality} onValueChange={(value: any) => setFormData({ ...formData, criticality: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -345,8 +390,8 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                 <Label htmlFor="manufacturer">{language === 'ar' ? 'الشركة المصنعة' : 'Manufacturer'}</Label>
                 <Input
                   id="manufacturer"
-                  value={form.manufacturer}
-                  onChange={(e) => setForm({ ...form, manufacturer: e.target.value })}
+                  value={formData.manufacturer}
+                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                 />
               </div>
 
@@ -354,8 +399,8 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                 <Label htmlFor="model">{language === 'ar' ? 'الطراز' : 'Model'}</Label>
                 <Input
                   id="model"
-                  value={form.model}
-                  onChange={(e) => setForm({ ...form, model: e.target.value })}
+                  value={formData.model}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 />
               </div>
 
@@ -363,8 +408,8 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                 <Label htmlFor="serial_number">{language === 'ar' ? 'الرقم التسلسلي' : 'Serial Number'}</Label>
                 <Input
                   id="serial_number"
-                  value={form.serial_number}
-                  onChange={(e) => setForm({ ...form, serial_number: e.target.value })}
+                  value={formData.serial_number}
+                  onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
                 />
               </div>
 
@@ -372,26 +417,94 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                 <Label htmlFor="supplier">{language === 'ar' ? 'المورد' : 'Supplier'}</Label>
                 <Input
                   id="supplier"
-                  value={form.supplier}
-                  onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+                  value={formData.supplier}
+                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                 />
               </div>
             </div>
-          </div>
 
-          {/* Purchase & Warranty */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">{language === 'ar' ? 'الشراء والضمان' : 'Purchase & Warranty'}</h3>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="purchase_date">{language === 'ar' ? 'تاريخ الشراء' : 'Purchase Date'}</Label>
-                <Input
-                  id="purchase_date"
-                  type="date"
-                  value={form.purchase_date}
-                  onChange={(e) => setForm({ ...form, purchase_date: e.target.value })}
-                />
+                <Label>{language === 'ar' ? 'تاريخ الشراء' : 'Purchase Date'}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.purchase_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.purchase_date ? format(formData.purchase_date, "PPP") : <span>{language === 'ar' ? 'اختر تاريخ' : 'Pick a date'}</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.purchase_date || undefined}
+                      onSelect={(date) => setFormData({ ...formData, purchase_date: date || null })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <Label>{language === 'ar' ? 'تاريخ التركيب' : 'Installation Date'}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.installation_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.installation_date ? format(formData.installation_date, "PPP") : <span>{language === 'ar' ? 'اختر تاريخ' : 'Pick a date'}</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.installation_date || undefined}
+                      onSelect={(date) => setFormData({ ...formData, installation_date: date || null })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'ar' ? 'تاريخ انتهاء الضمان' : 'Warranty Expiry'}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.warranty_expiry && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.warranty_expiry ? format(formData.warranty_expiry, "PPP") : <span>{language === 'ar' ? 'اختر تاريخ' : 'Pick a date'}</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.warranty_expiry || undefined}
+                      onSelect={(date) => setFormData({ ...formData, warranty_expiry: date || null })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div>
@@ -400,37 +513,9 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                   id="purchase_cost"
                   type="number"
                   step="0.01"
-                  value={form.purchase_cost}
-                  onChange={(e) => setForm({ ...form, purchase_cost: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="installation_date">{language === 'ar' ? 'تاريخ التركيب' : 'Installation Date'}</Label>
-                <Input
-                  id="installation_date"
-                  type="date"
-                  value={form.installation_date}
-                  onChange={(e) => setForm({ ...form, installation_date: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="warranty_expiry">{language === 'ar' ? 'انتهاء الضمان' : 'Warranty Expiry'}</Label>
-                <Input
-                  id="warranty_expiry"
-                  type="date"
-                  value={form.warranty_expiry}
-                  onChange={(e) => setForm({ ...form, warranty_expiry: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="warranty_provider">{language === 'ar' ? 'مزود الضمان' : 'Warranty Provider'}</Label>
-                <Input
-                  id="warranty_provider"
-                  value={form.warranty_provider}
-                  onChange={(e) => setForm({ ...form, warranty_provider: e.target.value })}
+                  value={formData.purchase_cost}
+                  onChange={(e) => setFormData({ ...formData, purchase_cost: e.target.value })}
+                  placeholder={language === 'ar' ? 'ريال سعودي' : 'SAR'}
                 />
               </div>
             </div>

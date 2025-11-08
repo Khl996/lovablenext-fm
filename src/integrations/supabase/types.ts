@@ -35,6 +35,7 @@ export type Database = {
           model: string | null
           name: string
           name_ar: string
+          parent_asset_id: string | null
           purchase_cost: number | null
           purchase_date: string | null
           qr_code: string | null
@@ -69,6 +70,7 @@ export type Database = {
           model?: string | null
           name: string
           name_ar: string
+          parent_asset_id?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           qr_code?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           model?: string | null
           name?: string
           name_ar?: string
+          parent_asset_id?: string | null
           purchase_cost?: number | null
           purchase_date?: string | null
           qr_code?: string | null
@@ -144,6 +147,13 @@ export type Database = {
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_parent_asset_id_fkey"
+            columns: ["parent_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
             referencedColumns: ["id"]
           },
           {
