@@ -30,7 +30,7 @@ import { NavLink } from '@/components/NavLink';
 const mainItems = [
   { title: 'dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
   { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
-  { title: 'assets', titleAr: 'الأصول', url: '/assets', icon: Package },
+  { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permission: 'view_assets' },
   { title: 'workOrders', titleAr: 'أوامر العمل', url: '/work-orders', icon: ClipboardList },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations', icon: Wrench },
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: BarChart3 },
@@ -53,6 +53,14 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
+
+  // Filter main items based on permissions
+  const visibleMainItems = mainItems.filter(item => {
+    if (item.permission) {
+      return permissions.hasPermission(item.permission as any);
+    }
+    return true;
+  });
 
   // Filter admin items based on permissions
   const visibleAdminItems = adminItems.filter(item => {
@@ -96,7 +104,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
           <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {visibleMainItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink

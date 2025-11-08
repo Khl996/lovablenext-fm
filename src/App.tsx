@@ -19,6 +19,7 @@ import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
+import Assets from "./pages/admin/Assets";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -137,6 +138,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Locations />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/assets" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Assets />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

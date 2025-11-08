@@ -46,10 +46,12 @@ export const translations = {
     // Assets
     assetCode: 'رمز الأصل',
     assetName: 'اسم الأصل',
+    addAsset: 'إضافة أصل',
     category: 'الفئة',
     status: 'الحالة',
     criticality: 'الأهمية',
     location: 'الموقع',
+    filterByLocation: 'تصفية حسب الموقع',
     
     // Work Orders
     workOrder: 'أمر عمل',
@@ -205,10 +207,12 @@ export const translations = {
     // Assets
     assetCode: 'Asset Code',
     assetName: 'Asset Name',
+    addAsset: 'Add Asset',
     category: 'Category',
     status: 'Status',
     criticality: 'Criticality',
     location: 'Location',
+    filterByLocation: 'Filter by Location',
     
     // Work Orders
     workOrder: 'Work Order',
