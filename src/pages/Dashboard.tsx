@@ -5,14 +5,18 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building2, 
   Package, 
   ClipboardList, 
   CheckCircle2, 
   Globe,
-  LogOut 
+  LogOut,
+  Download,
+  X
 } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface DashboardStats {
   totalAssets: number;
@@ -25,6 +29,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
   const { language, setLanguage, t, direction } = useLanguage();
+  const { isInstalled, isInstallable, installPWA } = usePWAInstall();
   const [stats, setStats] = useState<DashboardStats>({
     totalAssets: 0,
     activeWorkOrders: 0,
@@ -32,6 +37,7 @@ export default function Dashboard() {
     completedToday: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
   useEffect(() => {
     if (!user && !loading) {
@@ -109,6 +115,48 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+        {/* Install PWA Banner */}
+        {!isInstalled && showInstallBanner && (
+          <Alert className="bg-primary/5 border-primary/20">
+            <Download className="h-4 w-4 text-primary" />
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="font-medium text-foreground">
+                  {language === 'ar' 
+                    ? 'ثبّت التطبيق للوصول السريع' 
+                    : 'Install app for quick access'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {language === 'ar' 
+                    ? 'احصل على تجربة أفضل وإشعارات فورية' 
+                    : 'Get better experience and instant notifications'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isInstallable ? (
+                  <Button onClick={installPWA} size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    {language === 'ar' ? 'تثبيت' : 'Install'}
+                  </Button>
+                ) : (
+                  <Button onClick={() => navigate('/install')} size="sm" variant="outline" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    {language === 'ar' ? 'تعليمات التثبيت' : 'Install Instructions'}
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => setShowInstallBanner(false)} 
+                  size="sm" 
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>

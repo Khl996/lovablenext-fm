@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Building2, ArrowRight } from 'lucide-react';
+import { Building2, ArrowRight, Download } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { language } = useLanguage();
+  const { isInstalled } = usePWAInstall();
 
   useEffect(() => {
     if (user && !loading) {
@@ -48,8 +50,8 @@ const Index = () => {
           </p>
         </div>
 
-        {/* CTA Button */}
-        <div className="pt-2">
+        {/* CTA Buttons */}
+        <div className="pt-2 flex flex-col items-center gap-3">
           <Button 
             size="lg" 
             className="gap-2 px-8"
@@ -58,6 +60,18 @@ const Index = () => {
             {language === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
             <ArrowRight className="h-4 w-4" />
           </Button>
+          
+          {!isInstalled && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="gap-2"
+              onClick={() => navigate('/install')}
+            >
+              <Download className="h-4 w-4" />
+              {language === 'ar' ? 'ثبّت التطبيق' : 'Install App'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

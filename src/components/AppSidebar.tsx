@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import {
   Building2,
   Users,
@@ -12,6 +13,7 @@ import {
   Hospital,
   LayoutDashboard,
   Shield,
+  Download,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -50,6 +52,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { permissions, loading } = useCurrentUser();
+  const { isInstalled } = usePWAInstall();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
@@ -142,6 +145,28 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Install App Link */}
+        {!isInstalled && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/install"
+                      className="hover:bg-muted/50"
+                      activeClassName="bg-muted text-primary font-medium"
+                    >
+                      <Download className="h-4 w-4" />
+                      {!isCollapsed && <span>{language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
