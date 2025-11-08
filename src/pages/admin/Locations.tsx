@@ -59,7 +59,7 @@ type Room = {
 
 export default function Locations() {
   const { t, language } = useLanguage();
-  const { user, primaryRole, permissions } = useCurrentUser();
+  const { user, primaryRole, permissions, hospitalId } = useCurrentUser();
   const { toast } = useToast();
 
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -256,7 +256,7 @@ export default function Locations() {
         const { error } = await supabase
           .from('buildings')
           .insert({
-            hospital_id: selectedHospitalId,
+            hospital_id: hospitalId || selectedHospitalId,
             code: buildingForm.code,
             name: buildingForm.name,
             name_ar: buildingForm.name_ar,
