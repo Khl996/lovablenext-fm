@@ -65,7 +65,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     name: '',
     name_ar: '',
     parent_asset_id: '',
-    category: 'medical_equipment',
+    category: 'medical',
     status: 'active',
     criticality: 'non_essential',
     manufacturer: '',
@@ -169,7 +169,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
           name: '',
           name_ar: '',
           parent_asset_id: '',
-          category: 'medical_equipment',
+          category: 'medical',
           status: 'active',
           criticality: 'non_essential',
           manufacturer: '',
@@ -338,13 +338,11 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="medical_equipment">{language === 'ar' ? 'معدات طبية' : 'Medical Equipment'}</SelectItem>
-                    <SelectItem value="hvac">{language === 'ar' ? 'تكييف وتهوية' : 'HVAC'}</SelectItem>
+                    <SelectItem value="medical">{language === 'ar' ? 'طبي' : 'Medical'}</SelectItem>
                     <SelectItem value="electrical">{language === 'ar' ? 'كهربائي' : 'Electrical'}</SelectItem>
+                    <SelectItem value="mechanical">{language === 'ar' ? 'ميكانيكي' : 'Mechanical'}</SelectItem>
                     <SelectItem value="plumbing">{language === 'ar' ? 'سباكة' : 'Plumbing'}</SelectItem>
-                    <SelectItem value="fire_safety">{language === 'ar' ? 'السلامة من الحريق' : 'Fire Safety'}</SelectItem>
-                    <SelectItem value="it_equipment">{language === 'ar' ? 'معدات تقنية' : 'IT Equipment'}</SelectItem>
-                    <SelectItem value="furniture">{language === 'ar' ? 'أثاث' : 'Furniture'}</SelectItem>
+                    <SelectItem value="safety">{language === 'ar' ? 'السلامة' : 'Safety'}</SelectItem>
                     <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
                   </SelectContent>
                 </Select>
