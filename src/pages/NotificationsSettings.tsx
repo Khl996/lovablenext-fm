@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { requestFCMToken } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -59,15 +60,19 @@ export default function NotificationsSettings() {
       setPermission(result);
 
       if (result === 'granted') {
-        // Here we would normally register for push notifications with Firebase
-        // For now, we'll just save a placeholder token
-        const mockToken = `web-token-${user?.id}-${Date.now()}`;
+        // Request FCM token with VAPID key
+        const vapidKey = 'BG1maapDbVADD5Vs82i9fuTdBf1hYglOX928q0PFa5m0GznecFw-Pb7giBM1pc0V7Ue9oZ28xzPryBXGHDR8tgM';
+        const fcmToken = await requestFCMToken(vapidKey);
+        
+        if (!fcmToken) {
+          throw new Error('Unable to get FCM token');
+        }
         
         const { error } = await supabase
           .from('push_notification_tokens')
           .upsert({
             user_id: user?.id,
-            token: mockToken,
+            token: fcmToken,
             device_type: 'web'
           });
 

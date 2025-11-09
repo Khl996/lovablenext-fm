@@ -18,7 +18,7 @@ type Profile = {
 type UserRole = {
   id: string;
   user_id: string;
-  role: 'global_admin' | 'hospital_admin' | 'facility_manager' | 'maintenance_manager' | 'supervisor' | 'technician' | 'reporter';
+  role: 'global_admin' | 'hospital_admin' | 'facility_manager' | 'maintenance_manager' | 'supervisor' | 'technician' | 'reporter' | 'engineer';
   hospital_id: string | null;
   created_at: string;
 };

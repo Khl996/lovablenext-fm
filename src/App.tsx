@@ -22,6 +22,7 @@ import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
 import Assets from "./pages/admin/Assets";
+import WorkOrders from "./pages/admin/WorkOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -159,6 +160,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Assets />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/work-orders" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <WorkOrders />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

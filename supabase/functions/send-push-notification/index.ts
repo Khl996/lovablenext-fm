@@ -68,20 +68,84 @@ serve(async (req) => {
       );
     }
 
-    // TODO: Integrate with Firebase Cloud Messaging or other push notification service
-    // For now, we'll just log the notifications that would be sent
-    console.log(`Would send ${tokens.length} notifications:`, {
-      title,
-      body,
-      tokens: tokens.map(t => ({ token: t.token.substring(0, 20) + '...', type: t.device_type }))
-    });
+    // Send push notifications using Firebase Cloud Messaging
+    const serverKey = Deno.env.get('FIREBASE_SERVER_KEY');
+    if (!serverKey) {
+      console.warn('FIREBASE_SERVER_KEY not configured, simulating notifications');
+      // Simulate sending for development
+      const results = tokens.map(token => ({
+        token: token.token,
+        success: true,
+        messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      }));
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Notifications simulated (no Firebase key)`,
+          sent: results.length,
+          total: tokens.length,
+          results
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
-    // Simulate sending notifications
-    const results = tokens.map(token => ({
-      token: token.token,
-      success: true,
-      messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    }));
+    console.log(`Sending ${tokens.length} real notifications via FCM:`, { title, body });
+
+    const results = await Promise.all(
+      tokens.map(async (tokenRecord) => {
+        try {
+          const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `key=${serverKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: tokenRecord.token,
+              notification: {
+                title,
+                body,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+              },
+              data: data || {
+                url: '/dashboard'
+              }
+            }),
+          });
+
+          const result = await response.json();
+          
+          if (result.success === 1) {
+            console.log(`✅ Sent to ${tokenRecord.device_type}: ${tokenRecord.token.substring(0, 20)}...`);
+            return {
+              token: tokenRecord.token,
+              success: true,
+              messageId: result.results[0].message_id
+            };
+          } else {
+            console.error(`❌ Failed to send: ${tokenRecord.token.substring(0, 20)}...`, result);
+            return {
+              token: tokenRecord.token,
+              success: false,
+              error: result.results[0].error
+            };
+          }
+        } catch (error) {
+          console.error(`❌ Exception sending: ${tokenRecord.token.substring(0, 20)}...`, error);
+          return {
+            token: tokenRecord.token,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
+        }
+      })
+    );
 
     const successCount = results.filter(r => r.success).length;
 

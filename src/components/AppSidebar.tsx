@@ -33,7 +33,7 @@ const mainItems = [
   { title: 'dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
   { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
   { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permission: 'view_assets' },
-  { title: 'workOrders', titleAr: 'أوامر العمل', url: '/work-orders', icon: ClipboardList },
+  { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations', icon: Wrench },
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: BarChart3 },
 ];

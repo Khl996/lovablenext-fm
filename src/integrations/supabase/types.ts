@@ -293,7 +293,12 @@ export type Database = {
           id: string
           name: string
           name_ar: string
+          notes: string | null
           phone: string | null
+          status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           type: string | null
           updated_at: string
         }
@@ -304,7 +309,12 @@ export type Database = {
           id?: string
           name: string
           name_ar: string
+          notes?: string | null
           phone?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           type?: string | null
           updated_at?: string
         }
@@ -315,7 +325,12 @@ export type Database = {
           id?: string
           name?: string
           name_ar?: string
+          notes?: string | null
           phone?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           type?: string | null
           updated_at?: string
         }
@@ -778,6 +793,35 @@ export type Database = {
           },
         ]
       }
+      supervisor_buildings: {
+        Row: {
+          building_id: string
+          created_at: string
+          id: string
+          supervisor_id: string
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          id?: string
+          supervisor_id: string
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          id?: string
+          supervisor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervisor_buildings_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           certifications: Json | null
@@ -963,6 +1007,7 @@ export type Database = {
           is_redirected: boolean | null
           issue_type: string
           labor_time: number | null
+          notify_supervisor: boolean | null
           original_issue_type: string | null
           parts_used: Json | null
           photos: string[] | null
@@ -1013,6 +1058,7 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type: string
           labor_time?: number | null
+          notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
           photos?: string[] | null
@@ -1063,6 +1109,7 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type?: string
           labor_time?: number | null
+          notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
           photos?: string[] | null
