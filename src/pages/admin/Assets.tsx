@@ -27,6 +27,7 @@ import { Plus, Search, Pencil, Package, Trash2, List, Network } from 'lucide-rea
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
 import { AssetFormDialog } from '@/components/admin/AssetFormDialog';
 import { AssetTreeView } from '@/components/admin/AssetTreeView';
+import { AssetQRCode } from '@/components/admin/AssetQRCode';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -458,6 +459,7 @@ export default function Assets() {
                   {(canManage || canDelete) && (
                     <TableCell>
                       <div className="flex gap-2">
+                        <AssetQRCode asset={asset} />
                         {canManage && (
                           <Button
                             variant="ghost"

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Hospital } from 'lucide-react';
+import { Plus, Hospital, Ban, CheckCircle, Trash2 } from 'lucide-react';
 
 interface HospitalData {
   id: string;
@@ -17,14 +20,23 @@ interface HospitalData {
   address: string | null;
   phone: string | null;
   email: string | null;
+  status: string;
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspension_reason: string | null;
 }
 
 export default function Hospitals() {
   const { language, t } = useLanguage();
+  const { user, permissions } = useCurrentUser();
   const [hospitals, setHospitals] = useState<HospitalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingHospital, setEditingHospital] = useState<HospitalData | null>(null);
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState<HospitalData | null>(null);
+  const [suspensionReason, setSuspensionReason] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
@@ -33,6 +45,9 @@ export default function Hospitals() {
     phone: '',
     email: '',
   });
+
+  const canSuspend = permissions.hasPermission('hospitals.suspend');
+  const canDelete = permissions.hasPermission('hospitals.delete');
 
   useEffect(() => {
     loadHospitals();
@@ -125,6 +140,69 @@ export default function Hospitals() {
         phone: '',
         email: '',
       });
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!selectedHospital || !suspensionReason) {
+      toast.error(language === 'ar' ? 'الرجاء إدخال سبب التعليق' : 'Please enter suspension reason');
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('hospitals')
+        .update({
+          status: 'suspended',
+          suspended_at: new Date().toISOString(),
+          suspended_by: user?.id,
+          suspension_reason: suspensionReason,
+        })
+        .eq('id', selectedHospital.id);
+      if (error) throw error;
+      toast.success(language === 'ar' ? 'تم تعليق المستشفى' : 'Hospital suspended');
+      setSuspendDialogOpen(false);
+      setSuspensionReason('');
+      loadHospitals();
+    } catch (error) {
+      console.error('Error suspending hospital:', error);
+      toast.error(t('errorOccurred'));
+    }
+  };
+
+  const handleActivate = async (hospital: HospitalData) => {
+    try {
+      const { error } = await supabase
+        .from('hospitals')
+        .update({
+          status: 'active',
+          suspended_at: null,
+          suspended_by: null,
+          suspension_reason: null,
+        })
+        .eq('id', hospital.id);
+      if (error) throw error;
+      toast.success(language === 'ar' ? 'تم تفعيل المستشفى' : 'Hospital activated');
+      loadHospitals();
+    } catch (error) {
+      console.error('Error activating hospital:', error);
+      toast.error(t('errorOccurred'));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedHospital) return;
+    try {
+      const { error } = await supabase
+        .from('hospitals')
+        .delete()
+        .eq('id', selectedHospital.id);
+      if (error) throw error;
+      toast.success(language === 'ar' ? 'تم حذف المستشفى' : 'Hospital deleted');
+      setDeleteDialogOpen(false);
+      loadHospitals();
+    } catch (error) {
+      console.error('Error deleting hospital:', error);
+      toast.error(t('errorOccurred'));
     }
   };
 
@@ -229,23 +307,30 @@ export default function Hospitals() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {hospitals.map((hospital) => (
-          <Card key={hospital.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleEdit(hospital)}>
+          <Card key={hospital.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/5 p-3 rounded-lg border border-border">
-                  <Hospital className="h-6 w-6 text-primary" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/5 p-3 rounded-lg border border-border">
+                    <Hospital className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">
+                      {language === 'ar' ? hospital.name_ar : hospital.name}
+                    </CardTitle>
+                    {hospital.type && (
+                      <p className="text-sm text-muted-foreground mt-1">{hospital.type}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">
-                    {language === 'ar' ? hospital.name_ar : hospital.name}
-                  </CardTitle>
-                  {hospital.type && (
-                    <p className="text-sm text-muted-foreground mt-1">{hospital.type}</p>
-                  )}
-                </div>
+                <Badge variant={hospital.status === 'active' ? 'default' : 'destructive'}>
+                  {hospital.status === 'active' 
+                    ? (language === 'ar' ? 'نشط' : 'Active')
+                    : (language === 'ar' ? 'معلق' : 'Suspended')}
+                </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               {hospital.address && (
                 <p className="text-sm text-muted-foreground">{hospital.address}</p>
               )}
@@ -255,6 +340,45 @@ export default function Hospitals() {
               {hospital.email && (
                 <p className="text-sm text-muted-foreground" dir="ltr">{hospital.email}</p>
               )}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => handleEdit(hospital)} className="flex-1">
+                  {language === 'ar' ? 'تعديل' : 'Edit'}
+                </Button>
+                {canSuspend && hospital.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedHospital(hospital);
+                      setSuspendDialogOpen(true);
+                    }}
+                  >
+                    <Ban className="h-4 w-4" />
+                  </Button>
+                )}
+                {canSuspend && hospital.status === 'suspended' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleActivate(hospital)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedHospital(hospital);
+                      setDeleteDialogOpen(true);
+                    }}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -270,6 +394,52 @@ export default function Hospitals() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{language === 'ar' ? 'تعليق المستشفى' : 'Suspend Hospital'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === 'ar' 
+                ? 'الرجاء إدخال سبب تعليق هذا المستشفى'
+                : 'Please enter the reason for suspending this hospital'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label>{language === 'ar' ? 'سبب التعليق' : 'Suspension Reason'}</Label>
+            <Input
+              value={suspensionReason}
+              onChange={(e) => setSuspensionReason(e.target.value)}
+              placeholder={language === 'ar' ? 'أدخل السبب...' : 'Enter reason...'}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSuspend} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {language === 'ar' ? 'تعليق' : 'Suspend'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{language === 'ar' ? 'حذف المستشفى' : 'Delete Hospital'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === 'ar' 
+                ? 'هل أنت متأكد من حذف هذا المستشفى؟ لا يمكن التراجع عن هذا الإجراء.'
+                : 'Are you sure you want to delete this hospital? This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {language === 'ar' ? 'حذف' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

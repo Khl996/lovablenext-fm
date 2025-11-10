@@ -14,6 +14,8 @@ import {
   LayoutDashboard,
   Shield,
   Download,
+  FileText,
+  UsersRound,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -34,7 +36,8 @@ const mainItems = [
   { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
   { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permission: 'view_assets' },
   { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },
-  { title: 'operations', titleAr: 'سجل العمليات', url: '/operations', icon: Wrench },
+  { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound, permission: 'view_teams' },
+  { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: FileText, permission: 'view_operations_log' },
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: BarChart3 },
 ];
 

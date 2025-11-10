@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { WorkOrderFormDialog } from '@/components/admin/WorkOrderFormDialog';
 
 type WorkOrder = {
   id: string;
@@ -34,6 +35,7 @@ export default function WorkOrders() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const t = {
     title: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
@@ -140,7 +142,7 @@ export default function WorkOrders() {
           <p className="text-muted-foreground mt-1">{t.description}</p>
         </div>
         {permissions.hasPermission('users.create') && (
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             {t.addNew}
           </Button>
@@ -218,6 +220,12 @@ export default function WorkOrders() {
           )}
         </CardContent>
       </Card>
+
+      <WorkOrderFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={loadWorkOrders}
+      />
     </div>
   );
 }

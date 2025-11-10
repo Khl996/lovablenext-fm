@@ -24,7 +24,9 @@ import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
 import Assets from "./pages/admin/Assets";
-import WorkOrders from "./pages/admin/WorkOrders";
+import WorkOrders from './pages/admin/WorkOrders';
+import Teams from './pages/admin/Teams';
+import OperationsLog from './pages/OperationsLog';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -192,6 +194,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <WorkOrders />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/teams" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Teams />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/operations-log" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <OperationsLog />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
