@@ -17,6 +17,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Install from "./pages/Install";
 import NotificationsSettings from "./pages/NotificationsSettings";
+import Facilities from "./pages/Facilities";
+import Settings from "./pages/Settings";
 import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
@@ -110,6 +112,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/facilities"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Facilities />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Settings />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

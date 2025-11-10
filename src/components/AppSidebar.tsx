@@ -43,7 +43,7 @@ const adminItems = [
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
   { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield, permission: 'manage_users' },
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
-  { title: 'settings', titleAr: 'الإعدادات', url: '/admin/settings', icon: Settings },
+  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
 ];
 
 export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
