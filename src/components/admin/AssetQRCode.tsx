@@ -20,14 +20,9 @@ export function AssetQRCode({ asset }: AssetQRCodeProps) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const qrData = JSON.stringify({
-    code: asset.code,
-    name: language === 'ar' ? asset.name_ar : asset.name,
-    category: asset.category,
-    status: asset.status,
-  });
-
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+  // Create a URL that points to the asset details page
+  const assetUrl = `${window.location.origin}/admin/assets/${asset.code}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetUrl)}`;
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');

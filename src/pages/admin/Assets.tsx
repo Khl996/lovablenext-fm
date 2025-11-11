@@ -23,11 +23,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Pencil, Package, Trash2, List, Network } from 'lucide-react';
+import { Plus, Search, Pencil, Package, Trash2, List, Network, MoreVertical, Activity } from 'lucide-react';
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
 import { AssetFormDialog } from '@/components/admin/AssetFormDialog';
 import { AssetTreeView } from '@/components/admin/AssetTreeView';
 import { AssetQRCode } from '@/components/admin/AssetQRCode';
+import { AssetActionsDialog } from '@/components/admin/AssetActionsDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,6 +93,10 @@ export default function Assets() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
+  const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [buildingFilter, setBuildingFilter] = useState<string>('all');
+  const [buildings, setBuildings] = useState<Array<{ id: string; name: string; name_ar: string }>>([]);
 
   const canManage = permissions.hasPermission('manage_assets');
   const canDelete = permissions.hasPermission('delete_assets') || canManage;
@@ -93,8 +104,25 @@ export default function Assets() {
   useEffect(() => {
     if (hospitalId) {
       loadAssets();
+      loadBuildings();
     }
-  }, [hospitalId, statusFilter, categoryFilter, locationFilter]);
+  }, [hospitalId, statusFilter, categoryFilter, locationFilter, buildingFilter]);
+
+  const loadBuildings = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name, name_ar')
+        .eq('hospital_id', hospitalId)
+        .order('name');
+
+      if (error) throw error;
+      setBuildings(data || []);
+    } catch (error) {
+      console.error('Error loading buildings:', error);
+    }
+  };
 
   const loadAssets = async () => {
     if (!hospitalId) return;
@@ -113,6 +141,10 @@ export default function Assets() {
 
       if (categoryFilter !== 'all') {
         query = query.eq('category', categoryFilter as any);
+      }
+
+      if (buildingFilter !== 'all') {
+        query = query.eq('building_id', buildingFilter);
       }
 
       if (locationFilter.buildingId) {
@@ -201,6 +233,7 @@ export default function Assets() {
     setSearchQuery('');
     setStatusFilter('all');
     setCategoryFilter('all');
+    setBuildingFilter('all');
     setManufacturerFilter('');
     setSupplierFilter('');
     setLocationFilter({
@@ -210,6 +243,15 @@ export default function Assets() {
       departmentId: null,
       roomId: null,
     });
+  };
+
+  const handleLogAction = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setActionsDialogOpen(true);
+  };
+
+  const handleActionComplete = () => {
+    loadAssets();
   };
 
   const filteredAssets = assets.filter(asset => {
@@ -311,7 +353,7 @@ export default function Assets() {
       </div>
 
       {/* Basic Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -345,6 +387,19 @@ export default function Assets() {
             <SelectItem value="plumbing">{language === 'ar' ? 'سباكة' : 'Plumbing'}</SelectItem>
             <SelectItem value="safety">{language === 'ar' ? 'السلامة' : 'Safety'}</SelectItem>
             <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={buildingFilter} onValueChange={setBuildingFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder={language === 'ar' ? 'جميع المباني' : 'All Buildings'} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{language === 'ar' ? 'جميع المباني' : 'All Buildings'}</SelectItem>
+            {buildings.map((building) => (
+              <SelectItem key={building.id} value={building.id}>
+                {language === 'ar' ? building.name_ar : building.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={resetFilters}>
@@ -460,25 +515,34 @@ export default function Assets() {
                     <TableCell>
                       <div className="flex gap-2">
                         <AssetQRCode asset={asset} />
-                        {canManage && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditAsset(asset)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(asset)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleLogAction(asset)}>
+                              <Activity className="h-4 w-4 mr-2" />
+                              {language === 'ar' ? 'تسجيل عملية' : 'Log Operation'}
+                            </DropdownMenuItem>
+                            {canManage && (
+                              <DropdownMenuItem onClick={() => handleEditAsset(asset)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                {language === 'ar' ? 'تعديل' : 'Edit'}
+                              </DropdownMenuItem>
+                            )}
+                            {canDelete && (
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteClick(asset)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {language === 'ar' ? 'حذف' : 'Delete'}
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   )}
@@ -540,6 +604,14 @@ export default function Assets() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Asset Actions Dialog */}
+      <AssetActionsDialog
+        open={actionsDialogOpen}
+        onOpenChange={setActionsDialogOpen}
+        asset={selectedAsset}
+        onActionComplete={handleActionComplete}
+      />
     </div>
   );
 }
