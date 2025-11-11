@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Users, Search, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type Team = {
   id: string;
@@ -23,6 +24,26 @@ type Team = {
   status: string;
   hospital_id: string;
   created_at: string;
+};
+
+type TeamMember = {
+  id: string;
+  team_id: string;
+  user_id: string;
+  role: string;
+  specialization: string[] | null;
+  profiles: {
+    full_name: string;
+    email: string;
+  } | null;
+};
+
+type Specialization = {
+  id: string;
+  code: string;
+  name: string;
+  name_ar: string;
+  category: string;
 };
 
 export default function Teams() {
@@ -46,13 +67,35 @@ export default function Teams() {
     status: 'active',
   });
 
+  // Team members state
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [memberFormOpen, setMemberFormOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [specializations, setSpecializations] = useState<Specialization[]>([]);
+  const [memberFormData, setMemberFormData] = useState({
+    user_id: '',
+    role: 'technician',
+    specialization: [] as string[],
+  });
+
   const canManage = permissions.hasPermission('teams.manage');
 
   useEffect(() => {
     if (hospitalId) {
       loadTeams();
+      loadSpecializations();
     }
   }, [hospitalId]);
+
+  useEffect(() => {
+    if (selectedTeam) {
+      loadTeamMembers();
+      loadAvailableUsers();
+    }
+  }, [selectedTeam]);
 
   const loadTeams = async () => {
     if (!hospitalId) return;
@@ -74,6 +117,77 @@ export default function Teams() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSpecializations = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('specializations')
+        .select('*')
+        .eq('hospital_id', hospitalId)
+        .order('name');
+
+      if (error) throw error;
+      setSpecializations(data || []);
+    } catch (error: any) {
+      console.error('Error loading specializations:', error);
+    }
+  };
+
+  const loadTeamMembers = async () => {
+    if (!selectedTeam) return;
+    try {
+      // Load team members with user profiles
+      const { data: members, error: membersError } = await supabase
+        .from('team_members')
+        .select('id, team_id, user_id, role, specialization')
+        .eq('team_id', selectedTeam.id);
+
+      if (membersError) throw membersError;
+
+      // Load profiles for these users
+      if (members && members.length > 0) {
+        const userIds = members.map(m => m.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine data
+        const membersWithProfiles = members.map(member => ({
+          ...member,
+          profiles: profiles?.find(p => p.id === member.user_id) || null
+        }));
+
+        setTeamMembers(membersWithProfiles as TeamMember[]);
+      } else {
+        setTeamMembers([]);
+      }
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loadAvailableUsers = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('hospital_id', hospitalId);
+
+      if (error) throw error;
+      setAvailableUsers(data || []);
+    } catch (error: any) {
+      console.error('Error loading users:', error);
     }
   };
 
@@ -163,6 +277,126 @@ export default function Teams() {
       setDeleteDialogOpen(false);
       setTeamToDelete(null);
     }
+  };
+
+  const handleViewMembers = (team: Team) => {
+    setSelectedTeam(team);
+    setMembersDialogOpen(true);
+  };
+
+  const handleAddMember = () => {
+    setEditingMember(null);
+    setMemberFormData({
+      user_id: '',
+      role: 'technician',
+      specialization: [],
+    });
+    setMemberFormOpen(true);
+  };
+
+  const handleEditMember = (member: TeamMember) => {
+    setEditingMember(member);
+    setMemberFormData({
+      user_id: member.user_id,
+      role: member.role,
+      specialization: member.specialization || [],
+    });
+    setMemberFormOpen(true);
+  };
+
+  const handleMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTeam || !memberFormData.user_id) {
+      toast({
+        title: t('error'),
+        description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      if (editingMember) {
+        const { error } = await supabase
+          .from('team_members')
+          .update({
+            role: memberFormData.role,
+            specialization: memberFormData.specialization,
+          })
+          .eq('id', editingMember.id);
+
+        if (error) throw error;
+
+        toast({
+          title: language === 'ar' ? 'تم التحديث' : 'Updated',
+          description: language === 'ar' ? 'تم تحديث العضو بنجاح' : 'Member updated successfully',
+        });
+      } else {
+        const { error } = await supabase
+          .from('team_members')
+          .insert({
+            team_id: selectedTeam.id,
+            user_id: memberFormData.user_id,
+            role: memberFormData.role,
+            specialization: memberFormData.specialization,
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: language === 'ar' ? 'تم الإضافة' : 'Added',
+          description: language === 'ar' ? 'تم إضافة العضو بنجاح' : 'Member added successfully',
+        });
+      }
+
+      setMemberFormOpen(false);
+      loadTeamMembers();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteMember = async (memberId: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم الحذف' : 'Deleted',
+        description: language === 'ar' ? 'تم حذف العضو بنجاح' : 'Member deleted successfully',
+      });
+
+      loadTeamMembers();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleSpecialization = (specCode: string) => {
+    setMemberFormData(prev => ({
+      ...prev,
+      specialization: prev.specialization.includes(specCode)
+        ? prev.specialization.filter(s => s !== specCode)
+        : [...prev.specialization, specCode]
+    }));
+  };
+
+  const getSpecializationName = (code: string) => {
+    const spec = specializations.find(s => s.code === code);
+    if (!spec) return code;
+    return language === 'ar' ? spec.name_ar : spec.name;
   };
 
   const filteredTeams = teams.filter(team =>
@@ -255,9 +489,12 @@ export default function Teams() {
                 )}
                 {canManage && (
                   <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(team)} className="flex-1">
-                      <Pencil className="h-3 w-3 mr-1" />
-                      {language === 'ar' ? 'تعديل' : 'Edit'}
+                    <Button variant="outline" size="sm" onClick={() => handleViewMembers(team)} className="flex-1">
+                      <UserPlus className="h-3 w-3 mr-1" />
+                      {language === 'ar' ? 'الأعضاء' : 'Members'}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(team)}>
+                      <Pencil className="h-3 w-3" />
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDeleteClick(team)} className="text-destructive">
                       <Trash2 className="h-3 w-3" />
@@ -359,6 +596,169 @@ export default function Teams() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Team Members Dialog */}
+      <Dialog open={membersDialogOpen} onOpenChange={setMembersDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ar' ? 'أعضاء فريق: ' : 'Team Members: '}
+              {selectedTeam && (language === 'ar' ? selectedTeam.name_ar : selectedTeam.name)}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Button onClick={handleAddMember} className="w-full">
+              <UserPlus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة عضو جديد' : 'Add New Member'}
+            </Button>
+
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {language === 'ar' ? 'لا يوجد أعضاء في هذا الفريق' : 'No members in this team'}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {teamMembers.map((member) => (
+                  <Card key={member.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{member.profiles?.full_name || 'Unknown'}</h4>
+                          <p className="text-sm text-muted-foreground">{member.profiles?.email}</p>
+                          <div className="mt-2">
+                            <Badge variant="outline" className="mr-2">
+                              {member.role === 'technician' 
+                                ? (language === 'ar' ? 'فني' : 'Technician')
+                                : member.role === 'supervisor'
+                                ? (language === 'ar' ? 'مشرف' : 'Supervisor')
+                                : member.role}
+                            </Badge>
+                          </div>
+                          {member.specialization && member.specialization.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {member.specialization.map((spec, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {getSpecializationName(spec)}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditMember(member)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Member Dialog */}
+      <Dialog open={memberFormOpen} onOpenChange={setMemberFormOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingMember
+                ? (language === 'ar' ? 'تعديل عضو' : 'Edit Member')
+                : (language === 'ar' ? 'إضافة عضو جديد' : 'Add New Member')}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleMemberSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'المستخدم' : 'User'}</Label>
+              <Select
+                value={memberFormData.user_id}
+                onValueChange={(value) => setMemberFormData({ ...memberFormData, user_id: value })}
+                disabled={!!editingMember}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={language === 'ar' ? 'اختر مستخدم' : 'Select user'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'الدور' : 'Role'}</Label>
+              <Select
+                value={memberFormData.role}
+                onValueChange={(value) => setMemberFormData({ ...memberFormData, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="technician">{language === 'ar' ? 'فني' : 'Technician'}</SelectItem>
+                  <SelectItem value="supervisor">{language === 'ar' ? 'مشرف' : 'Supervisor'}</SelectItem>
+                  <SelectItem value="lead">{language === 'ar' ? 'قائد الفريق' : 'Team Lead'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'التخصصات' : 'Specializations'}</Label>
+              <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
+                {specializations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {language === 'ar' ? 'لا توجد تخصصات متاحة' : 'No specializations available'}
+                  </p>
+                ) : (
+                  specializations.map((spec) => (
+                    <div key={spec.id} className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id={spec.code}
+                        checked={memberFormData.specialization.includes(spec.code)}
+                        onCheckedChange={() => toggleSpecialization(spec.code)}
+                      />
+                      <label
+                        htmlFor={spec.code}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                      >
+                        {language === 'ar' ? spec.name_ar : spec.name}
+                        <span className="text-muted-foreground ml-2">({spec.code})</span>
+                      </label>
+                      <Badge variant="outline" className="text-xs">
+                        {spec.category}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setMemberFormOpen(false)}>
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button type="submit">{language === 'ar' ? 'حفظ' : 'Save'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
