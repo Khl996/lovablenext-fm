@@ -23,7 +23,8 @@ import {
   CheckCircle2,
   Download,
   MessageSquare,
-  Users
+  Users,
+  UserCog
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -71,13 +72,44 @@ export default function WorkOrderDetails() {
   const [updating, setUpdating] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [newStatus, setNewStatus] = useState<string>('');
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [reporterName, setReporterName] = useState<string>('');
+  const [supervisorName, setSupervisorName] = useState<string>('');
 
   useEffect(() => {
     if (id) {
       loadWorkOrder();
       loadOperations();
+      loadTeams();
     }
   }, [id]);
+
+  const loadTeams = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('hospital_id')
+        .eq('id', userData.user.id)
+        .single();
+
+      if (profile?.hospital_id) {
+        const { data, error } = await supabase
+          .from('teams')
+          .select('id, name, name_ar')
+          .eq('hospital_id', profile.hospital_id)
+          .eq('status', 'active');
+        
+        if (error) throw error;
+        setTeams(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
 
   const loadWorkOrder = async () => {
     try {
@@ -91,6 +123,26 @@ export default function WorkOrderDetails() {
       if (error) throw error;
       setWorkOrder(data);
       setNewStatus(data.status);
+      setSelectedTeam(data.assigned_team || '');
+
+      // Load reporter and supervisor names
+      if (data.reported_by) {
+        const { data: reporter } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.reported_by)
+          .single();
+        if (reporter) setReporterName(reporter.full_name);
+      }
+
+      if (data.supervisor_approved_by) {
+        const { data: supervisor } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.supervisor_approved_by)
+          .single();
+        if (supervisor) setSupervisorName(supervisor.full_name);
+      }
     } catch (error: any) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -123,19 +175,56 @@ export default function WorkOrderDetails() {
 
     try {
       setUpdating(true);
+      
+      const updates: any = { 
+        status: newStatus as any,
+      };
+
+      if (newNote) {
+        updates.work_notes = newNote;
+      }
+
+      if (selectedTeam && selectedTeam !== workOrder.assigned_team) {
+        updates.assigned_team = selectedTeam;
+      }
+
       const { error } = await supabase
         .from('work_orders')
-        .update({ 
-          status: newStatus as any,
-          work_notes: newNote || workOrder.work_notes 
-        })
+        .update(updates)
         .eq('id', workOrder.id);
 
       if (error) throw error;
 
+      // Log the action in operations_log
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('hospital_id, full_name')
+          .eq('id', userData.user.id)
+          .single();
+
+        if (profile?.hospital_id) {
+          await supabase.from('operations_log').insert({
+            hospital_id: profile.hospital_id,
+            related_work_order: workOrder.id,
+            type: 'adjustment',
+            code: `OP-${Date.now()}`,
+            system_type: 'Work Order',
+            asset_name: workOrder.code,
+            location: workOrder.building_id || 'N/A',
+            technician_name: profile.full_name,
+            reason: `Status updated to ${newStatus}`,
+            description: newNote || `Status changed from ${workOrder.status} to ${newStatus}`,
+            notes: newNote,
+            performed_by: userData.user.id,
+          });
+        }
+      }
+
       toast({
         title: language === 'ar' ? 'تم التحديث' : 'Updated',
-        description: language === 'ar' ? 'تم تحديث حالة الأمر بنجاح' : 'Work order status updated successfully',
+        description: language === 'ar' ? 'تم تحديث حالة الأمر بنجاح' : 'Work order updated successfully',
       });
 
       loadWorkOrder();
@@ -150,6 +239,17 @@ export default function WorkOrderDetails() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleExportPDF = async () => {
+    if (!workOrder) return;
+
+    // This is a placeholder - you'll need to implement actual PDF generation
+    // using a library like jsPDF or by calling a backend endpoint
+    toast({
+      title: language === 'ar' ? 'قريباً' : 'Coming Soon',
+      description: language === 'ar' ? 'سيتم إضافة تصدير PDF قريباً' : 'PDF export feature coming soon',
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -297,6 +397,14 @@ export default function WorkOrderDetails() {
                 </span>
               </div>
 
+              {reporterName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{language === 'ar' ? 'المبلغ:' : 'Reporter:'}</span>
+                  <span className="font-medium">{reporterName}</span>
+                </div>
+              )}
+
               {workOrder.urgency && (
                 <div className="flex items-center gap-2 text-sm">
                   <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -304,14 +412,22 @@ export default function WorkOrderDetails() {
                   <span className="font-medium">{workOrder.urgency}</span>
                 </div>
               )}
+
+              {supervisorName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <UserCog className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{language === 'ar' ? 'المشرف:' : 'Supervisor:'}</span>
+                  <span className="font-medium">{supervisorName}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Update Status */}
+          {/* Update Status & Actions */}
           {permissions.hasPermission('manage_work_orders') && (
             <Card>
               <CardHeader>
-                <CardTitle>{language === 'ar' ? 'تحديث الحالة' : 'Update Status'}</CardTitle>
+                <CardTitle>{language === 'ar' ? 'الإجراءات' : 'Actions'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -331,6 +447,22 @@ export default function WorkOrderDetails() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'إعادة تعيين الفريق' : 'Reassign Team'}</Label>
+                  <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={language === 'ar' ? 'اختر فريق' : 'Select team'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {language === 'ar' ? team.name_ar : team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label>{language === 'ar' ? 'إضافة ملاحظة' : 'Add Note'}</Label>
                   <Textarea
                     value={newNote}
@@ -343,9 +475,9 @@ export default function WorkOrderDetails() {
                 <Button 
                   className="w-full" 
                   onClick={handleUpdateStatus}
-                  disabled={updating || newStatus === workOrder.status}
+                  disabled={updating}
                 >
-                  {updating ? (language === 'ar' ? 'جاري التحديث...' : 'Updating...') : (language === 'ar' ? 'تحديث' : 'Update')}
+                  {updating ? (language === 'ar' ? 'جاري التحديث...' : 'Updating...') : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
                 </Button>
               </CardContent>
             </Card>
@@ -356,11 +488,16 @@ export default function WorkOrderDetails() {
             <CardHeader>
               <CardTitle>{language === 'ar' ? 'التصدير' : 'Export'}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full" onClick={handleExportPDF}>
                 <Download className="h-4 w-4 mr-2" />
                 {language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
               </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                {language === 'ar' 
+                  ? 'يتضمن ترويسة المستشفى والشعارات وسجل الإجراءات الكامل' 
+                  : 'Includes hospital header, logos, and full action history'}
+              </p>
             </CardContent>
           </Card>
         </div>
