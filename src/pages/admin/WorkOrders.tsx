@@ -197,7 +197,11 @@ export default function WorkOrders() {
           ) : (
             <div className="space-y-4">
               {filteredWorkOrders.map((wo) => (
-                <Card key={wo.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                <Card 
+                  key={wo.id} 
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  onClick={() => window.location.href = `/admin/work-orders/${wo.id}`}
+                >
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>

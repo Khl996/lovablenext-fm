@@ -19,6 +19,8 @@ import Install from "./pages/Install";
 import NotificationsSettings from "./pages/NotificationsSettings";
 import Facilities from "./pages/Facilities";
 import Settings from "./pages/Settings";
+import Maintenance from "./pages/Maintenance";
+import WorkOrderDetails from "./pages/WorkOrderDetails";
 import Hospitals from "./pages/admin/Hospitals";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
@@ -134,6 +136,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Settings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/maintenance"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Maintenance />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/work-orders/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <WorkOrderDetails />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
