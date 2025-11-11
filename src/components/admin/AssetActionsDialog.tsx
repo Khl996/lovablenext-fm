@@ -79,13 +79,22 @@ export function AssetActionsDialog({ open, onOpenChange, asset, onActionComplete
         details = `${language === 'ar' ? 'تم تغيير حالة الأصل من' : 'Changed asset status from'} "${asset.status}" ${language === 'ar' ? 'إلى' : 'to'} "${newStatus}". ${notes}`;
       }
 
+      // Map action type to operation_type enum values
+      const operationTypeMap: Record<ActionType, 'startup' | 'shutdown' | 'adjustment' | 'transfer'> = {
+        status_change: 'adjustment',
+        maintenance: 'adjustment',
+        transfer: 'transfer',
+        inspection: 'adjustment',
+        repair: 'adjustment',
+      };
+
       // Log the operation
       const { error: logError } = await supabase
         .from('operations_log')
         .insert({
           hospital_id: hospitalId,
           asset_id: asset.id,
-          type: 'maintenance',
+          type: operationTypeMap[actionType],
           code: `OP-${Date.now()}`,
           system_type: 'Asset Management',
           asset_name: language === 'ar' ? asset.name_ar : asset.name,
