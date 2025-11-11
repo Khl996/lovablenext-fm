@@ -31,6 +31,7 @@ import Teams from './pages/admin/Teams';
 import OperationsLog from './pages/OperationsLog';
 import IssueTypeSettings from './pages/admin/IssueTypeSettings';
 import Specializations from './pages/admin/Specializations';
+import LookupTables from './pages/admin/LookupTables';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -258,6 +259,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Specializations />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/lookup-tables" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <LookupTables />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

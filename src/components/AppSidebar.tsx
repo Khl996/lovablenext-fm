@@ -19,6 +19,7 @@ import {
   History,
   GitBranch,
   Award,
+  Database,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -51,6 +52,7 @@ const adminItems = [
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
   { title: 'issueTypes', titleAr: 'ربط أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch, permission: 'manage_users' },
   { title: 'specializations', titleAr: 'التخصصات', url: '/admin/specializations', icon: Award, permission: 'manage_users' },
+  { title: 'lookupTables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database, permission: 'manage_users' },
   { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
 ];
 
