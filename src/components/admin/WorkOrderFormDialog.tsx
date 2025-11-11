@@ -23,17 +23,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const { user, hospitalId } = useCurrentUser();
   const { toast } = useToast();
 
-  const issueTypes = [
-    { value: 'electrical', labelAr: 'كهرباء', labelEn: 'Electrical', department: 'electrical' },
-    { value: 'hvac', labelAr: 'تكييف وتبريد', labelEn: 'HVAC', department: 'hvac' },
-    { value: 'plumbing', labelAr: 'سباكة', labelEn: 'Plumbing', department: 'plumbing' },
-    { value: 'building', labelAr: 'مباني وإنشاءات', labelEn: 'Building', department: 'civil' },
-    { value: 'medical_equipment', labelAr: 'أجهزة طبية', labelEn: 'Medical Equipment', department: 'biomedical' },
-    { value: 'cleaning', labelAr: 'نظافة', labelEn: 'Cleaning', department: 'cleaning' },
-    { value: 'safety', labelAr: 'السلامة', labelEn: 'Safety', department: 'safety' },
-    { value: 'network', labelAr: 'شبكات وتقنية', labelEn: 'Network/IT', department: 'it' },
-    { value: 'other', labelAr: 'أخرى', labelEn: 'Other', department: null },
-  ];
+  const [issueTypeMappings, setIssueTypeMappings] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     issue_type: '',
@@ -58,6 +48,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   useEffect(() => {
     if (open && hospitalId) {
       loadTeams();
+      loadIssueTypeMappings();
     }
   }, [open, hospitalId]);
 
@@ -76,16 +67,31 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     }
   };
 
-  // Auto-assign team based on issue type
+  const loadIssueTypeMappings = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('issue_type_team_mapping')
+        .select('*, teams(id, name, name_ar)')
+        .eq('hospital_id', hospitalId);
+      if (error) throw error;
+      setIssueTypeMappings(data || []);
+    } catch (error) {
+      console.error('Error loading issue type mappings:', error);
+    }
+  };
+
+  // Auto-assign team based on issue type mapping
   const handleIssueTypeChange = (value: string) => {
     setFormData({ ...formData, issue_type: value });
     
-    const selectedIssueType = issueTypes.find(t => t.value === value);
-    if (selectedIssueType?.department) {
-      const matchingTeam = teams.find(t => t.department === selectedIssueType.department);
-      if (matchingTeam) {
-        setSelectedTeam(matchingTeam.id);
-      }
+    // Find mapping for this issue type
+    const mapping = issueTypeMappings.find(m => m.issue_type === value);
+    if (mapping) {
+      setSelectedTeam(mapping.team_id);
+    } else {
+      // Clear team selection if no mapping found
+      setSelectedTeam('');
     }
   };
 
@@ -202,13 +208,24 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
                 <SelectValue placeholder={language === 'ar' ? 'اختر نوع البلاغ' : 'Select issue type'} />
               </SelectTrigger>
               <SelectContent>
-                {issueTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {language === 'ar' ? type.labelAr : type.labelEn}
+                {issueTypeMappings.length > 0 ? (
+                  issueTypeMappings.map((mapping) => (
+                    <SelectItem key={mapping.id} value={mapping.issue_type}>
+                      {language === 'ar' ? mapping.issue_type_ar : mapping.issue_type}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    {language === 'ar' ? 'لا توجد أنواع بلاغات متاحة' : 'No issue types available'}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            {issueTypeMappings.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' ? 'يرجى إضافة أنواع البلاغات من صفحة الإعدادات' : 'Please add issue types from Settings page'}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -336,6 +336,54 @@ export type Database = {
         }
         Relationships: []
       }
+      issue_type_team_mapping: {
+        Row: {
+          created_at: string
+          hospital_id: string
+          id: string
+          is_default: boolean | null
+          issue_type: string
+          issue_type_ar: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hospital_id: string
+          id?: string
+          is_default?: boolean | null
+          issue_type: string
+          issue_type_ar: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hospital_id?: string
+          id?: string
+          is_default?: boolean | null
+          issue_type?: string
+          issue_type_ar?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issue_type_team_mapping_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issue_type_team_mapping_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_plans: {
         Row: {
           budget: number | null
@@ -789,6 +837,50 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specializations: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          hospital_id: string
+          id: string
+          name: string
+          name_ar: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          hospital_id: string
+          id?: string
+          name: string
+          name_ar: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          hospital_id?: string
+          id?: string
+          name?: string
+          name_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specializations_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
             referencedColumns: ["id"]
           },
         ]

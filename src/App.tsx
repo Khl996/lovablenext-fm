@@ -29,6 +29,8 @@ import Assets from "./pages/admin/Assets";
 import WorkOrders from './pages/admin/WorkOrders';
 import Teams from './pages/admin/Teams';
 import OperationsLog from './pages/OperationsLog';
+import IssueTypeSettings from './pages/admin/IssueTypeSettings';
+import Specializations from './pages/admin/Specializations';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -236,6 +238,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <OperationsLog />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/issue-types" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <IssueTypeSettings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/specializations" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Specializations />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
