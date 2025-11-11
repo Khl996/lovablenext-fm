@@ -384,6 +384,303 @@ export type Database = {
           },
         ]
       }
+      lookup_asset_categories: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          parent_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          parent_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          parent_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_asset_categories_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_asset_statuses: {
+        Row: {
+          category: string
+          code: string
+          color: string | null
+          created_at: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          code: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          code?: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_asset_statuses_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_priorities: {
+        Row: {
+          code: string
+          color: string | null
+          created_at: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          level: number
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          level?: number
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          level?: number
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_priorities_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_team_roles: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          level: number | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          level?: number | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          level?: number | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_team_roles_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_work_order_statuses: {
+        Row: {
+          category: string
+          code: string
+          color: string | null
+          created_at: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          code: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          code?: string
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_work_order_statuses_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lookup_work_types: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lookup_work_types_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_plans: {
         Row: {
           budget: number | null
