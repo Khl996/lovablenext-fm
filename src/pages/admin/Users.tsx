@@ -35,16 +35,6 @@ interface Hospital {
   name_ar: string;
 }
 
-const rolesList = [
-  { value: 'global_admin', labelEn: 'Global Admin', labelAr: 'مدير النظام' },
-  { value: 'hospital_admin', labelEn: 'Hospital Admin', labelAr: 'مدير المستشفى' },
-  { value: 'facility_manager', labelEn: 'Facility Manager', labelAr: 'مدير المرافق' },
-  { value: 'maintenance_manager', labelEn: 'Maintenance Manager', labelAr: 'مدير الصيانة' },
-  { value: 'supervisor', labelEn: 'Supervisor', labelAr: 'مشرف' },
-  { value: 'technician', labelEn: 'Technician', labelAr: 'فني' },
-  { value: 'reporter', labelEn: 'Reporter', labelAr: 'مبلغ' },
-];
-
 export default function Users() {
   const { language, t } = useLanguage();
   const { isGlobalAdmin, hospitalId: currentUserHospitalId, canManageUsers } = useCurrentUser();
@@ -167,18 +157,19 @@ export default function Users() {
 
   const loadLookupRoles = async () => {
     try {
-      const hospitalFilter = isGlobalAdmin ? {} : { hospital_id: currentUserHospitalId };
       const { data, error } = await supabase
-        .from('lookup_team_roles')
+        .from('system_roles')
         .select('*')
-        .match(hospitalFilter)
         .eq('is_active', true)
         .order('display_order');
 
       if (error) throw error;
-      setLookupRoles(data || []);
+      
+      // Filter out global_admin from the list (it's handled separately)
+      const filteredRoles = (data || []).filter(r => r.code !== 'global_admin');
+      setLookupRoles(filteredRoles);
     } catch (error) {
-      console.error('Error loading lookup roles:', error);
+      console.error('Error loading system roles:', error);
     }
   };
 
@@ -221,30 +212,16 @@ export default function Users() {
 
       if (profileError) throw profileError;
 
-      // Assign role - check if it's global_admin (system role) or custom role
-      if (formData.role === 'global_admin') {
-        // Use old system for global_admin
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([{
-            user_id: authData.user.id,
-            role: formData.role as any,
-            hospital_id: null,
-          }]);
+      // Assign role using user_custom_roles for all roles
+      const { error: roleError } = await supabase
+        .from('user_custom_roles')
+        .insert([{
+          user_id: authData.user.id,
+          role_code: formData.role,
+          hospital_id: formData.role === 'global_admin' ? null : (formData.hospitalId || null),
+        }]);
 
-        if (roleError) throw roleError;
-      } else {
-        // Use new system for custom roles
-        const { error: roleError } = await supabase
-          .from('user_custom_roles')
-          .insert([{
-            user_id: authData.user.id,
-            role_code: formData.role,
-            hospital_id: formData.hospitalId || null,
-          }]);
-
-        if (roleError) throw roleError;
-      }
+      if (roleError) throw roleError;
 
       toast.success(t('userAdded'));
       setIsDialogOpen(false);
@@ -264,15 +241,18 @@ export default function Users() {
   };
 
   const getRoleLabel = (role: string) => {
-    // Check if it's a system role first
-    const systemRole = rolesList.find((r) => r.value === role);
+    // Get from system roles
+    const systemRole = lookupRoles.find((r) => r.code === role);
     if (systemRole) {
-      return language === 'ar' ? systemRole.labelAr : systemRole.labelEn;
+      return language === 'ar' ? systemRole.name_ar : systemRole.name;
     }
     
-    // Otherwise, get from lookup roles
-    const lookupRole = lookupRoles.find((r) => r.code === role);
-    return lookupRole ? (language === 'ar' ? lookupRole.name_ar : lookupRole.name) : role;
+    // Handle global_admin explicitly
+    if (role === 'global_admin') {
+      return language === 'ar' ? 'مدير النظام' : 'Global Admin';
+    }
+    
+    return role;
   };
 
   if (!canManageUsers) {

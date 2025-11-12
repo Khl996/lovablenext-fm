@@ -30,25 +30,17 @@ export default function RolePermissions() {
     try {
       setLoading(true);
 
-      // Load lookup roles first
-      const hospitalFilter = isGlobalAdmin ? {} : { hospital_id: hospitalId };
+      // Load system roles only (not team roles)
       const { data: rolesData, error: rolesError } = await supabase
-        .from('lookup_team_roles')
+        .from('system_roles')
         .select('*')
-        .match(hospitalFilter)
         .eq('is_active', true)
         .order('display_order');
 
       if (rolesError) throw rolesError;
 
-      const roles = [
-        // Keep global_admin as system role
-        { code: 'global_admin', name: 'Global Admin', name_ar: 'مدير النظام' },
-        // Add custom roles from lookup table
-        ...(rolesData || [])
-      ];
-
-      setLookupRoles(roles);
+      const systemRoles = rolesData || [];
+      setLookupRoles(systemRoles);
 
       const [permsResult, rolePermsResult] = await Promise.all([
         supabase.from('permissions').select('*').order('category').order('name'),
@@ -63,7 +55,7 @@ export default function RolePermissions() {
 
       // Build matrix
       const matrix: Record<string, Record<string, boolean>> = {};
-      roles.forEach((role) => {
+      systemRoles.forEach((role) => {
         matrix[role.code] = {};
         (permsResult.data || []).forEach((perm) => {
           const hasPermission = (rolePermsResult.data || []).some(
