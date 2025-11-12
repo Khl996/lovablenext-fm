@@ -226,7 +226,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="placeholder" disabled>
                     {language === 'ar' ? 'لا توجد أنواع بلاغات متاحة' : 'No issue types available'}
                   </SelectItem>
                 )}

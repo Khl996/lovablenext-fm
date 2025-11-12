@@ -45,6 +45,7 @@ type WorkOrder = {
   reported_by: string;
   assigned_to: string | null;
   assigned_team: string | null;
+  asset_id: string | null;
   building_id: string | null;
   floor_id: string | null;
   department_id: string | null;
@@ -98,6 +99,8 @@ export default function WorkOrderDetails() {
   const [supervisorName, setSupervisorName] = useState<string>('');
   const [assignedTechnicianName, setAssignedTechnicianName] = useState<string>('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [asset, setAsset] = useState<any>(null);
+  const [location, setLocation] = useState<any>({});
 
   useEffect(() => {
     if (id) {
@@ -182,6 +185,52 @@ export default function WorkOrderDetails() {
           .single();
         if (technician) setAssignedTechnicianName(technician.full_name);
       }
+
+      // Load asset info
+      if (data.asset_id) {
+        const { data: assetData } = await supabase
+          .from('assets')
+          .select('*, buildings(name, name_ar), floors(name, name_ar), departments(name, name_ar), rooms(name, name_ar)')
+          .eq('id', data.asset_id)
+          .single();
+        if (assetData) setAsset(assetData);
+      }
+
+      // Load location info
+      const locationData: any = {};
+      if (data.building_id) {
+        const { data: building } = await supabase
+          .from('buildings')
+          .select('name, name_ar')
+          .eq('id', data.building_id)
+          .single();
+        locationData.building = building;
+      }
+      if (data.floor_id) {
+        const { data: floor } = await supabase
+          .from('floors')
+          .select('name, name_ar')
+          .eq('id', data.floor_id)
+          .single();
+        locationData.floor = floor;
+      }
+      if (data.department_id) {
+        const { data: department } = await supabase
+          .from('departments')
+          .select('name, name_ar')
+          .eq('id', data.department_id)
+          .single();
+        locationData.department = department;
+      }
+      if (data.room_id) {
+        const { data: room } = await supabase
+          .from('rooms')
+          .select('name, name_ar')
+          .eq('id', data.room_id)
+          .single();
+        locationData.room = room;
+      }
+      setLocation(locationData);
     } catch (error: any) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -258,6 +307,36 @@ export default function WorkOrderDetails() {
 
       if (error) throw error;
 
+      // Send notification if technician was assigned
+      if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
+        try {
+          await supabase.functions.invoke('notify-work-order-updates', {
+            body: {
+              workOrderId: workOrder.id,
+              action: 'assigned',
+              performedBy: user?.id
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to send notification:', notifyError);
+        }
+      }
+
+      // Send notification for status change
+      if (newStatus !== workOrder.status) {
+        try {
+          await supabase.functions.invoke('notify-work-order-updates', {
+            body: {
+              workOrderId: workOrder.id,
+              action: 'status_changed',
+              performedBy: user?.id
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to send notification:', notifyError);
+        }
+      }
+
       // Log the action in operations_log
       if (user && hospitalId) {
         const { data: profile } = await supabase
@@ -316,15 +395,176 @@ export default function WorkOrderDetails() {
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = () => {
     if (!workOrder) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
 
-    // This is a placeholder - you'll need to implement actual PDF generation
-    // using a library like jsPDF or by calling a backend endpoint
-    toast({
-      title: language === 'ar' ? 'قريباً' : 'Coming Soon',
-      description: language === 'ar' ? 'سيتم إضافة تصدير PDF قريباً' : 'PDF export feature coming soon',
-    });
+    const locationStr = [
+      location.building ? (language === 'ar' ? location.building.name_ar : location.building.name) : '',
+      location.floor ? (language === 'ar' ? location.floor.name_ar : location.floor.name) : '',
+      location.department ? (language === 'ar' ? location.department.name_ar : location.department.name) : '',
+      location.room ? (language === 'ar' ? location.room.name_ar : location.room.name) : '',
+    ].filter(Boolean).join(' - ');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="${language === 'ar' ? 'rtl' : 'ltr'}">
+      <head>
+        <meta charset="UTF-8">
+        <title>${workOrder.code} - ${language === 'ar' ? 'تفاصيل أمر العمل' : 'Work Order Details'}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
+          .header { text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+          .section { margin: 20px 0; page-break-inside: avoid; }
+          .label { font-weight: bold; color: #555; }
+          .value { margin: 5px 0 15px 0; }
+          .workflow { margin: 20px 0; }
+          .workflow-item { padding: 15px; border-left: 3px solid #ddd; margin: 10px 0; }
+          .workflow-item.completed { border-color: #22c55e; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: ${language === 'ar' ? 'right' : 'left'}; }
+          th { background-color: #f5f5f5; }
+          @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${language === 'ar' ? 'تفاصيل أمر العمل' : 'Work Order Details'}</h1>
+          <h2>${workOrder.code}</h2>
+        </div>
+
+        <div class="section">
+          <div class="label">${language === 'ar' ? 'نوع البلاغ:' : 'Issue Type:'}</div>
+          <div class="value">${workOrder.issue_type}</div>
+
+          <div class="label">${language === 'ar' ? 'الحالة:' : 'Status:'}</div>
+          <div class="value">${workOrder.status}</div>
+
+          <div class="label">${language === 'ar' ? 'الأولوية:' : 'Priority:'}</div>
+          <div class="value">${workOrder.priority}</div>
+
+          <div class="label">${language === 'ar' ? 'تاريخ البلاغ:' : 'Reported Date:'}</div>
+          <div class="value">${format(new Date(workOrder.reported_at), 'dd/MM/yyyy HH:mm')}</div>
+
+          ${reporterName ? `
+            <div class="label">${language === 'ar' ? 'المبلغ:' : 'Reporter:'}</div>
+            <div class="value">${reporterName}</div>
+          ` : ''}
+
+          ${assignedTechnicianName ? `
+            <div class="label">${language === 'ar' ? 'الفني المعين:' : 'Assigned Technician:'}</div>
+            <div class="value">${assignedTechnicianName}</div>
+          ` : ''}
+        </div>
+
+        ${asset ? `
+          <div class="section">
+            <h3>${language === 'ar' ? 'معلومات الأصل' : 'Asset Information'}</h3>
+            <div class="label">${language === 'ar' ? 'اسم الأصل:' : 'Asset Name:'}</div>
+            <div class="value">${language === 'ar' ? asset.name_ar : asset.name}</div>
+            <div class="label">${language === 'ar' ? 'الرقم التسلسلي:' : 'Serial Number:'}</div>
+            <div class="value">${asset.serial_number || '-'}</div>
+            <div class="label">${language === 'ar' ? 'الموديل:' : 'Model:'}</div>
+            <div class="value">${asset.model || '-'}</div>
+          </div>
+        ` : ''}
+
+        ${locationStr ? `
+          <div class="section">
+            <h3>${language === 'ar' ? 'الموقع' : 'Location'}</h3>
+            <div class="value">${locationStr}</div>
+          </div>
+        ` : ''}
+
+        <div class="section">
+          <h3>${language === 'ar' ? 'الوصف' : 'Description'}</h3>
+          <div class="value">${workOrder.description}</div>
+        </div>
+
+        <div class="section">
+          <h3>${language === 'ar' ? 'سير العمل والموافقات' : 'Workflow & Approvals'}</h3>
+          <div class="workflow">
+            ${workOrder.technician_completed_at ? `
+              <div class="workflow-item completed">
+                <strong>${language === 'ar' ? 'إنهاء الفني' : 'Technician Completed'}</strong>
+                <p>${format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</p>
+                ${workOrder.technician_notes ? `<p>${workOrder.technician_notes}</p>` : ''}
+              </div>
+            ` : ''}
+            ${workOrder.supervisor_approved_at ? `
+              <div class="workflow-item completed">
+                <strong>${language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approved'}</strong>
+                <p>${format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                ${workOrder.supervisor_notes ? `<p>${workOrder.supervisor_notes}</p>` : ''}
+              </div>
+            ` : ''}
+            ${workOrder.engineer_approved_at ? `
+              <div class="workflow-item completed">
+                <strong>${language === 'ar' ? 'موافقة المهندس' : 'Engineer Approved'}</strong>
+                <p>${format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                ${workOrder.engineer_notes ? `<p>${workOrder.engineer_notes}</p>` : ''}
+              </div>
+            ` : ''}
+            ${workOrder.customer_reviewed_at ? `
+              <div class="workflow-item completed">
+                <strong>${language === 'ar' ? 'مراجعة المبلغ' : 'Customer Reviewed'}</strong>
+                <p>${format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</p>
+                <p>${language === 'ar' ? 'بواسطة' : 'By'}: ${reporterName}</p>
+                ${workOrder.customer_feedback ? `<p>${workOrder.customer_feedback}</p>` : ''}
+              </div>
+            ` : ''}
+            ${workOrder.maintenance_manager_approved_at ? `
+              <div class="workflow-item completed">
+                <strong>${language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</strong>
+                <p>${format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                ${workOrder.maintenance_manager_notes ? `<p>${workOrder.maintenance_manager_notes}</p>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        ${operations.length > 0 ? `
+          <div class="section">
+            <h3>${language === 'ar' ? 'سجل الإجراءات' : 'Action History'}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>${language === 'ar' ? 'التاريخ' : 'Date'}</th>
+                  <th>${language === 'ar' ? 'النوع' : 'Type'}</th>
+                  <th>${language === 'ar' ? 'الوصف' : 'Description'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${operations.map(op => `
+                  <tr>
+                    <td>${format(new Date(op.timestamp), 'dd/MM/yyyy HH:mm')}</td>
+                    <td>${op.type}</td>
+                    <td>${op.description}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
+
+        <div class="no-print" style="margin-top: 30px; text-align: center;">
+          <button onclick="window.print()" style="padding: 10px 20px; background: #333; color: white; border: none; cursor: pointer;">
+            ${language === 'ar' ? 'طباعة' : 'Print'}
+          </button>
+          <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; cursor: pointer; margin-right: 10px;">
+            ${language === 'ar' ? 'إغلاق' : 'Close'}
+          </button>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
 
   const getStatusBadge = (statusCode: string) => {
@@ -639,6 +879,60 @@ export default function WorkOrderDetails() {
             </CardContent>
           </Card>
 
+          {/* Asset & Location Info */}
+          {(asset || Object.keys(location).length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  {language === 'ar' ? 'الأصل والموقع' : 'Asset & Location'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {asset && (
+                  <>
+                    <div>
+                      <Label className="text-muted-foreground">{language === 'ar' ? 'اسم الأصل' : 'Asset Name'}</Label>
+                      <p className="font-medium">{language === 'ar' ? asset.name_ar : asset.name}</p>
+                    </div>
+                    {asset.code && (
+                      <div>
+                        <Label className="text-muted-foreground">{language === 'ar' ? 'رمز الأصل' : 'Asset Code'}</Label>
+                        <p className="font-medium">{asset.code}</p>
+                      </div>
+                    )}
+                    {asset.serial_number && (
+                      <div>
+                        <Label className="text-muted-foreground">{language === 'ar' ? 'الرقم التسلسلي' : 'Serial Number'}</Label>
+                        <p className="font-medium">{asset.serial_number}</p>
+                      </div>
+                    )}
+                    {asset.model && (
+                      <div>
+                        <Label className="text-muted-foreground">{language === 'ar' ? 'الموديل' : 'Model'}</Label>
+                        <p className="font-medium">{asset.model}</p>
+                      </div>
+                    )}
+                    <Separator />
+                  </>
+                )}
+                {Object.keys(location).length > 0 && (
+                  <div>
+                    <Label className="text-muted-foreground">{language === 'ar' ? 'الموقع' : 'Location'}</Label>
+                    <p className="font-medium">
+                      {[
+                        location.building ? (language === 'ar' ? location.building.name_ar : location.building.name) : '',
+                        location.floor ? (language === 'ar' ? location.floor.name_ar : location.floor.name) : '',
+                        location.department ? (language === 'ar' ? location.department.name_ar : location.department.name) : '',
+                        location.room ? (language === 'ar' ? location.room.name_ar : location.room.name) : '',
+                      ].filter(Boolean).join(' - ')}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Workflow Actions */}
           {(
             (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) ||
@@ -723,6 +1017,34 @@ export default function WorkOrderDetails() {
                         .eq('id', workOrder.id);
 
                       if (error) throw error;
+
+                      // Send appropriate notification based on the action
+                      let notificationAction: string | null = null;
+                      if (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) {
+                        notificationAction = 'completed';
+                      } else if (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) {
+                        notificationAction = 'supervisor_approved';
+                      } else if (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) {
+                        notificationAction = 'engineer_approved';
+                      } else if (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) {
+                        notificationAction = 'customer_reviewed';
+                      } else if (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at) {
+                        notificationAction = 'final_approved';
+                      }
+
+                      if (notificationAction) {
+                        try {
+                          await supabase.functions.invoke('notify-work-order-updates', {
+                            body: {
+                              workOrderId: workOrder.id,
+                              action: notificationAction,
+                              performedBy: user?.id
+                            }
+                          });
+                        } catch (notifyError) {
+                          console.error('Failed to send notification:', notifyError);
+                        }
+                      }
 
                       toast({
                         title: language === 'ar' ? 'تم الحفظ' : 'Saved',

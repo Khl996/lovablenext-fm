@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface NotificationRequest {
   userId?: string;
+  userIds?: string[];
   hospitalId?: string;
   title: string;
   body: string;
@@ -26,15 +27,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { userId, hospitalId, title, body, data }: NotificationRequest = await req.json();
+    const { userId, userIds, hospitalId, title, body, data }: NotificationRequest = await req.json();
 
-    console.log('Sending notification:', { userId, hospitalId, title });
+    console.log('Sending notification:', { userId, userIds, hospitalId, title });
 
     // Get tokens for specified users
     let query = supabase.from('push_notification_tokens').select('token, device_type');
 
     if (userId) {
       query = query.eq('user_id', userId);
+    } else if (userIds && userIds.length > 0) {
+      query = query.in('user_id', userIds);
     } else if (hospitalId) {
       // Get all users in the hospital
       const { data: profiles } = await supabase
@@ -43,8 +46,8 @@ serve(async (req) => {
         .eq('hospital_id', hospitalId);
 
       if (profiles && profiles.length > 0) {
-        const userIds = profiles.map(p => p.id);
-        query = query.in('user_id', userIds);
+        const profileIds = profiles.map(p => p.id);
+        query = query.in('user_id', profileIds);
       }
     }
 
