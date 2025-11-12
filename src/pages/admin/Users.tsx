@@ -168,14 +168,18 @@ export default function Users() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('User creation failed');
 
-      // Update profile
+      // Wait for trigger to create profile, then update additional fields
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: authData.user.id,
+          full_name: formData.fullName,
+          email: formData.email,
           phone: formData.phone || null,
           hospital_id: formData.hospitalId || null,
-        })
-        .eq('id', authData.user.id);
+        });
 
       if (profileError) throw profileError;
 
