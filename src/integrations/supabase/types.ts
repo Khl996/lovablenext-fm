@@ -1389,6 +1389,9 @@ export type Database = {
           description: string
           due_date: string | null
           end_time: string | null
+          engineer_approved_at: string | null
+          engineer_approved_by: string | null
+          engineer_notes: string | null
           estimated_duration: number | null
           floor_id: string | null
           hospital_id: string
@@ -1396,6 +1399,9 @@ export type Database = {
           is_redirected: boolean | null
           issue_type: string
           labor_time: number | null
+          maintenance_manager_approved_at: string | null
+          maintenance_manager_approved_by: string | null
+          maintenance_manager_notes: string | null
           notify_supervisor: boolean | null
           original_issue_type: string | null
           parts_used: Json | null
@@ -1416,6 +1422,8 @@ export type Database = {
           supervisor_approved_at: string | null
           supervisor_approved_by: string | null
           supervisor_notes: string | null
+          technician_completed_at: string | null
+          technician_notes: string | null
           total_cost: number | null
           updated_at: string
           urgency: string | null
@@ -1440,6 +1448,9 @@ export type Database = {
           description: string
           due_date?: string | null
           end_time?: string | null
+          engineer_approved_at?: string | null
+          engineer_approved_by?: string | null
+          engineer_notes?: string | null
           estimated_duration?: number | null
           floor_id?: string | null
           hospital_id: string
@@ -1447,6 +1458,9 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type: string
           labor_time?: number | null
+          maintenance_manager_approved_at?: string | null
+          maintenance_manager_approved_by?: string | null
+          maintenance_manager_notes?: string | null
           notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
@@ -1467,6 +1481,8 @@ export type Database = {
           supervisor_approved_at?: string | null
           supervisor_approved_by?: string | null
           supervisor_notes?: string | null
+          technician_completed_at?: string | null
+          technician_notes?: string | null
           total_cost?: number | null
           updated_at?: string
           urgency?: string | null
@@ -1491,6 +1507,9 @@ export type Database = {
           description?: string
           due_date?: string | null
           end_time?: string | null
+          engineer_approved_at?: string | null
+          engineer_approved_by?: string | null
+          engineer_notes?: string | null
           estimated_duration?: number | null
           floor_id?: string | null
           hospital_id?: string
@@ -1498,6 +1517,9 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type?: string
           labor_time?: number | null
+          maintenance_manager_approved_at?: string | null
+          maintenance_manager_approved_by?: string | null
+          maintenance_manager_notes?: string | null
           notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
@@ -1518,6 +1540,8 @@ export type Database = {
           supervisor_approved_at?: string | null
           supervisor_approved_by?: string | null
           supervisor_notes?: string | null
+          technician_completed_at?: string | null
+          technician_notes?: string | null
           total_cost?: number | null
           updated_at?: string
           urgency?: string | null

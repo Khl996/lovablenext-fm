@@ -53,6 +53,18 @@ type WorkOrder = {
   supervisor_notes: string | null;
   customer_feedback: string | null;
   customer_rating: number | null;
+  technician_completed_at: string | null;
+  technician_notes: string | null;
+  supervisor_approved_by: string | null;
+  supervisor_approved_at: string | null;
+  engineer_approved_by: string | null;
+  engineer_approved_at: string | null;
+  engineer_notes: string | null;
+  customer_reviewed_by: string | null;
+  customer_reviewed_at: string | null;
+  maintenance_manager_approved_by: string | null;
+  maintenance_manager_approved_at: string | null;
+  maintenance_manager_notes: string | null;
 };
 
 type OperationLog = {
@@ -420,6 +432,127 @@ export default function WorkOrderDetails() {
             </CardContent>
           </Card>
 
+          {/* Approval Workflow */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                {language === 'ar' ? 'مسار الموافقات' : 'Approval Workflow'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Technician Work */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {workOrder.technician_completed_at ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+                  )}
+                  <span className="font-medium">{language === 'ar' ? 'عمل الفني' : 'Technician Work'}</span>
+                </div>
+                {workOrder.technician_completed_at && (
+                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
+                    <p>{format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</p>
+                    {workOrder.technician_notes && (
+                      <p className="text-foreground">{workOrder.technician_notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Supervisor Approval */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {workOrder.supervisor_approved_at ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+                  )}
+                  <span className="font-medium">{language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approval'}</span>
+                </div>
+                {workOrder.supervisor_approved_at && (
+                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
+                    <p>{format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                    <p>{language === 'ar' ? 'بواسطة' : 'by'}: {supervisorName}</p>
+                    {workOrder.supervisor_notes && (
+                      <p className="text-foreground">{workOrder.supervisor_notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Engineer Approval */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {workOrder.engineer_approved_at ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+                  )}
+                  <span className="font-medium">{language === 'ar' ? 'موافقة المهندس' : 'Engineer Approval'}</span>
+                </div>
+                {workOrder.engineer_approved_at && workOrder.engineer_approved_by && (
+                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
+                    <p>{format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                    {workOrder.engineer_notes && (
+                      <p className="text-foreground">{workOrder.engineer_notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Customer Review */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {workOrder.customer_reviewed_at ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+                  )}
+                  <span className="font-medium">{language === 'ar' ? 'مراجعة المبلغ' : 'Customer Review'}</span>
+                </div>
+                {workOrder.customer_reviewed_at && (
+                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
+                    <p>{format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</p>
+                    <p>{language === 'ar' ? 'بواسطة' : 'by'}: {reporterName}</p>
+                    {workOrder.customer_feedback && (
+                      <p className="text-foreground">{workOrder.customer_feedback}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Final Approval */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {workOrder.maintenance_manager_approved_at ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
+                  )}
+                  <span className="font-medium">{language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</span>
+                </div>
+                {workOrder.maintenance_manager_approved_at && (
+                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
+                    <p>{format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</p>
+                    {workOrder.maintenance_manager_notes && (
+                      <p className="text-foreground">{workOrder.maintenance_manager_notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Operations Log */}
           <Card>
             <CardHeader>
@@ -506,11 +639,121 @@ export default function WorkOrderDetails() {
             </CardContent>
           </Card>
 
+          {/* Workflow Actions */}
+          {(
+            (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) ||
+            (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) ||
+            (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) ||
+            (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) ||
+            (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at)
+          ) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {workOrder.assigned_to === user?.id && !workOrder.technician_completed_at && (language === 'ar' ? 'إنهاء العمل' : 'Complete Work')}
+                  {!workOrder.supervisor_approved_at && workOrder.technician_completed_at && (language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approval')}
+                  {!workOrder.engineer_approved_at && workOrder.supervisor_approved_at && (language === 'ar' ? 'موافقة المهندس' : 'Engineer Approval')}
+                  {workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at && (language === 'ar' ? 'مراجعة المبلغ' : 'Customer Review')}
+                  {!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at && (language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'الملاحظات' : 'Notes'}</Label>
+                  <Textarea
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder={language === 'ar' ? 'أضف ملاحظة...' : 'Add a note...'}
+                    rows={4}
+                  />
+                </div>
+
+                <Button 
+                  className="w-full" 
+                  onClick={async () => {
+                    if (!newNote.trim()) {
+                      toast({
+                        title: language === 'ar' ? 'خطأ' : 'Error',
+                        description: language === 'ar' ? 'الرجاء إضافة ملاحظات' : 'Please add notes',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
+
+                    setUpdating(true);
+                    try {
+                      let updates: any = {};
+
+                      if (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) {
+                        updates = {
+                          technician_completed_at: new Date().toISOString(),
+                          technician_notes: newNote,
+                          status: 'in_progress',
+                        };
+                      } else if (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) {
+                        updates = {
+                          supervisor_approved_by: user?.id,
+                          supervisor_approved_at: new Date().toISOString(),
+                          supervisor_notes: newNote,
+                        };
+                      } else if (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) {
+                        updates = {
+                          engineer_approved_by: user?.id,
+                          engineer_approved_at: new Date().toISOString(),
+                          engineer_notes: newNote,
+                        };
+                      } else if (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) {
+                        updates = {
+                          customer_reviewed_by: user?.id,
+                          customer_reviewed_at: new Date().toISOString(),
+                          customer_feedback: newNote,
+                        };
+                      } else if (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at) {
+                        updates = {
+                          maintenance_manager_approved_by: user?.id,
+                          maintenance_manager_approved_at: new Date().toISOString(),
+                          maintenance_manager_notes: newNote,
+                          status: 'completed',
+                        };
+                      }
+
+                      const { error } = await supabase
+                        .from('work_orders')
+                        .update(updates)
+                        .eq('id', workOrder.id);
+
+                      if (error) throw error;
+
+                      toast({
+                        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
+                        description: language === 'ar' ? 'تم حفظ الإجراء بنجاح' : 'Action saved successfully',
+                      });
+
+                      setNewNote('');
+                      loadWorkOrder();
+                    } catch (error: any) {
+                      toast({
+                        title: language === 'ar' ? 'خطأ' : 'Error',
+                        description: error.message,
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setUpdating(false);
+                    }
+                  }}
+                  disabled={updating}
+                >
+                  {updating ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Update Status & Actions */}
           {permissions.hasPermission('manage_work_orders') && (
             <Card>
               <CardHeader>
-                <CardTitle>{language === 'ar' ? 'الإجراءات' : 'Actions'}</CardTitle>
+                <CardTitle>{language === 'ar' ? 'الإجراءات الإدارية' : 'Admin Actions'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -520,7 +763,7 @@ export default function WorkOrderDetails() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {lookups.work_order_statuses?.filter(s => s.is_active).map((status) => (
+                      {lookups.work_order_statuses?.filter(s => s.is_active && s.code).map((status) => (
                         <SelectItem key={status.code} value={status.code}>
                           {getLookupName(status, language)}
                         </SelectItem>
@@ -559,59 +802,6 @@ export default function WorkOrderDetails() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'إضافة ملاحظة' : 'Add Note'}</Label>
-                  <Textarea
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    placeholder={language === 'ar' ? 'أضف ملاحظة...' : 'Add a note...'}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'إضافة صور' : 'Add Photos'}</Label>
-                  <div className="border-2 border-dashed rounded-lg p-4">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <label 
-                      htmlFor="file-upload"
-                      className="flex flex-col items-center justify-center cursor-pointer"
-                    >
-                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        {language === 'ar' ? 'اضغط لإضافة صور' : 'Click to upload photos'}
-                      </span>
-                    </label>
-                  </div>
-                  
-                  {selectedFiles.length > 0 && (
-                    <div className="space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <div className="flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" />
-                            <span className="text-sm">{file.name}</span>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <Button 
