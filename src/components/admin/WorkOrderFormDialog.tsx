@@ -155,8 +155,8 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     try {
       const code = await generateCode();
       
-      // Prepare photos array (in real app, you'd upload to storage first)
-      const photoUrls = attachments.map(f => URL.createObjectURL(f));
+      // TODO: Upload photos to storage first, then save URLs
+      // For now, we'll skip photos to avoid errors
       
       const { error } = await supabase.from('work_orders').insert([{
         code,
@@ -172,7 +172,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         department_id: formData.location.departmentId || null,
         room_id: formData.location.roomId || null,
         assigned_team: selectedTeam || null,
-        photos: photoUrls.length > 0 ? photoUrls : null,
+        photos: null,
       }]);
 
       if (error) throw error;
