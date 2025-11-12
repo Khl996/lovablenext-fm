@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
 import { Upload, X } from 'lucide-react';
+import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 
 type WorkOrderFormProps = {
   open: boolean;
@@ -23,12 +24,13 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const { user, hospitalId } = useCurrentUser();
   const { toast } = useToast();
 
+  const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_types']);
   const [issueTypeMappings, setIssueTypeMappings] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     issue_type: '',
     description: '',
-    priority: 'medium',
+    priority: '',
     urgency: '',
     reporter_name: '',
     reporter_contact: '',
@@ -44,6 +46,14 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const [teams, setTeams] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [attachments, setAttachments] = useState<File[]>([]);
+
+  // Set default priority when lookups are loaded
+  useEffect(() => {
+    if (lookups.priorities && lookups.priorities.length > 0 && !formData.priority) {
+      const defaultPriority = lookups.priorities.find(p => p.code === 'medium') || lookups.priorities[0];
+      setFormData(prev => ({ ...prev, priority: defaultPriority.code }));
+    }
+  }, [lookups.priorities]);
 
   useEffect(() => {
     if (open && hospitalId) {
@@ -174,10 +184,11 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
 
       onSuccess();
       onOpenChange(false);
+      const defaultPriority = lookups.priorities?.find(p => p.code === 'medium')?.code || '';
       setFormData({
         issue_type: '',
         description: '',
-        priority: 'medium',
+        priority: defaultPriority,
         urgency: '',
         reporter_name: '',
         reporter_contact: '',
@@ -243,13 +254,14 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
               <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
               <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">{language === 'ar' ? 'منخفضة' : 'Low'}</SelectItem>
-                  <SelectItem value="medium">{language === 'ar' ? 'متوسطة' : 'Medium'}</SelectItem>
-                  <SelectItem value="high">{language === 'ar' ? 'عالية' : 'High'}</SelectItem>
-                  <SelectItem value="urgent">{language === 'ar' ? 'عاجلة' : 'Urgent'}</SelectItem>
+                  {lookups.priorities?.map((priority) => (
+                    <SelectItem key={priority.code} value={priority.code}>
+                      {getLookupName(priority, language)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -261,9 +273,11 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
                   <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="emergency">{language === 'ar' ? 'طارئ' : 'Emergency'}</SelectItem>
-                  <SelectItem value="routine">{language === 'ar' ? 'دوري' : 'Routine'}</SelectItem>
-                  <SelectItem value="preventive">{language === 'ar' ? 'وقائي' : 'Preventive'}</SelectItem>
+                  {lookups.work_types?.map((workType) => (
+                    <SelectItem key={workType.code} value={workType.code}>
+                      {getLookupName(workType, language)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

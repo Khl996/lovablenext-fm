@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { WorkOrderFormDialog } from '@/components/admin/WorkOrderFormDialog';
+import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 
 type WorkOrder = {
   id: string;
@@ -30,6 +31,7 @@ type WorkOrder = {
 export default function WorkOrders() {
   const { language } = useLanguage();
   const { loading: userLoading, permissions } = useCurrentUser();
+  const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_order_statuses']);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,22 +45,7 @@ export default function WorkOrders() {
     addNew: language === 'ar' ? 'إضافة أمر عمل' : 'Add Work Order',
     search: language === 'ar' ? 'بحث...' : 'Search...',
     filter: language === 'ar' ? 'فلترة' : 'Filter',
-    status: {
-      all: language === 'ar' ? 'الكل' : 'All',
-      pending: language === 'ar' ? 'قيد الانتظار' : 'Pending',
-      assigned: language === 'ar' ? 'محددة' : 'Assigned',
-      in_progress: language === 'ar' ? 'قيد التنفيذ' : 'In Progress',
-      completed: language === 'ar' ? 'مكتملة' : 'Completed',
-      approved: language === 'ar' ? 'معتمدة' : 'Approved',
-      cancelled: language === 'ar' ? 'ملغية' : 'Cancelled',
-    },
-    priority: {
-      all: language === 'ar' ? 'الكل' : 'All',
-      low: language === 'ar' ? 'منخفضة' : 'Low',
-      medium: language === 'ar' ? 'متوسطة' : 'Medium',
-      high: language === 'ar' ? 'عالية' : 'High',
-      urgent: language === 'ar' ? 'عاجلة' : 'Urgent',
-    },
+    all: language === 'ar' ? 'الكل' : 'All',
     noPermission: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
     loading: language === 'ar' ? 'جاري التحميل...' : 'Loading...',
     noWorkOrders: language === 'ar' ? 'لا توجد أوامر عمل' : 'No work orders found',
@@ -86,36 +73,41 @@ export default function WorkOrders() {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-      case 'approved':
-        return 'default';
+  const getStatusBadgeVariant = (statusCode: string) => {
+    const status = lookups.work_order_statuses?.find(s => s.code === statusCode);
+    if (!status) return 'outline';
+    
+    // Use category to determine variant
+    switch (status.category) {
+      case 'closed':
+        return statusCode === 'cancelled' ? 'destructive' : 'default';
       case 'in_progress':
         return 'secondary';
-      case 'pending':
-      case 'assigned':
-        return 'outline';
-      case 'cancelled':
-        return 'destructive';
+      case 'open':
       default:
         return 'outline';
     }
   };
 
-  const getPriorityBadgeVariant = (priority: string) => {
-    switch (priority) {
-      case 'urgent':
-        return 'destructive';
-      case 'high':
-        return 'default';
-      case 'medium':
-        return 'secondary';
-      case 'low':
-        return 'outline';
-      default:
-        return 'outline';
-    }
+  const getPriorityBadgeVariant = (priorityCode: string) => {
+    const priority = lookups.priorities?.find(p => p.code === priorityCode);
+    if (!priority) return 'outline';
+    
+    // Use level to determine variant
+    if (priority.level >= 4) return 'destructive'; // urgent
+    if (priority.level >= 3) return 'default'; // high
+    if (priority.level >= 2) return 'secondary'; // medium
+    return 'outline'; // low
+  };
+
+  const getStatusName = (code: string) => {
+    const status = lookups.work_order_statuses?.find(s => s.code === code);
+    return status ? getLookupName(status, language) : code;
+  };
+
+  const getPriorityName = (code: string) => {
+    const priority = lookups.priorities?.find(p => p.code === code);
+    return priority ? getLookupName(priority, language) : code;
   };
 
   const filteredWorkOrders = workOrders.filter(wo => {
@@ -126,7 +118,7 @@ export default function WorkOrders() {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  if (userLoading || loading) {
+  if (userLoading || loading || lookupsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -163,28 +155,28 @@ export default function WorkOrders() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder={t.status.all} />
+                <SelectValue placeholder={t.all} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t.status.all}</SelectItem>
-                <SelectItem value="pending">{t.status.pending}</SelectItem>
-                <SelectItem value="assigned">{t.status.assigned}</SelectItem>
-                <SelectItem value="in_progress">{t.status.in_progress}</SelectItem>
-                <SelectItem value="completed">{t.status.completed}</SelectItem>
-                <SelectItem value="approved">{t.status.approved}</SelectItem>
-                <SelectItem value="cancelled">{t.status.cancelled}</SelectItem>
+                <SelectItem value="all">{t.all}</SelectItem>
+                {lookups.work_order_statuses?.map((status) => (
+                  <SelectItem key={status.code} value={status.code}>
+                    {getLookupName(status, language)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder={t.priority.all} />
+                <SelectValue placeholder={t.all} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t.priority.all}</SelectItem>
-                <SelectItem value="low">{t.priority.low}</SelectItem>
-                <SelectItem value="medium">{t.priority.medium}</SelectItem>
-                <SelectItem value="high">{t.priority.high}</SelectItem>
-                <SelectItem value="urgent">{t.priority.urgent}</SelectItem>
+                <SelectItem value="all">{t.all}</SelectItem>
+                {lookups.priorities?.map((priority) => (
+                  <SelectItem key={priority.code} value={priority.code}>
+                    {getLookupName(priority, language)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -210,10 +202,10 @@ export default function WorkOrders() {
                       </div>
                       <div className="flex gap-2">
                         <Badge variant={getStatusBadgeVariant(wo.status)}>
-                          {t.status[wo.status as keyof typeof t.status] || wo.status}
+                          {getStatusName(wo.status)}
                         </Badge>
                         <Badge variant={getPriorityBadgeVariant(wo.priority)}>
-                          {t.priority[wo.priority as keyof typeof t.priority] || wo.priority}
+                          {getPriorityName(wo.priority)}
                         </Badge>
                       </div>
                     </div>
