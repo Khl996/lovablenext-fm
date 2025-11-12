@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +30,7 @@ type WorkOrder = {
 };
 
 export default function WorkOrders() {
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const { loading: userLoading, permissions } = useCurrentUser();
   const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_order_statuses']);
@@ -192,7 +194,7 @@ export default function WorkOrders() {
                 <Card 
                   key={wo.id} 
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => window.location.href = `/admin/work-orders/${wo.id}`}
+                  onClick={() => navigate(`/admin/work-orders/${wo.id}`)}
                 >
                   <CardHeader>
                     <div className="flex justify-between items-start">

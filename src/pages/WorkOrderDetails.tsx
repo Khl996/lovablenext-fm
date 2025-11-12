@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -24,9 +25,13 @@ import {
   Download,
   MessageSquare,
   Users,
-  UserCog
+  UserCog,
+  Upload,
+  X,
+  Image as ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 
 type WorkOrder = {
   id: string;
@@ -63,8 +68,9 @@ export default function WorkOrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { permissions, user } = useCurrentUser();
+  const { permissions, user, hospitalId } = useCurrentUser();
   const { toast } = useToast();
+  const { lookups, loading: lookupsLoading } = useLookupTables(['work_order_statuses', 'priorities', 'work_types']);
 
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [operations, setOperations] = useState<OperationLog[]>([]);
@@ -73,39 +79,50 @@ export default function WorkOrderDetails() {
   const [newNote, setNewNote] = useState('');
   const [newStatus, setNewStatus] = useState<string>('');
   const [teams, setTeams] = useState<any[]>([]);
+  const [technicians, setTechnicians] = useState<any[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [reporterName, setReporterName] = useState<string>('');
   const [supervisorName, setSupervisorName] = useState<string>('');
+  const [assignedTechnicianName, setAssignedTechnicianName] = useState<string>('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   useEffect(() => {
     if (id) {
       loadWorkOrder();
       loadOperations();
       loadTeams();
+      loadTechnicians();
     }
   }, [id]);
 
-  const loadTeams = async () => {
+  const loadTechnicians = async () => {
+    if (!hospitalId) return;
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-
-      const { data: profile } = await supabase
+      // Get users from the hospital
+      const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('hospital_id')
-        .eq('id', userData.user.id)
-        .single();
+        .select('id, full_name, email')
+        .eq('hospital_id', hospitalId);
+      
+      if (error) throw error;
+      setTechnicians(profiles || []);
+    } catch (error) {
+      console.error('Error loading technicians:', error);
+    }
+  };
 
-      if (profile?.hospital_id) {
-        const { data, error } = await supabase
-          .from('teams')
-          .select('id, name, name_ar')
-          .eq('hospital_id', profile.hospital_id)
-          .eq('status', 'active');
-        
-        if (error) throw error;
-        setTeams(data || []);
-      }
+  const loadTeams = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('id, name, name_ar')
+        .eq('hospital_id', hospitalId)
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      setTeams(data || []);
     } catch (error) {
       console.error('Error loading teams:', error);
     }
@@ -124,8 +141,9 @@ export default function WorkOrderDetails() {
       setWorkOrder(data);
       setNewStatus(data.status);
       setSelectedTeam(data.assigned_team || '');
+      setSelectedTechnician(data.assigned_to || '');
 
-      // Load reporter and supervisor names
+      // Load reporter, supervisor, and assigned technician names
       if (data.reported_by) {
         const { data: reporter } = await supabase
           .from('profiles')
@@ -142,6 +160,15 @@ export default function WorkOrderDetails() {
           .eq('id', data.supervisor_approved_by)
           .single();
         if (supervisor) setSupervisorName(supervisor.full_name);
+      }
+
+      if (data.assigned_to) {
+        const { data: technician } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.assigned_to)
+          .single();
+        if (technician) setAssignedTechnicianName(technician.full_name);
       }
     } catch (error: any) {
       toast({
@@ -170,6 +197,17 @@ export default function WorkOrderDetails() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpdateStatus = async () => {
     if (!workOrder || !newStatus) return;
 
@@ -181,11 +219,24 @@ export default function WorkOrderDetails() {
       };
 
       if (newNote) {
-        updates.work_notes = newNote;
+        updates.work_notes = workOrder.work_notes 
+          ? `${workOrder.work_notes}\n\n[${format(new Date(), 'dd/MM/yyyy HH:mm')}]: ${newNote}`
+          : newNote;
       }
 
       if (selectedTeam && selectedTeam !== workOrder.assigned_team) {
         updates.assigned_team = selectedTeam;
+      }
+
+      if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
+        updates.assigned_to = selectedTechnician;
+      }
+
+      // TODO: Implement photo upload to storage bucket
+      // For now, we'll just note in the log that photos were added
+      if (selectedFiles.length > 0) {
+        updates.work_notes = (updates.work_notes || workOrder.work_notes || '') + 
+          `\n[${selectedFiles.length} ${language === 'ar' ? 'صور مرفقة' : 'photos attached'}]`;
       }
 
       const { error } = await supabase
@@ -196,40 +247,52 @@ export default function WorkOrderDetails() {
       if (error) throw error;
 
       // Log the action in operations_log
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
+      if (user && hospitalId) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('hospital_id, full_name')
-          .eq('id', userData.user.id)
+          .select('full_name')
+          .eq('id', user.id)
           .single();
 
-        if (profile?.hospital_id) {
-          await supabase.from('operations_log').insert({
-            hospital_id: profile.hospital_id,
-            related_work_order: workOrder.id,
-            type: 'adjustment',
-            code: `OP-${Date.now()}`,
-            system_type: 'Work Order',
-            asset_name: workOrder.code,
-            location: workOrder.building_id || 'N/A',
-            technician_name: profile.full_name,
-            reason: `Status updated to ${newStatus}`,
-            description: newNote || `Status changed from ${workOrder.status} to ${newStatus}`,
-            notes: newNote,
-            performed_by: userData.user.id,
-          });
+        const logDescription = [];
+        if (newStatus !== workOrder.status) {
+          logDescription.push(`${language === 'ar' ? 'الحالة من' : 'Status from'} ${workOrder.status} ${language === 'ar' ? 'إلى' : 'to'} ${newStatus}`);
         }
+        if (selectedTeam && selectedTeam !== workOrder.assigned_team) {
+          logDescription.push(`${language === 'ar' ? 'الفريق المعين' : 'Team assigned'}`);
+        }
+        if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
+          logDescription.push(`${language === 'ar' ? 'الفني المعين' : 'Technician assigned'}`);
+        }
+        if (selectedFiles.length > 0) {
+          logDescription.push(`${selectedFiles.length} ${language === 'ar' ? 'صور مرفقة' : 'photos attached'}`);
+        }
+
+        await supabase.from('operations_log').insert({
+          hospital_id: hospitalId,
+          related_work_order: workOrder.id,
+          type: 'adjustment',
+          code: `OP-${Date.now()}`,
+          system_type: 'Work Order',
+          asset_name: workOrder.code,
+          location: workOrder.building_id || 'N/A',
+          technician_name: profile?.full_name || 'Unknown',
+          reason: logDescription.join(', '),
+          description: newNote || logDescription.join(', '),
+          notes: newNote,
+          performed_by: user.id,
+        });
       }
 
       toast({
         title: language === 'ar' ? 'تم التحديث' : 'Updated',
-        description: language === 'ar' ? 'تم تحديث حالة الأمر بنجاح' : 'Work order updated successfully',
+        description: language === 'ar' ? 'تم تحديث أمر العمل بنجاح' : 'Work order updated successfully',
       });
 
       loadWorkOrder();
       loadOperations();
       setNewNote('');
+      setSelectedFiles([]);
     } catch (error: any) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -252,31 +315,43 @@ export default function WorkOrderDetails() {
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-      pending: { variant: 'outline', label: language === 'ar' ? 'قيد الانتظار' : 'Pending' },
-      assigned: { variant: 'secondary', label: language === 'ar' ? 'محددة' : 'Assigned' },
-      in_progress: { variant: 'default', label: language === 'ar' ? 'قيد التنفيذ' : 'In Progress' },
-      completed: { variant: 'default', label: language === 'ar' ? 'مكتملة' : 'Completed' },
-      approved: { variant: 'default', label: language === 'ar' ? 'معتمدة' : 'Approved' },
-      cancelled: { variant: 'destructive', label: language === 'ar' ? 'ملغية' : 'Cancelled' },
+  const getStatusBadge = (statusCode: string) => {
+    const status = lookups.work_order_statuses?.find(s => s.code === statusCode);
+    if (!status) return <Badge variant="outline">{statusCode}</Badge>;
+    
+    const variantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      'open': 'outline',
+      'in_progress': 'default',
+      'completed': 'default',
+      'cancelled': 'destructive',
     };
-    const statusInfo = variants[status] || { variant: 'outline' as const, label: status };
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    
+    return (
+      <Badge variant={variantMap[status.category] || 'outline'}>
+        {getLookupName(status, language)}
+      </Badge>
+    );
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-      low: { variant: 'outline', label: language === 'ar' ? 'منخفضة' : 'Low' },
-      medium: { variant: 'secondary', label: language === 'ar' ? 'متوسطة' : 'Medium' },
-      high: { variant: 'default', label: language === 'ar' ? 'عالية' : 'High' },
-      urgent: { variant: 'destructive', label: language === 'ar' ? 'عاجلة' : 'Urgent' },
+  const getPriorityBadge = (priorityCode: string) => {
+    const priority = lookups.priorities?.find(p => p.code === priorityCode);
+    if (!priority) return <Badge variant="outline">{priorityCode}</Badge>;
+    
+    const variantMap: Record<number, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      1: 'outline',      // Low
+      2: 'secondary',    // Medium  
+      3: 'default',      // High
+      4: 'destructive',  // Critical/Urgent
     };
-    const priorityInfo = variants[priority] || { variant: 'outline' as const, label: priority };
-    return <Badge variant={priorityInfo.variant}>{priorityInfo.label}</Badge>;
+    
+    return (
+      <Badge variant={variantMap[priority.level || 0] || 'outline'}>
+        {getLookupName(priority, language)}
+      </Badge>
+    );
   };
 
-  if (loading) {
+  if (loading || lookupsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -405,6 +480,14 @@ export default function WorkOrderDetails() {
                 </div>
               )}
 
+               {assignedTechnicianName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{language === 'ar' ? 'الفني المعين:' : 'Assigned To:'}</span>
+                  <span className="font-medium">{assignedTechnicianName}</span>
+                </div>
+              )}
+
               {workOrder.urgency && (
                 <div className="flex items-center gap-2 text-sm">
                   <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -437,17 +520,17 @@ export default function WorkOrderDetails() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">{language === 'ar' ? 'قيد الانتظار' : 'Pending'}</SelectItem>
-                      <SelectItem value="assigned">{language === 'ar' ? 'محددة' : 'Assigned'}</SelectItem>
-                      <SelectItem value="in_progress">{language === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</SelectItem>
-                      <SelectItem value="completed">{language === 'ar' ? 'مكتملة' : 'Completed'}</SelectItem>
-                      <SelectItem value="cancelled">{language === 'ar' ? 'ملغية' : 'Cancelled'}</SelectItem>
+                      {lookups.work_order_statuses?.filter(s => s.is_active).map((status) => (
+                        <SelectItem key={status.code} value={status.code}>
+                          {getLookupName(status, language)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'إعادة تعيين الفريق' : 'Reassign Team'}</Label>
+                  <Label>{language === 'ar' ? 'تعيين الفريق' : 'Assign Team'}</Label>
                   <Select value={selectedTeam} onValueChange={setSelectedTeam}>
                     <SelectTrigger>
                       <SelectValue placeholder={language === 'ar' ? 'اختر فريق' : 'Select team'} />
@@ -463,6 +546,22 @@ export default function WorkOrderDetails() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'تعيين الفني' : 'Assign Technician'}</Label>
+                  <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={language === 'ar' ? 'اختر فني' : 'Select technician'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {technicians.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label>{language === 'ar' ? 'إضافة ملاحظة' : 'Add Note'}</Label>
                   <Textarea
                     value={newNote}
@@ -470,6 +569,49 @@ export default function WorkOrderDetails() {
                     placeholder={language === 'ar' ? 'أضف ملاحظة...' : 'Add a note...'}
                     rows={3}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'إضافة صور' : 'Add Photos'}</Label>
+                  <div className="border-2 border-dashed rounded-lg p-4">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <label 
+                      htmlFor="file-upload"
+                      className="flex flex-col items-center justify-center cursor-pointer"
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'اضغط لإضافة صور' : 'Click to upload photos'}
+                      </span>
+                    </label>
+                  </div>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <div className="flex items-center gap-2">
+                            <ImageIcon className="h-4 w-4" />
+                            <span className="text-sm">{file.name}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button 
