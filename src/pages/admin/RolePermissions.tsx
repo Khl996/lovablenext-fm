@@ -5,9 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Shield, Save } from 'lucide-react';
+import { Shield, Save, Plus } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import { z } from 'zod';
 
 type Permission = Database['public']['Tables']['permissions']['Row'];
 type RolePermission = Database['public']['Tables']['role_permissions']['Row'];
@@ -21,6 +26,13 @@ export default function RolePermissions() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissionMatrix, setPermissionMatrix] = useState<Record<string, Record<string, boolean>>>({});
+  const [isAddRoleDialogOpen, setIsAddRoleDialogOpen] = useState(false);
+  const [newRole, setNewRole] = useState({
+    code: '',
+    name: '',
+    name_ar: '',
+    description: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -81,6 +93,70 @@ export default function RolePermissions() {
         [permissionKey]: !prev[role][permissionKey],
       },
     }));
+  };
+
+  const roleSchema = z.object({
+    code: z.string()
+      .trim()
+      .min(2, { message: language === 'ar' ? 'الكود يجب أن يكون حرفين على الأقل' : 'Code must be at least 2 characters' })
+      .max(50, { message: language === 'ar' ? 'الكود يجب أن يكون أقل من 50 حرف' : 'Code must be less than 50 characters' })
+      .regex(/^[a-z_]+$/, { message: language === 'ar' ? 'الكود يجب أن يحتوي على أحرف صغيرة و _ فقط' : 'Code must contain only lowercase letters and underscores' }),
+    name: z.string()
+      .trim()
+      .min(2, { message: language === 'ar' ? 'الاسم يجب أن يكون حرفين على الأقل' : 'Name must be at least 2 characters' })
+      .max(100, { message: language === 'ar' ? 'الاسم يجب أن يكون أقل من 100 حرف' : 'Name must be less than 100 characters' }),
+    name_ar: z.string()
+      .trim()
+      .min(2, { message: language === 'ar' ? 'الاسم بالعربي يجب أن يكون حرفين على الأقل' : 'Arabic name must be at least 2 characters' })
+      .max(100, { message: language === 'ar' ? 'الاسم بالعربي يجب أن يكون أقل من 100 حرف' : 'Arabic name must be less than 100 characters' }),
+    description: z.string()
+      .trim()
+      .max(500, { message: language === 'ar' ? 'الوصف يجب أن يكون أقل من 500 حرف' : 'Description must be less than 500 characters' })
+      .optional(),
+  });
+
+  const handleAddRole = async () => {
+    try {
+      // Validate inputs
+      const validatedData = roleSchema.parse(newRole);
+
+      // Check if code already exists
+      const { data: existing } = await supabase
+        .from('system_roles')
+        .select('code')
+        .eq('code', validatedData.code)
+        .single();
+
+      if (existing) {
+        toast.error(language === 'ar' ? 'الكود موجود مسبقاً' : 'Code already exists');
+        return;
+      }
+
+      // Insert new role
+      const { error } = await supabase
+        .from('system_roles')
+        .insert([{
+          code: validatedData.code,
+          name: validatedData.name,
+          name_ar: validatedData.name_ar,
+          description: validatedData.description || null,
+          display_order: lookupRoles.length + 1,
+        }]);
+
+      if (error) throw error;
+
+      toast.success(language === 'ar' ? 'تم إضافة الدور بنجاح' : 'Role added successfully');
+      setIsAddRoleDialogOpen(false);
+      setNewRole({ code: '', name: '', name_ar: '', description: '' });
+      loadData();
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        console.error('Error adding role:', error);
+        toast.error(error.message || t('errorOccurred'));
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -172,10 +248,83 @@ export default function RolePermissions() {
           </p>
         </div>
 
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
-          <Save className="h-4 w-4" />
-          {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : t('save')}
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={isAddRoleDialogOpen} onOpenChange={setIsAddRoleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                {language === 'ar' ? 'إضافة دور' : 'Add Role'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>{language === 'ar' ? 'إضافة دور جديد' : 'Add New Role'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">{language === 'ar' ? 'الكود' : 'Code'}</Label>
+                  <Input
+                    id="code"
+                    value={newRole.code}
+                    onChange={(e) => setNewRole({ ...newRole, code: e.target.value })}
+                    placeholder="e.g. department_head"
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'ar' ? 'أحرف صغيرة و _ فقط' : 'Lowercase letters and underscores only'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">{language === 'ar' ? 'الاسم (English)' : 'Name (English)'}</Label>
+                  <Input
+                    id="name"
+                    value={newRole.name}
+                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                    placeholder="Department Head"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name_ar">{language === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)'}</Label>
+                  <Input
+                    id="name_ar"
+                    value={newRole.name_ar}
+                    onChange={(e) => setNewRole({ ...newRole, name_ar: e.target.value })}
+                    placeholder="رئيس القسم"
+                    dir="rtl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">{language === 'ar' ? 'الوصف (اختياري)' : 'Description (Optional)'}</Label>
+                  <Textarea
+                    id="description"
+                    value={newRole.description}
+                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                    placeholder={language === 'ar' ? 'وصف الدور...' : 'Role description...'}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsAddRoleDialogOpen(false)}>
+                    {t('cancel')}
+                  </Button>
+                  <Button onClick={handleAddRole}>
+                    {language === 'ar' ? 'إضافة' : 'Add'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="h-4 w-4" />
+            {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : t('save')}
+          </Button>
+        </div>
       </div>
 
       <Card>
