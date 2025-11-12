@@ -50,6 +50,7 @@ export default function Users() {
   const { isGlobalAdmin, hospitalId: currentUserHospitalId, canManageUsers } = useCurrentUser();
   const [users, setUsers] = useState<UserData[]>([]);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [lookupRoles, setLookupRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -63,7 +64,7 @@ export default function Users() {
   });
 
   useEffect(() => {
-    Promise.all([loadUsers(), loadHospitals()]);
+    Promise.all([loadUsers(), loadHospitals(), loadLookupRoles()]);
   }, []);
 
   const loadUsers = async () => {
@@ -82,26 +83,46 @@ export default function Users() {
 
       if (profilesError) throw profilesError;
 
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
+      // Get both old and new roles
+      const [rolesResult, customRolesResult] = await Promise.all([
+        supabase.from('user_roles').select(`
           id,
           user_id,
           role,
           hospital_id,
           hospitals(name, name_ar)
-        `);
+        `),
+        supabase.from('user_custom_roles').select(`
+          id,
+          user_id,
+          role_code,
+          hospital_id,
+          hospitals(name, name_ar)
+        `)
+      ]);
 
-      if (rolesError) throw rolesError;
+      if (rolesResult.error) throw rolesResult.error;
+      if (customRolesResult.error) throw customRolesResult.error;
 
       const usersWithRoles = (profilesData || []).map((profile: any) => {
-        const userRoles = (rolesData || [])
+        const systemRoles = (rolesResult.data || [])
           .filter((r: any) => r.user_id === profile.id)
           .map((r: any) => ({
             id: r.id,
             role: r.role,
             hospital_id: r.hospital_id,
             hospital_name: r.hospitals ? (language === 'ar' ? r.hospitals.name_ar : r.hospitals.name) : null,
+            isSystemRole: true,
+          }));
+
+        const customRolesList = (customRolesResult.data || [])
+          .filter((r: any) => r.user_id === profile.id)
+          .map((r: any) => ({
+            id: r.id,
+            role: r.role_code,
+            hospital_id: r.hospital_id,
+            hospital_name: r.hospitals ? (language === 'ar' ? r.hospitals.name_ar : r.hospitals.name) : null,
+            isSystemRole: false,
           }));
 
         return {
@@ -112,7 +133,7 @@ export default function Users() {
           phone: profile.phone,
           hospital_id: profile.hospital_id,
           hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
-          roles: userRoles,
+          roles: [...systemRoles, ...customRolesList],
         };
       });
 
@@ -141,6 +162,23 @@ export default function Users() {
       setHospitals(data || []);
     } catch (error) {
       console.error('Error loading hospitals:', error);
+    }
+  };
+
+  const loadLookupRoles = async () => {
+    try {
+      const hospitalFilter = isGlobalAdmin ? {} : { hospital_id: currentUserHospitalId };
+      const { data, error } = await supabase
+        .from('lookup_team_roles')
+        .select('*')
+        .match(hospitalFilter)
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setLookupRoles(data || []);
+    } catch (error) {
+      console.error('Error loading lookup roles:', error);
     }
   };
 
@@ -183,16 +221,30 @@ export default function Users() {
 
       if (profileError) throw profileError;
 
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          role: formData.role as any,
-          hospital_id: formData.hospitalId || null,
-        }]);
+      // Assign role - check if it's global_admin (system role) or custom role
+      if (formData.role === 'global_admin') {
+        // Use old system for global_admin
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: authData.user.id,
+            role: formData.role as any,
+            hospital_id: null,
+          }]);
 
-      if (roleError) throw roleError;
+        if (roleError) throw roleError;
+      } else {
+        // Use new system for custom roles
+        const { error: roleError } = await supabase
+          .from('user_custom_roles')
+          .insert([{
+            user_id: authData.user.id,
+            role_code: formData.role,
+            hospital_id: formData.hospitalId || null,
+          }]);
+
+        if (roleError) throw roleError;
+      }
 
       toast.success(t('userAdded'));
       setIsDialogOpen(false);
@@ -212,8 +264,15 @@ export default function Users() {
   };
 
   const getRoleLabel = (role: string) => {
-    const roleObj = rolesList.find((r) => r.value === role);
-    return language === 'ar' ? roleObj?.labelAr : roleObj?.labelEn;
+    // Check if it's a system role first
+    const systemRole = rolesList.find((r) => r.value === role);
+    if (systemRole) {
+      return language === 'ar' ? systemRole.labelAr : systemRole.labelEn;
+    }
+    
+    // Otherwise, get from lookup roles
+    const lookupRole = lookupRoles.find((r) => r.code === role);
+    return lookupRole ? (language === 'ar' ? lookupRole.name_ar : lookupRole.name) : role;
   };
 
   if (!canManageUsers) {
@@ -313,9 +372,17 @@ export default function Users() {
                     <SelectValue placeholder={t('selectRole')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {rolesList.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {language === 'ar' ? role.labelAr : role.labelEn}
+                    {/* Show global_admin only for global admins */}
+                    {isGlobalAdmin && (
+                      <SelectItem value="global_admin">
+                        {language === 'ar' ? 'مدير النظام' : 'Global Admin'}
+                      </SelectItem>
+                    )}
+                    
+                    {/* Show custom roles from lookup table */}
+                    {lookupRoles.map((role) => (
+                      <SelectItem key={role.code} value={role.code}>
+                        {language === 'ar' ? role.name_ar : role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

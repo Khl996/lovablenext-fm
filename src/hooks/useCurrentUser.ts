@@ -23,10 +23,19 @@ type UserRole = {
   created_at: string;
 };
 
+type CustomUserRole = {
+  id: string;
+  user_id: string;
+  role_code: string;
+  hospital_id: string | null;
+  created_at: string;
+};
+
 export type CurrentUserInfo = {
   user: User | null;
   profile: Profile | null;
   roles: UserRole[];
+  customRoles: CustomUserRole[];
   primaryRole: UserRole['role'] | null;
   hospitalId: string | null;
   loading: boolean;
@@ -44,6 +53,7 @@ export function useCurrentUser(): CurrentUserInfo {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomUserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -60,6 +70,7 @@ export function useCurrentUser(): CurrentUserInfo {
         setUser(null);
         setProfile(null);
         setRoles([]);
+        setCustomRoles([]);
         setLoading(false);
         return;
       }
@@ -93,7 +104,7 @@ export function useCurrentUser(): CurrentUserInfo {
         setProfile(profileData);
       }
 
-      // Get roles
+      // Get roles (old system - app_role)
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('*')
@@ -101,6 +112,15 @@ export function useCurrentUser(): CurrentUserInfo {
 
       if (rolesError) throw rolesError;
       setRoles(rolesData || []);
+
+      // Get custom roles (new system - role_code)
+      const { data: customRolesData, error: customRolesError } = await supabase
+        .from('user_custom_roles')
+        .select('*')
+        .eq('user_id', authUser.id);
+
+      if (customRolesError) throw customRolesError;
+      setCustomRoles(customRolesData || []);
 
     } catch (err: any) {
       console.error('Error loading user data:', err);
@@ -121,6 +141,7 @@ export function useCurrentUser(): CurrentUserInfo {
         setUser(null);
         setProfile(null);
         setRoles([]);
+        setCustomRoles([]);
       }
     });
 
@@ -129,23 +150,25 @@ export function useCurrentUser(): CurrentUserInfo {
 
   // Determine primary role (global_admin has priority)
   const primaryRole = roles.find(r => r.role === 'global_admin')?.role || roles[0]?.role || null;
-  const hospitalId = profile?.hospital_id || roles[0]?.hospital_id || null;
+  const hospitalId = profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
 
   // Derived permissions
   const isGlobalAdmin = roles.some(r => r.role === 'global_admin');
-  const isHospitalAdmin = roles.some(r => r.role === 'hospital_admin');
-  const isFacilityManager = roles.some(r => r.role === 'facility_manager');
+  const isHospitalAdmin = roles.some(r => r.role === 'hospital_admin') || customRoles.some(r => r.role_code === 'hospital_admin');
+  const isFacilityManager = roles.some(r => r.role === 'facility_manager') || customRoles.some(r => r.role_code === 'facility_manager');
   const canManageUsers = isGlobalAdmin || isHospitalAdmin || isFacilityManager;
   const canManageHospitals = isGlobalAdmin;
 
-  // Use permissions hook
+  // Use permissions hook with both old and new role systems
   const userRoleNames = roles.map(r => r.role);
-  const permissions = usePermissions(user?.id || null, userRoleNames);
+  const customRoleCodes = customRoles.map(r => r.role_code);
+  const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes);
 
   return {
     user,
     profile,
     roles,
+    customRoles,
     primaryRole,
     hospitalId,
     loading,

@@ -18,7 +18,7 @@ export type UserPermissionsInfo = {
 
 type AppRole = Database['public']['Enums']['app_role'];
 
-export function usePermissions(userId: string | null, userRoles: AppRole[] = []): UserPermissionsInfo {
+export function usePermissions(userId: string | null, userRoles: AppRole[] = [], customRoleCodes: string[] = []): UserPermissionsInfo {
   const [allPermissions, setAllPermissions] = useState<PermissionKey[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
@@ -26,7 +26,7 @@ export function usePermissions(userId: string | null, userRoles: AppRole[] = [])
   const [error, setError] = useState<string>();
 
   const loadPermissions = async () => {
-    if (!userId || userRoles.length === 0) {
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -35,7 +35,7 @@ export function usePermissions(userId: string | null, userRoles: AppRole[] = [])
       setLoading(true);
       setError(undefined);
 
-      // Fetch role-based permissions
+      // Fetch role-based permissions (old system - app_role)
       const { data: rolePermsData, error: rolePermsError } = await supabase
         .from('role_permissions')
         .select('*')
@@ -43,6 +43,19 @@ export function usePermissions(userId: string | null, userRoles: AppRole[] = [])
         .eq('allowed', true);
 
       if (rolePermsError) throw rolePermsError;
+
+      // Fetch custom role permissions (new system - role_code)
+      let customRolePermsData: any[] = [];
+      if (customRoleCodes.length > 0) {
+        const { data, error } = await supabase
+          .from('role_permissions')
+          .select('*')
+          .in('role_code', customRoleCodes)
+          .eq('allowed', true);
+
+        if (error) throw error;
+        customRolePermsData = data || [];
+      }
 
       // Fetch user-specific permissions
       const { data: userPermsData, error: userPermsError } = await supabase
@@ -52,11 +65,14 @@ export function usePermissions(userId: string | null, userRoles: AppRole[] = [])
 
       if (userPermsError) throw userPermsError;
 
-      setRolePermissions(rolePermsData || []);
+      setRolePermissions([...(rolePermsData || []), ...customRolePermsData]);
       setUserPermissions(userPermsData || []);
 
       // Compute final permissions list
-      const basePermissions = new Set(rolePermsData?.map((rp) => rp.permission_key) || []);
+      const basePermissions = new Set([
+        ...(rolePermsData?.map((rp) => rp.permission_key) || []),
+        ...(customRolePermsData?.map((rp) => rp.permission_key) || [])
+      ]);
       
       // Apply user-specific overrides
       userPermsData?.forEach((up) => {
@@ -78,7 +94,7 @@ export function usePermissions(userId: string | null, userRoles: AppRole[] = [])
 
   useEffect(() => {
     loadPermissions();
-  }, [userId, JSON.stringify(userRoles)]);
+  }, [userId, JSON.stringify(userRoles), JSON.stringify(customRoleCodes)]);
 
   const hasPermission = (key: PermissionKey, hospitalId?: string | null): boolean => {
     // Check for explicit deny (highest priority)

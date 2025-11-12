@@ -1069,6 +1069,7 @@ export type Database = {
           id: string
           permission_key: string
           role: Database["public"]["Enums"]["app_role"]
+          role_code: string | null
         }
         Insert: {
           allowed?: boolean
@@ -1076,6 +1077,7 @@ export type Database = {
           id?: string
           permission_key: string
           role: Database["public"]["Enums"]["app_role"]
+          role_code?: string | null
         }
         Update: {
           allowed?: boolean
@@ -1083,6 +1085,7 @@ export type Database = {
           id?: string
           permission_key?: string
           role?: Database["public"]["Enums"]["app_role"]
+          role_code?: string | null
         }
         Relationships: [
           {
@@ -1289,6 +1292,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "teams_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_custom_roles: {
+        Row: {
+          created_at: string | null
+          hospital_id: string | null
+          id: string
+          role_code: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          hospital_id?: string | null
+          id?: string
+          role_code: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          hospital_id?: string | null
+          id?: string
+          role_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_custom_roles_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
@@ -1606,7 +1641,19 @@ export type Database = {
     }
     Functions: {
       get_user_hospital: { Args: { _user_id: string }; Returns: string }
+      has_custom_role: {
+        Args: { _role_code: string; _user_id: string }
+        Returns: boolean
+      }
       has_permission: {
+        Args: {
+          _hospital_id?: string
+          _permission_key: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_permission_v2: {
         Args: {
           _hospital_id?: string
           _permission_key: string

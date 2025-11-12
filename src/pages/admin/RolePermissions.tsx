@@ -12,21 +12,12 @@ import type { Database } from '@/integrations/supabase/types';
 type Permission = Database['public']['Tables']['permissions']['Row'];
 type RolePermission = Database['public']['Tables']['role_permissions']['Row'];
 
-const roles = [
-  { value: 'global_admin', labelEn: 'Global Admin', labelAr: 'مدير النظام' },
-  { value: 'hospital_admin', labelEn: 'Hospital Admin', labelAr: 'مدير المستشفى' },
-  { value: 'facility_manager', labelEn: 'Facility Manager', labelAr: 'مدير المرافق' },
-  { value: 'maintenance_manager', labelEn: 'Maintenance Manager', labelAr: 'مدير الصيانة' },
-  { value: 'supervisor', labelEn: 'Supervisor', labelAr: 'مشرف' },
-  { value: 'technician', labelEn: 'Technician', labelAr: 'فني' },
-  { value: 'reporter', labelEn: 'Reporter', labelAr: 'مبلغ' },
-];
-
 export default function RolePermissions() {
   const { language, t } = useLanguage();
-  const { isGlobalAdmin } = useCurrentUser();
+  const { isGlobalAdmin, hospitalId } = useCurrentUser();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
+  const [lookupRoles, setLookupRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [permissionMatrix, setPermissionMatrix] = useState<Record<string, Record<string, boolean>>>({});
@@ -38,6 +29,26 @@ export default function RolePermissions() {
   const loadData = async () => {
     try {
       setLoading(true);
+
+      // Load lookup roles first
+      const hospitalFilter = isGlobalAdmin ? {} : { hospital_id: hospitalId };
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('lookup_team_roles')
+        .select('*')
+        .match(hospitalFilter)
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (rolesError) throw rolesError;
+
+      const roles = [
+        // Keep global_admin as system role
+        { code: 'global_admin', name: 'Global Admin', name_ar: 'مدير النظام' },
+        // Add custom roles from lookup table
+        ...(rolesData || [])
+      ];
+
+      setLookupRoles(roles);
 
       const [permsResult, rolePermsResult] = await Promise.all([
         supabase.from('permissions').select('*').order('category').order('name'),
@@ -53,12 +64,12 @@ export default function RolePermissions() {
       // Build matrix
       const matrix: Record<string, Record<string, boolean>> = {};
       roles.forEach((role) => {
-        matrix[role.value] = {};
+        matrix[role.code] = {};
         (permsResult.data || []).forEach((perm) => {
           const hasPermission = (rolePermsResult.data || []).some(
-            (rp) => rp.role === role.value && rp.permission_key === perm.key && rp.allowed
+            (rp) => (rp.role_code === role.code || rp.role === role.code) && rp.permission_key === perm.key && rp.allowed
           );
-          matrix[role.value][perm.key] = hasPermission;
+          matrix[role.code][perm.key] = hasPermission;
         });
       });
       setPermissionMatrix(matrix);
@@ -88,16 +99,23 @@ export default function RolePermissions() {
       const { error: deleteError } = await supabase.from('role_permissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (deleteError) throw deleteError;
 
-      // Insert new permissions
-      const newPermissions: Array<{ role: string; permission_key: string; allowed: boolean }> = [];
-      Object.entries(permissionMatrix).forEach(([role, perms]) => {
+      // Insert new permissions with role_code
+      const newPermissions: Array<{ role_code: string; permission_key: string; allowed: boolean; role?: string }> = [];
+      Object.entries(permissionMatrix).forEach(([roleCode, perms]) => {
         Object.entries(perms).forEach(([permKey, allowed]) => {
           if (allowed) {
-            newPermissions.push({
-              role,
+            const perm: any = {
+              role_code: roleCode,
               permission_key: permKey,
               allowed: true,
-            });
+            };
+            
+            // For global_admin, also set the role field for backward compatibility
+            if (roleCode === 'global_admin') {
+              perm.role = 'global_admin';
+            }
+            
+            newPermissions.push(perm);
           }
         });
       });
@@ -180,9 +198,9 @@ export default function RolePermissions() {
                   <th className="text-start p-3 font-semibold min-w-[200px]">
                     {language === 'ar' ? 'الصلاحية' : 'Permission'}
                   </th>
-                  {roles.map((role) => (
-                    <th key={role.value} className="text-center p-3 font-semibold min-w-[120px]">
-                      {language === 'ar' ? role.labelAr : role.labelEn}
+                  {lookupRoles.map((role) => (
+                    <th key={role.code} className="text-center p-3 font-semibold min-w-[120px]">
+                      {language === 'ar' ? role.name_ar : role.name}
                     </th>
                   ))}
                 </tr>
@@ -191,7 +209,7 @@ export default function RolePermissions() {
                 {Object.entries(groupedPermissions).map(([category, perms]) => (
                   <>
                     <tr key={category} className="bg-muted/50">
-                      <td colSpan={roles.length + 1} className="p-3 font-semibold">
+                      <td colSpan={lookupRoles.length + 1} className="p-3 font-semibold">
                         {category.toUpperCase()}
                       </td>
                     </tr>
@@ -205,11 +223,11 @@ export default function RolePermissions() {
                             )}
                           </div>
                         </td>
-                        {roles.map((role) => (
-                          <td key={`${role.value}-${perm.key}`} className="p-3 text-center">
+                        {lookupRoles.map((role) => (
+                          <td key={`${role.code}-${perm.key}`} className="p-3 text-center">
                             <Checkbox
-                              checked={permissionMatrix[role.value]?.[perm.key] || false}
-                              onCheckedChange={() => togglePermission(role.value, perm.key)}
+                              checked={permissionMatrix[role.code]?.[perm.key] || false}
+                              onCheckedChange={() => togglePermission(role.code, perm.key)}
                             />
                           </td>
                         ))}
