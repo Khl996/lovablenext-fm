@@ -1406,7 +1406,7 @@ export type Database = {
           original_issue_type: string | null
           parts_used: Json | null
           photos: string[] | null
-          priority: Database["public"]["Enums"]["work_order_priority"]
+          priority: string
           redirect_reason: string | null
           redirected_by: string | null
           redirected_to: string | null
@@ -1465,7 +1465,7 @@ export type Database = {
           original_issue_type?: string | null
           parts_used?: Json | null
           photos?: string[] | null
-          priority?: Database["public"]["Enums"]["work_order_priority"]
+          priority?: string
           redirect_reason?: string | null
           redirected_by?: string | null
           redirected_to?: string | null
@@ -1524,7 +1524,7 @@ export type Database = {
           original_issue_type?: string | null
           parts_used?: Json | null
           photos?: string[] | null
-          priority?: Database["public"]["Enums"]["work_order_priority"]
+          priority?: string
           redirect_reason?: string | null
           redirected_by?: string | null
           redirected_to?: string | null
