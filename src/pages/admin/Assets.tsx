@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -100,6 +101,8 @@ export default function Assets() {
 
   const canManage = permissions.hasPermission('manage_assets');
   const canDelete = permissions.hasPermission('delete_assets') || canManage;
+  
+  const { lookups, loading: lookupsLoading } = useLookupTables(['asset_statuses', 'asset_categories']);
 
   useEffect(() => {
     if (hospitalId) {
@@ -275,15 +278,19 @@ export default function Assets() {
   });
 
   const getStatusBadge = (status: string) => {
+    const statusItem = lookups.asset_statuses?.find(s => s.code === status);
+    if (!statusItem) return <Badge>{status}</Badge>;
+    
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      active: 'default',
+      operational: 'default',
       maintenance: 'secondary',
       retired: 'outline',
-      inactive: 'destructive',
+      out_of_service: 'destructive',
     };
+    
     return (
-      <Badge variant={variants[status] || 'default'}>
-        {language === 'ar' ? getStatusArabic(status) : status}
+      <Badge variant={variants[statusItem.category] || 'default'}>
+        {getLookupName(statusItem, language)}
       </Badge>
     );
   };
@@ -294,31 +301,20 @@ export default function Assets() {
       critical: 'default',
       non_essential: 'secondary',
     };
+    
+    const criticalityMap: Record<string, string> = {
+      essential: language === 'ar' ? 'أساسي' : 'Essential',
+      critical: language === 'ar' ? 'حرج' : 'Critical',
+      non_essential: language === 'ar' ? 'غير أساسي' : 'Non-Essential',
+    };
+    
     return (
       <Badge variant={variants[criticality] || 'default'}>
-        {language === 'ar' ? getCriticalityArabic(criticality) : criticality}
+        {criticalityMap[criticality] || criticality}
       </Badge>
     );
   };
 
-  const getStatusArabic = (status: string) => {
-    const statusMap: Record<string, string> = {
-      active: 'نشط',
-      maintenance: 'صيانة',
-      retired: 'متقاعد',
-      inactive: 'غير نشط',
-    };
-    return statusMap[status] || status;
-  };
-
-  const getCriticalityArabic = (criticality: string) => {
-    const criticalityMap: Record<string, string> = {
-      essential: 'أساسي',
-      critical: 'حرج',
-      non_essential: 'غير أساسي',
-    };
-    return criticalityMap[criticality] || criticality;
-  };
 
   if (!permissions.hasPermission('view_assets')) {
     return (
@@ -369,10 +365,11 @@ export default function Assets() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
-            <SelectItem value="active">{language === 'ar' ? 'نشط' : 'Active'}</SelectItem>
-            <SelectItem value="maintenance">{language === 'ar' ? 'صيانة' : 'Maintenance'}</SelectItem>
-            <SelectItem value="inactive">{language === 'ar' ? 'غير نشط' : 'Inactive'}</SelectItem>
-            <SelectItem value="retired">{language === 'ar' ? 'متقاعد' : 'Retired'}</SelectItem>
+            {lookups.asset_statuses?.map((status) => (
+              <SelectItem key={status.code} value={status.code}>
+                {getLookupName(status, language)}
+              </SelectItem>
+            )) || []}
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -381,12 +378,11 @@ export default function Assets() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{language === 'ar' ? 'جميع الفئات' : 'All Categories'}</SelectItem>
-            <SelectItem value="medical">{language === 'ar' ? 'طبي' : 'Medical'}</SelectItem>
-            <SelectItem value="electrical">{language === 'ar' ? 'كهربائي' : 'Electrical'}</SelectItem>
-            <SelectItem value="mechanical">{language === 'ar' ? 'ميكانيكي' : 'Mechanical'}</SelectItem>
-            <SelectItem value="plumbing">{language === 'ar' ? 'سباكة' : 'Plumbing'}</SelectItem>
-            <SelectItem value="safety">{language === 'ar' ? 'السلامة' : 'Safety'}</SelectItem>
-            <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
+            {lookups.asset_categories?.map((category) => (
+              <SelectItem key={category.code} value={category.code}>
+                {getLookupName(category, language)}
+              </SelectItem>
+            )) || []}
           </SelectContent>
         </Select>
         <Select value={buildingFilter} onValueChange={setBuildingFilter}>

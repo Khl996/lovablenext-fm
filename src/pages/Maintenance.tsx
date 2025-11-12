@@ -166,17 +166,7 @@ export default function Maintenance() {
     );
   }
 
-  if (!permissions.hasPermission('view_maintenance')) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">{t('accessDenied')}</h3>
-          <p className="text-muted-foreground">{t('noPermission')}</p>
-        </div>
-      </div>
-    );
-  }
+  // Maintenance is accessible to all authenticated users
 
   return (
     <div className="space-y-6 p-6">
