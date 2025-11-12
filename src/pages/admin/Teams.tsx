@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, Search, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 
 type Team = {
   id: string;
@@ -50,6 +51,7 @@ export default function Teams() {
   const { t, language } = useLanguage();
   const { hospitalId, permissions } = useCurrentUser();
   const { toast } = useToast();
+  const { lookups, loading: lookupsLoading } = useLookupTables(['team_roles']);
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -399,13 +401,18 @@ export default function Teams() {
     return language === 'ar' ? spec.name_ar : spec.name;
   };
 
+  const getRoleName = (roleCode: string) => {
+    const role = lookups.team_roles?.find(r => r.code === roleCode);
+    return role ? getLookupName(role, language) : roleCode;
+  };
+
   const filteredTeams = teams.filter(team =>
     team.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     team.name_ar.includes(searchQuery)
   );
 
-  if (loading) {
+  if (loading || lookupsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -627,11 +634,7 @@ export default function Teams() {
                           <p className="text-sm text-muted-foreground">{member.profiles?.email}</p>
                           <div className="mt-2">
                             <Badge variant="outline" className="mr-2">
-                              {member.role === 'technician' 
-                                ? (language === 'ar' ? 'فني' : 'Technician')
-                                : member.role === 'supervisor'
-                                ? (language === 'ar' ? 'مشرف' : 'Supervisor')
-                                : member.role}
+                              {getRoleName(member.role)}
                             </Badge>
                           </div>
                           {member.specialization && member.specialization.length > 0 && (
@@ -712,9 +715,11 @@ export default function Teams() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="technician">{language === 'ar' ? 'فني' : 'Technician'}</SelectItem>
-                  <SelectItem value="supervisor">{language === 'ar' ? 'مشرف' : 'Supervisor'}</SelectItem>
-                  <SelectItem value="lead">{language === 'ar' ? 'قائد الفريق' : 'Team Lead'}</SelectItem>
+                  {lookups.team_roles?.filter(role => role.is_active).map((role) => (
+                    <SelectItem key={role.code} value={role.code}>
+                      {getLookupName(role, language)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
