@@ -23,7 +23,6 @@ import Maintenance from "./pages/Maintenance";
 import WorkOrderDetails from "./pages/WorkOrderDetails";
 import Hospitals from "./pages/admin/Hospitals";
 import Companies from "./pages/admin/Companies";
-import Hospital from "./pages/admin/Hospital";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";

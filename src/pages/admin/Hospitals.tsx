@@ -16,6 +16,7 @@ interface HospitalData {
   id: string;
   name: string;
   name_ar: string;
+  logo_url: string | null;
   type: string | null;
   address: string | null;
   phone: string | null;
@@ -37,9 +38,12 @@ export default function Hospitals() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState<HospitalData | null>(null);
   const [suspensionReason, setSuspensionReason] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
+    logo_url: '',
     type: '',
     address: '',
     phone: '',
@@ -57,7 +61,7 @@ export default function Hospitals() {
     try {
       const { data, error } = await supabase
         .from('hospitals')
-        .select('*')
+        .select('id, name, name_ar, logo_url, type, address, phone, email, status, suspended_at, suspended_by, suspension_reason')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,6 +74,33 @@ export default function Hospitals() {
     }
   };
 
+  const uploadLogo = async (file: File, hospitalId: string): Promise<string | null> => {
+    try {
+      setUploadingLogo(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${hospitalId}_${Date.now()}.${fileExt}`;
+      const filePath = `${hospitalId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('hospital-logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('hospital-logos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error(language === 'ar' ? 'فشل رفع الشعار' : 'Failed to upload logo');
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -79,30 +110,65 @@ export default function Hospitals() {
     }
 
     try {
+      let logoUrl = formData.logo_url;
+
       if (editingHospital) {
+        // Upload logo if a new file is selected
+        if (logoFile) {
+          const uploadedUrl = await uploadLogo(logoFile, editingHospital.id);
+          if (uploadedUrl) {
+            logoUrl = uploadedUrl;
+            // Delete old logo if exists
+            if (formData.logo_url) {
+              const oldPath = formData.logo_url.split('/').slice(-2).join('/');
+              await supabase.storage.from('hospital-logos').remove([oldPath]);
+            }
+          } else {
+            return;
+          }
+        }
+
         // Update existing hospital
         const { error } = await supabase
           .from('hospitals')
-          .update(formData)
+          .update({ ...formData, logo_url: logoUrl })
           .eq('id', editingHospital.id);
 
         if (error) throw error;
         toast.success(t('hospitalUpdated'));
       } else {
-        // Insert new hospital
-        const { error } = await supabase
+        // Insert new hospital first
+        const { data: newHospital, error: insertError } = await supabase
           .from('hospitals')
-          .insert([formData]);
+          .insert([formData])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+
+        // Upload logo if a file is selected
+        if (logoFile && newHospital) {
+          const uploadedUrl = await uploadLogo(logoFile, newHospital.id);
+          if (uploadedUrl) {
+            const { error: updateError } = await supabase
+              .from('hospitals')
+              .update({ logo_url: uploadedUrl })
+              .eq('id', newHospital.id);
+
+            if (updateError) throw updateError;
+          }
+        }
+
         toast.success(t('hospitalAdded'));
       }
 
       setIsDialogOpen(false);
       setEditingHospital(null);
+      setLogoFile(null);
       setFormData({
         name: '',
         name_ar: '',
+        logo_url: '',
         type: '',
         address: '',
         phone: '',
@@ -120,11 +186,13 @@ export default function Hospitals() {
     setFormData({
       name: hospital.name,
       name_ar: hospital.name_ar,
+      logo_url: hospital.logo_url || '',
       type: hospital.type || '',
       address: hospital.address || '',
       phone: hospital.phone || '',
       email: hospital.email || '',
     });
+    setLogoFile(null);
     setIsDialogOpen(true);
   };
 
@@ -132,9 +200,11 @@ export default function Hospitals() {
     setIsDialogOpen(open);
     if (!open) {
       setEditingHospital(null);
+      setLogoFile(null);
       setFormData({
         name: '',
         name_ar: '',
+        logo_url: '',
         type: '',
         address: '',
         phone: '',
@@ -257,6 +327,43 @@ export default function Hospitals() {
               </div>
 
               <div className="space-y-2">
+                <Label>{language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}</Label>
+                {formData.logo_url && (
+                  <div className="flex items-center justify-center p-4 border-2 border-dashed rounded-lg bg-muted">
+                    <img 
+                      src={formData.logo_url} 
+                      alt="Hospital logo" 
+                      className="max-h-24 object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setLogoFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, logo_url: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  disabled={uploadingLogo}
+                />
+                {uploadingLogo && (
+                  <div className="text-sm text-muted-foreground">
+                    {language === 'ar' ? 'جاري الرفع...' : 'Uploading...'}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="type">{t('hospitalType')}</Label>
                 <Input
                   id="type"
@@ -298,7 +405,9 @@ export default function Hospitals() {
                 <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>
                   {t('cancel')}
                 </Button>
-                <Button type="submit">{editingHospital ? t('save') : t('submit')}</Button>
+                <Button type="submit" disabled={uploadingLogo}>
+                  {editingHospital ? t('save') : t('submit')}
+                </Button>
               </div>
             </form>
           </DialogContent>

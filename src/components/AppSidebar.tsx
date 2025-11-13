@@ -47,7 +47,6 @@ const mainItems = [
 
 const adminItems = [
   { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital, permission: 'manage_hospitals' },
-  { title: 'hospital', titleAr: 'إدارة المستشفى', url: '/admin/hospital', icon: Building2, permission: 'manage_hospitals' },
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2, permission: 'manage_hospitals' },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
   { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield, permission: 'manage_users' },
