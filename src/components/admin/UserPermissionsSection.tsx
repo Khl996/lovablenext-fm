@@ -5,12 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, X, Shield } from 'lucide-react';
+import { Plus, X, Shield, CheckCircle2, XCircle, Search } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Permission = Database['public']['Tables']['permissions']['Row'];
 type UserPermission = Database['public']['Tables']['user_permissions']['Row'];
+
+interface EffectivePermission extends Permission {
+  source: 'role' | 'override';
+  effect: 'grant' | 'deny';
+  roleNames?: string[];
+  overrideId?: string;
+  hospitalId?: string | null;
+}
 
 interface UserPermissionsSectionProps {
   userId: string;
@@ -23,8 +33,11 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
   const { language, t } = useLanguage();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
+  const [effectivePermissions, setEffectivePermissions] = useState<EffectivePermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [formData, setFormData] = useState({
     permissionKey: '',
     effect: 'grant' as 'grant' | 'deny',
@@ -39,16 +52,112 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
     try {
       setLoading(true);
 
-      const [permsResult, userPermsResult] = await Promise.all([
-        supabase.from('permissions').select('*').order('category').order('name'),
-        supabase.from('user_permissions').select('*').eq('user_id', userId),
+      // Load all permissions
+      const permsResult = await supabase.from('permissions').select('*').order('category').order('name');
+      if (permsResult.error) throw permsResult.error;
+      const allPermissions = permsResult.data || [];
+      setPermissions(allPermissions);
+
+      // Load user's explicit overrides
+      const userPermsResult = await supabase.from('user_permissions').select('*').eq('user_id', userId);
+      if (userPermsResult.error) throw userPermsResult.error;
+      const userOverrides = userPermsResult.data || [];
+      setUserPermissions(userOverrides);
+
+      // Load user's roles and their permissions
+      const [oldRolesResult, customRolesResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select(`
+            role,
+            role_permissions!inner(permission_key, allowed)
+          `)
+          .eq('user_id', userId),
+        supabase
+          .from('user_custom_roles')
+          .select(`
+            role_code,
+            system_roles!inner(name, name_ar),
+            role_permissions!role_permissions_role_code_fkey!inner(permission_key, allowed)
+          `)
+          .eq('user_id', userId),
       ]);
 
-      if (permsResult.error) throw permsResult.error;
-      if (userPermsResult.error) throw userPermsResult.error;
+      // Build effective permissions map
+      const effectiveMap = new Map<string, EffectivePermission>();
 
-      setPermissions(permsResult.data || []);
-      setUserPermissions(userPermsResult.data || []);
+      // Process old system roles permissions
+      if (oldRolesResult.data) {
+        oldRolesResult.data.forEach((ur: any) => {
+          const rolePerms = ur.role_permissions || [];
+          rolePerms.forEach((rp: any) => {
+            if (rp.allowed) {
+              const key = rp.permission_key;
+              if (!effectiveMap.has(key)) {
+                const perm = allPermissions.find((p) => p.key === key);
+                if (perm) {
+                  effectiveMap.set(key, {
+                    ...perm,
+                    source: 'role',
+                    effect: 'grant',
+                    roleNames: [ur.role],
+                  });
+                }
+              } else {
+                const existing = effectiveMap.get(key)!;
+                if (existing.roleNames && !existing.roleNames.includes(ur.role)) {
+                  existing.roleNames.push(ur.role);
+                }
+              }
+            }
+          });
+        });
+      }
+
+      // Process custom roles permissions
+      if (customRolesResult.data) {
+        customRolesResult.data.forEach((cr: any) => {
+          const rolePerms = cr.role_permissions || [];
+          const roleName = language === 'ar' ? cr.system_roles?.name_ar : cr.system_roles?.name;
+          rolePerms.forEach((rp: any) => {
+            if (rp.allowed) {
+              const key = rp.permission_key;
+              if (!effectiveMap.has(key)) {
+                const perm = allPermissions.find((p) => p.key === key);
+                if (perm) {
+                  effectiveMap.set(key, {
+                    ...perm,
+                    source: 'role',
+                    effect: 'grant',
+                    roleNames: [roleName || cr.role_code],
+                  });
+                }
+              } else {
+                const existing = effectiveMap.get(key)!;
+                if (existing.roleNames && !existing.roleNames.includes(roleName || cr.role_code)) {
+                  existing.roleNames.push(roleName || cr.role_code);
+                }
+              }
+            }
+          });
+        });
+      }
+
+      // Apply user overrides (highest priority)
+      userOverrides.forEach((up) => {
+        const perm = allPermissions.find((p) => p.key === up.permission_key);
+        if (perm) {
+          effectiveMap.set(up.permission_key, {
+            ...perm,
+            source: 'override',
+            effect: up.effect as 'grant' | 'deny',
+            overrideId: up.id,
+            hospitalId: up.hospital_id,
+          });
+        }
+      });
+
+      setEffectivePermissions(Array.from(effectiveMap.values()));
     } catch (error: any) {
       console.error('Error loading permissions:', error);
       toast.error(t('errorOccurred'));
@@ -109,6 +218,24 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
     const hospital = hospitals.find((h) => h.id === hospitalId);
     return hospital ? (language === 'ar' ? hospital.name_ar : hospital.name) : hospitalId;
   };
+
+  const categories = Array.from(new Set(permissions.map((p) => p.category)));
+
+  const filteredPermissions = effectivePermissions.filter((perm) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      perm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      perm.name_ar.includes(searchQuery) ||
+      perm.key.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory = selectedCategory === 'all' || perm.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const grantedPermissions = filteredPermissions.filter((p) => p.effect === 'grant');
+  const deniedPermissions = filteredPermissions.filter((p) => p.effect === 'deny');
+  const overridePermissions = filteredPermissions.filter((p) => p.source === 'override');
 
   if (loading) {
     return (
