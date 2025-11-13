@@ -17,6 +17,7 @@ type WorkOrder = {
   id: string;
   code: string;
   description: string;
+  issue_type: string;
   status: string;
   priority: string;
   reported_at: string;
@@ -42,15 +43,24 @@ export default function WorkOrders() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const t = {
-    title: language === 'ar' ? 'أوامر العمل' : 'Work Orders',
-    description: language === 'ar' ? 'إدارة أوامر الصيانة والإصلاح' : 'Manage maintenance and repair work orders',
-    addNew: language === 'ar' ? 'إضافة أمر عمل' : 'Add Work Order',
-    search: language === 'ar' ? 'بحث...' : 'Search...',
+    title: language === 'ar' ? 'بلاغات الصيانة' : 'Maintenance Reports',
+    description: language === 'ar' ? 'إدارة بلاغات الصيانة والإصلاح' : 'Manage maintenance and repair reports',
+    addNew: language === 'ar' ? 'بلاغ صيانة جديد' : 'New Maintenance Report',
+    search: language === 'ar' ? 'بحث برقم البلاغ أو الوصف...' : 'Search by code or description...',
     filter: language === 'ar' ? 'فلترة' : 'Filter',
     all: language === 'ar' ? 'الكل' : 'All',
+    status: language === 'ar' ? 'الحالة' : 'Status',
+    priority: language === 'ar' ? 'الأولوية' : 'Priority',
+    results: language === 'ar' ? 'نتيجة' : 'results',
+    clearFilters: language === 'ar' ? 'مسح الفلاتر' : 'Clear Filters',
     noPermission: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
     loading: language === 'ar' ? 'جاري التحميل...' : 'Loading...',
-    noWorkOrders: language === 'ar' ? 'لا توجد أوامر عمل' : 'No work orders found',
+    noWorkOrders: language === 'ar' ? 'لا توجد بلاغات صيانة' : 'No maintenance reports found',
+    noResults: language === 'ar' ? 'لا توجد نتائج مطابقة للبحث' : 'No results match your search',
+    code: language === 'ar' ? 'رقم البلاغ' : 'Code',
+    issueType: language === 'ar' ? 'نوع البلاغ' : 'Issue Type',
+    location: language === 'ar' ? 'الموقع' : 'Location',
+    reportedDate: language === 'ar' ? 'تاريخ البلاغ' : 'Reported Date',
   };
 
   useEffect(() => {
@@ -113,12 +123,24 @@ export default function WorkOrders() {
   };
 
   const filteredWorkOrders = workOrders.filter(wo => {
-    const matchesSearch = wo.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         wo.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = searchQuery === '' || 
+      wo.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      wo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      wo.issue_type?.toLowerCase().includes(searchQuery.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || wo.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || wo.priority === priorityFilter;
+    
     return matchesSearch && matchesStatus && matchesPriority;
   });
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery !== '' || statusFilter !== 'all' || priorityFilter !== 'all';
 
   if (userLoading || loading || lookupsLoading) {
     return (

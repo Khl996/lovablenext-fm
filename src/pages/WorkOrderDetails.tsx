@@ -408,129 +408,374 @@ export default function WorkOrderDetails() {
       location.room ? (language === 'ar' ? location.room.name_ar : location.room.name) : '',
     ].filter(Boolean).join(' - ');
 
+    // Get status and priority names
+    const statusLookup = lookups.work_order_statuses?.find(s => s.code === workOrder.status);
+    const statusName = statusLookup ? (language === 'ar' ? statusLookup.name_ar : statusLookup.name) : workOrder.status;
+    
+    const priorityLookup = lookups.priorities?.find(p => p.code === workOrder.priority);
+    const priorityName = priorityLookup ? (language === 'ar' ? priorityLookup.name_ar : priorityLookup.name) : workOrder.priority;
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html dir="${language === 'ar' ? 'rtl' : 'ltr'}">
       <head>
         <meta charset="UTF-8">
-        <title>${workOrder.code} - ${language === 'ar' ? 'تفاصيل أمر العمل' : 'Work Order Details'}</title>
+        <title>${workOrder.code} - ${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-          .header { text-align: center; border-bottom: 3px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .section { margin: 20px 0; page-break-inside: avoid; }
-          .label { font-weight: bold; color: #555; }
-          .value { margin: 5px 0 15px 0; }
-          .workflow { margin: 20px 0; }
-          .workflow-item { padding: 15px; border-left: 3px solid #ddd; margin: 10px 0; }
-          .workflow-item.completed { border-color: #22c55e; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: ${language === 'ar' ? 'right' : 'left'}; }
-          th { background-color: #f5f5f5; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 40px; 
+            line-height: 1.8;
+            color: #333;
+          }
+          
+          /* Header */
+          .pdf-header { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #2563eb;
+            padding-bottom: 20px; 
+            margin-bottom: 40px; 
+          }
+          .pdf-header .logo-section h1 {
+            font-size: 28px;
+            color: #2563eb;
+            margin-bottom: 5px;
+          }
+          .pdf-header .logo-section p {
+            font-size: 14px;
+            color: #666;
+          }
+          .pdf-header .report-info {
+            text-align: ${language === 'ar' ? 'left' : 'right'};
+          }
+          .pdf-header .report-info .code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+          }
+          .pdf-header .report-info .date {
+            font-size: 12px;
+            color: #666;
+          }
+
+          /* Status Bar */
+          .status-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+          }
+          .status-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+          }
+          .status-item .label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+          }
+          .status-item .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e293b;
+          }
+          
+          /* Sections */
+          .section { 
+            margin: 30px 0; 
+            page-break-inside: avoid;
+            background: white;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+          }
+          .section-title { 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+          }
+          
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+          }
+          .info-item {
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+          }
+          .label { 
+            font-weight: 600; 
+            color: #64748b; 
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          }
+          .value { 
+            color: #1e293b;
+            font-size: 15px;
+            font-weight: 500;
+          }
+          
+          /* Workflow */
+          .workflow-timeline { 
+            margin: 20px 0;
+            position: relative;
+            padding-${language === 'ar' ? 'right' : 'left'}: 30px;
+          }
+          .workflow-timeline::before {
+            content: '';
+            position: absolute;
+            ${language === 'ar' ? 'right' : 'left'}: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+          }
+          .workflow-item { 
+            padding: 15px 20px;
+            margin: 15px 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            position: relative;
+          }
+          .workflow-item::before {
+            content: '';
+            position: absolute;
+            ${language === 'ar' ? 'right' : 'left'}: -25px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #cbd5e1;
+          }
+          .workflow-item.completed::before { 
+            background: #22c55e;
+            border-color: #22c55e;
+          }
+          .workflow-item .step-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+          }
+          .workflow-item .step-detail {
+            font-size: 13px;
+            color: #64748b;
+            margin: 4px 0;
+          }
+          
+          /* Table */
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            background: white;
+          }
+          th, td { 
+            border: 1px solid #e2e8f0; 
+            padding: 12px; 
+            text-align: ${language === 'ar' ? 'right' : 'left'};
+          }
+          th { 
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+            text-transform: uppercase;
+          }
+          td {
+            color: #1e293b;
+            font-size: 14px;
+          }
+          
+          /* Footer */
+          .pdf-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+          }
+          
           @media print {
             body { padding: 20px; }
             .no-print { display: none; }
+            .section { page-break-inside: avoid; }
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>${language === 'ar' ? 'تفاصيل أمر العمل' : 'Work Order Details'}</h1>
-          <h2>${workOrder.code}</h2>
+        <!-- Custom Header -->
+        <div class="pdf-header">
+          <div class="logo-section">
+            <h1>${language === 'ar' ? 'نظام إدارة الصيانة' : 'Maintenance Management System'}</h1>
+            <p>${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</p>
+          </div>
+          <div class="report-info">
+            <div class="code">${workOrder.code}</div>
+            <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+          </div>
         </div>
 
+        <!-- Status Summary Bar -->
+        <div class="status-bar">
+          <div class="status-item">
+            <div class="label">${language === 'ar' ? 'الحالة' : 'Status'}</div>
+            <div class="value">${statusName}</div>
+          </div>
+          <div class="status-item">
+            <div class="label">${language === 'ar' ? 'الأولوية' : 'Priority'}</div>
+            <div class="value">${priorityName}</div>
+          </div>
+          <div class="status-item">
+            <div class="label">${language === 'ar' ? 'تاريخ البلاغ' : 'Reported Date'}</div>
+            <div class="value">${format(new Date(workOrder.reported_at), 'dd/MM/yyyy')}</div>
+          </div>
+        </div>
+
+        <!-- Basic Information -->
         <div class="section">
-          <div class="label">${language === 'ar' ? 'نوع البلاغ:' : 'Issue Type:'}</div>
-          <div class="value">${workOrder.issue_type}</div>
-
-          <div class="label">${language === 'ar' ? 'الحالة:' : 'Status:'}</div>
-          <div class="value">${workOrder.status}</div>
-
-          <div class="label">${language === 'ar' ? 'الأولوية:' : 'Priority:'}</div>
-          <div class="value">${workOrder.priority}</div>
-
-          <div class="label">${language === 'ar' ? 'تاريخ البلاغ:' : 'Reported Date:'}</div>
-          <div class="value">${format(new Date(workOrder.reported_at), 'dd/MM/yyyy HH:mm')}</div>
-
-          ${reporterName ? `
-            <div class="label">${language === 'ar' ? 'المبلغ:' : 'Reporter:'}</div>
-            <div class="value">${reporterName}</div>
-          ` : ''}
-
-          ${assignedTechnicianName ? `
-            <div class="label">${language === 'ar' ? 'الفني المعين:' : 'Assigned Technician:'}</div>
-            <div class="value">${assignedTechnicianName}</div>
-          ` : ''}
+          <h3 class="section-title">${language === 'ar' ? 'معلومات البلاغ' : 'Report Information'}</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">${language === 'ar' ? 'نوع البلاغ' : 'Issue Type'}</div>
+              <div class="value">${workOrder.issue_type}</div>
+            </div>
+            ${reporterName ? `
+            <div class="info-item">
+              <div class="label">${language === 'ar' ? 'المبلغ' : 'Reporter'}</div>
+              <div class="value">${reporterName}</div>
+            </div>
+            ` : ''}
+            ${assignedTechnicianName ? `
+            <div class="info-item">
+              <div class="label">${language === 'ar' ? 'الفني المعين' : 'Assigned Technician'}</div>
+              <div class="value">${assignedTechnicianName}</div>
+            </div>
+            ` : ''}
+            ${supervisorName ? `
+            <div class="info-item">
+              <div class="label">${language === 'ar' ? 'المشرف' : 'Supervisor'}</div>
+              <div class="value">${supervisorName}</div>
+            </div>
+            ` : ''}
+          </div>
+          <div style="margin-top: 15px;">
+            <div class="label">${language === 'ar' ? 'الوصف' : 'Description'}</div>
+            <div class="value" style="margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 6px;">
+              ${workOrder.description}
+            </div>
+          </div>
         </div>
 
+        <!-- Asset Information -->
         ${asset ? `
           <div class="section">
-            <h3>${language === 'ar' ? 'معلومات الأصل' : 'Asset Information'}</h3>
-            <div class="label">${language === 'ar' ? 'اسم الأصل:' : 'Asset Name:'}</div>
-            <div class="value">${language === 'ar' ? asset.name_ar : asset.name}</div>
-            <div class="label">${language === 'ar' ? 'الرقم التسلسلي:' : 'Serial Number:'}</div>
-            <div class="value">${asset.serial_number || '-'}</div>
-            <div class="label">${language === 'ar' ? 'الموديل:' : 'Model:'}</div>
-            <div class="value">${asset.model || '-'}</div>
+            <h3 class="section-title">${language === 'ar' ? 'معلومات الأصل' : 'Asset Information'}</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="label">${language === 'ar' ? 'اسم الأصل' : 'Asset Name'}</div>
+                <div class="value">${language === 'ar' ? asset.name_ar : asset.name}</div>
+              </div>
+              ${asset.code ? `
+              <div class="info-item">
+                <div class="label">${language === 'ar' ? 'رقم الأصل' : 'Asset Code'}</div>
+                <div class="value">${asset.code}</div>
+              </div>
+              ` : ''}
+              ${asset.serial_number ? `
+              <div class="info-item">
+                <div class="label">${language === 'ar' ? 'الرقم التسلسلي' : 'Serial Number'}</div>
+                <div class="value">${asset.serial_number}</div>
+              </div>
+              ` : ''}
+              ${asset.model ? `
+              <div class="info-item">
+                <div class="label">${language === 'ar' ? 'الموديل' : 'Model'}</div>
+                <div class="value">${asset.model}</div>
+              </div>
+              ` : ''}
+            </div>
           </div>
         ` : ''}
 
+        <!-- Location -->
         ${locationStr ? `
           <div class="section">
-            <h3>${language === 'ar' ? 'الموقع' : 'Location'}</h3>
-            <div class="value">${locationStr}</div>
+            <h3 class="section-title">${language === 'ar' ? 'الموقع' : 'Location'}</h3>
+            <div class="info-item">
+              <div class="value">${locationStr}</div>
+            </div>
           </div>
         ` : ''}
 
+        <!-- Workflow Timeline -->
         <div class="section">
-          <h3>${language === 'ar' ? 'الوصف' : 'Description'}</h3>
-          <div class="value">${workOrder.description}</div>
-        </div>
-
-        <div class="section">
-          <h3>${language === 'ar' ? 'سير العمل والموافقات' : 'Workflow & Approvals'}</h3>
-          <div class="workflow">
+          <h3 class="section-title">${language === 'ar' ? 'سير العمل والموافقات' : 'Workflow & Approvals'}</h3>
+          <div class="workflow-timeline">
             ${workOrder.technician_completed_at ? `
               <div class="workflow-item completed">
-                <strong>${language === 'ar' ? 'إنهاء الفني' : 'Technician Completed'}</strong>
-                <p>${format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</p>
-                ${workOrder.technician_notes ? `<p>${workOrder.technician_notes}</p>` : ''}
+                <div class="step-title">${language === 'ar' ? 'إنهاء الفني' : 'Technician Completed'}</div>
+                <div class="step-detail">${format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${workOrder.technician_notes ? `<div class="step-detail">${workOrder.technician_notes}</div>` : ''}
               </div>
             ` : ''}
             ${workOrder.supervisor_approved_at ? `
               <div class="workflow-item completed">
-                <strong>${language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approved'}</strong>
-                <p>${format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                ${workOrder.supervisor_notes ? `<p>${workOrder.supervisor_notes}</p>` : ''}
+                <div class="step-title">${language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approved'}</div>
+                <div class="step-detail">${format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${workOrder.supervisor_notes ? `<div class="step-detail">${workOrder.supervisor_notes}</div>` : ''}
               </div>
             ` : ''}
             ${workOrder.engineer_approved_at ? `
               <div class="workflow-item completed">
-                <strong>${language === 'ar' ? 'موافقة المهندس' : 'Engineer Approved'}</strong>
-                <p>${format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                ${workOrder.engineer_notes ? `<p>${workOrder.engineer_notes}</p>` : ''}
+                <div class="step-title">${language === 'ar' ? 'موافقة المهندس' : 'Engineer Approved'}</div>
+                <div class="step-detail">${format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${workOrder.engineer_notes ? `<div class="step-detail">${workOrder.engineer_notes}</div>` : ''}
               </div>
             ` : ''}
             ${workOrder.customer_reviewed_at ? `
               <div class="workflow-item completed">
-                <strong>${language === 'ar' ? 'مراجعة المبلغ' : 'Customer Reviewed'}</strong>
-                <p>${format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</p>
-                <p>${language === 'ar' ? 'بواسطة' : 'By'}: ${reporterName}</p>
-                ${workOrder.customer_feedback ? `<p>${workOrder.customer_feedback}</p>` : ''}
+                <div class="step-title">${language === 'ar' ? 'مراجعة المبلغ' : 'Customer Reviewed'}</div>
+                <div class="step-detail">${format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</div>
+                <div class="step-detail">${language === 'ar' ? 'بواسطة' : 'By'}: ${reporterName}</div>
+                ${workOrder.customer_feedback ? `<div class="step-detail">${workOrder.customer_feedback}</div>` : ''}
               </div>
             ` : ''}
             ${workOrder.maintenance_manager_approved_at ? `
               <div class="workflow-item completed">
-                <strong>${language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</strong>
-                <p>${format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                ${workOrder.maintenance_manager_notes ? `<p>${workOrder.maintenance_manager_notes}</p>` : ''}
+                <div class="step-title">${language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</div>
+                <div class="step-detail">${format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${workOrder.maintenance_manager_notes ? `<div class="step-detail">${workOrder.maintenance_manager_notes}</div>` : ''}
               </div>
             ` : ''}
           </div>
         </div>
 
+        <!-- Action History -->
         ${operations.length > 0 ? `
           <div class="section">
-            <h3>${language === 'ar' ? 'سجل الإجراءات' : 'Action History'}</h3>
+            <h3 class="section-title">${language === 'ar' ? 'سجل الإجراءات' : 'Action History'}</h3>
             <table>
               <thead>
                 <tr>
@@ -544,7 +789,7 @@ export default function WorkOrderDetails() {
                   <tr>
                     <td>${format(new Date(op.timestamp), 'dd/MM/yyyy HH:mm')}</td>
                     <td>${op.type}</td>
-                    <td>${op.description}</td>
+                    <td>${op.description || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -552,11 +797,17 @@ export default function WorkOrderDetails() {
           </div>
         ` : ''}
 
-        <div class="no-print" style="margin-top: 30px; text-align: center;">
-          <button onclick="window.print()" style="padding: 10px 20px; background: #333; color: white; border: none; cursor: pointer;">
+        <!-- Footer -->
+        <div class="pdf-footer">
+          <p>${language === 'ar' ? 'تم إنشاء هذا التقرير تلقائيًا بواسطة نظام إدارة الصيانة' : 'This report was automatically generated by Maintenance Management System'}</p>
+          <p>${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+        </div>
+
+        <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px;">
+          <button onclick="window.print()" style="padding: 12px 30px; background: #2563eb; color: white; border: none; cursor: pointer; border-radius: 6px; font-size: 16px; margin: 0 10px;">
             ${language === 'ar' ? 'طباعة' : 'Print'}
           </button>
-          <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; cursor: pointer; margin-right: 10px;">
+          <button onclick="window.close()" style="padding: 12px 30px; background: #64748b; color: white; border: none; cursor: pointer; border-radius: 6px; font-size: 16px; margin: 0 10px;">
             ${language === 'ar' ? 'إغلاق' : 'Close'}
           </button>
         </div>
