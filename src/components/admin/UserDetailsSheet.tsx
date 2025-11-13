@@ -38,6 +38,7 @@ interface UserData {
     role: string;
     hospital_id: string | null;
     hospital_name?: string;
+    isSystemRole?: boolean;
   }>;
 }
 
@@ -47,15 +48,11 @@ interface Hospital {
   name_ar: string;
 }
 
-const rolesList = [
-  { value: 'global_admin', labelEn: 'Global Admin', labelAr: 'مدير النظام' },
-  { value: 'hospital_admin', labelEn: 'Hospital Admin', labelAr: 'مدير المستشفى' },
-  { value: 'facility_manager', labelEn: 'Facility Manager', labelAr: 'مدير المرافق' },
-  { value: 'maintenance_manager', labelEn: 'Maintenance Manager', labelAr: 'مدير الصيانة' },
-  { value: 'supervisor', labelEn: 'Supervisor', labelAr: 'مشرف' },
-  { value: 'technician', labelEn: 'Technician', labelAr: 'فني' },
-  { value: 'reporter', labelEn: 'Reporter', labelAr: 'مبلغ' },
-];
+interface SystemRole {
+  code: string;
+  name: string;
+  name_ar: string;
+}
 
 interface UserDetailsSheetProps {
   user: UserData | null;
@@ -69,9 +66,10 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
   const { language, t } = useLanguage();
   const { isGlobalAdmin } = useCurrentUser();
   const currentUser = useCurrentUser();
+  const [systemRoles, setSystemRoles] = useState<SystemRole[]>([]);
   const [newRole, setNewRole] = useState('');
   const [newRoleHospital, setNewRoleHospital] = useState('');
-  const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<{id: string; isSystemRole: boolean} | null>(null);
   const [loading, setLoading] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -80,6 +78,10 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     phone: '',
     hospital_id: '',
   });
+
+  useEffect(() => {
+    loadSystemRoles();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -92,11 +94,26 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     }
   }, [user]);
 
+  const loadSystemRoles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_roles')
+        .select('code, name, name_ar')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (error) throw error;
+      setSystemRoles(data || []);
+    } catch (error) {
+      console.error('Error loading system roles:', error);
+    }
+  };
+
   if (!user) return null;
 
   const getRoleLabel = (role: string) => {
-    const roleObj = rolesList.find((r) => r.value === role);
-    return language === 'ar' ? roleObj?.labelAr : roleObj?.labelEn;
+    const roleObj = systemRoles.find((r) => r.code === role);
+    return language === 'ar' ? roleObj?.name_ar : roleObj?.name;
   };
 
   const canAssignRole = (role: string) => {
@@ -120,11 +137,12 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     try {
       const roleHospitalId = newRole === 'global_admin' ? null : (newRoleHospital || currentUser.hospitalId);
 
+      // Add to user_custom_roles (new system)
       const { error } = await supabase
-        .from('user_roles')
+        .from('user_custom_roles')
         .insert([{
           user_id: user.id,
-          role: newRole as any,
+          role_code: newRole,
           hospital_id: roleHospitalId,
         }]);
 
@@ -174,11 +192,12 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     }
   };
 
-  const handleDeleteRole = async (roleId: string) => {
+  const handleDeleteRole = async (roleId: string, isSystemRole: boolean) => {
     setLoading(true);
     try {
+      const tableName = isSystemRole ? 'user_roles' : 'user_custom_roles';
       const { error } = await supabase
-        .from('user_roles')
+        .from(tableName)
         .delete()
         .eq('id', roleId);
 
@@ -195,8 +214,8 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     }
   };
 
-  const availableRoles = rolesList.filter(role => 
-    !user.roles.some(ur => ur.role === role.value) && canAssignRole(role.value)
+  const availableRoles = systemRoles.filter(role => 
+    !user.roles.some(ur => ur.role === role.code) && canAssignRole(role.code)
   );
 
   return (
@@ -345,7 +364,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setRoleToDelete(role.id)}
+                          onClick={() => setRoleToDelete({id: role.id, isSystemRole: role.isSystemRole || false})}
                           disabled={loading}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -368,8 +387,8 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                           </SelectTrigger>
                           <SelectContent>
                             {availableRoles.map((role) => (
-                              <SelectItem key={role.value} value={role.value}>
-                                {language === 'ar' ? role.labelAr : role.labelEn}
+                              <SelectItem key={role.code} value={role.code}>
+                                {language === 'ar' ? role.name_ar : role.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -436,7 +455,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => roleToDelete && handleDeleteRole(roleToDelete)}
+              onClick={() => roleToDelete && handleDeleteRole(roleToDelete.id, roleToDelete.isSystemRole)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('delete')}
