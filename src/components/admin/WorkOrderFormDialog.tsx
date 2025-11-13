@@ -27,6 +27,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_types']);
   const [issueTypeMappings, setIssueTypeMappings] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     issue_type: '',
@@ -34,6 +35,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     priority: '',
     urgency: '',
     asset_id: '',
+    company_id: '',
     location: {
       hospitalId: null,
       buildingId: null,
@@ -60,6 +62,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       loadTeams();
       loadIssueTypeMappings();
       loadAssets();
+      loadCompanies();
     }
   }, [open, hospitalId]);
 
@@ -105,6 +108,22 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       setAssets(data || []);
     } catch (error) {
       console.error('Error loading assets:', error);
+    }
+  };
+
+  const loadCompanies = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name, name_ar, logo_url')
+        .eq('hospital_id', hospitalId)
+        .eq('status', 'active')
+        .order('name');
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error loading companies:', error);
     }
   };
 
@@ -200,6 +219,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         department_id: formData.location.departmentId || null,
         room_id: formData.location.roomId || null,
         assigned_team: selectedTeam || null,
+        company_id: formData.company_id || null,
         photos: null,
       }]);
 
@@ -219,6 +239,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         priority: defaultPriority,
         urgency: '',
         asset_id: '',
+        company_id: '',
         location: { hospitalId: null, buildingId: null, floorId: null, departmentId: null, roomId: null },
       });
       setSelectedTeam('');
@@ -345,14 +366,14 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
           <div className="space-y-2">
             <Label>{language === 'ar' ? 'الأصل' : 'Asset'}</Label>
             <Select
-              value={formData.asset_id}
-              onValueChange={(value) => setFormData({ ...formData, asset_id: value })}
+              value={formData.asset_id || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, asset_id: value === 'none' ? '' : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder={language === 'ar' ? 'اختر الأصل (اختياري)' : 'Select Asset (optional)'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{language === 'ar' ? 'بدون أصل' : 'No Asset'}</SelectItem>
+                <SelectItem value="none">{language === 'ar' ? 'بدون أصل' : 'No Asset'}</SelectItem>
                 {assets.map((asset) => (
                   <SelectItem key={asset.id} value={asset.id}>
                     {language === 'ar' ? asset.name_ar || asset.name : asset.name} ({asset.code})
@@ -360,6 +381,32 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Company Selection */}
+          <div className="space-y-2">
+            <Label>{language === 'ar' ? 'الشركة المسؤولة' : 'Responsible Company'}</Label>
+            <Select
+              value={formData.company_id || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, company_id: value === 'none' ? '' : value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={language === 'ar' ? 'اختر الشركة (اختياري)' : 'Select Company (optional)'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{language === 'ar' ? 'بدون شركة محددة' : 'No specific company'}</SelectItem>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {language === 'ar' ? company.name_ar : company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {companies.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' ? 'لا توجد شركات متعاقدة. يرجى إضافتها من صفحة الإعدادات' : 'No contracted companies. Please add them from Settings'}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

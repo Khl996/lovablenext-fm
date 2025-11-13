@@ -101,6 +101,8 @@ export default function WorkOrderDetails() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [asset, setAsset] = useState<any>(null);
   const [location, setLocation] = useState<any>({});
+  const [hospital, setHospital] = useState<any>(null);
+  const [company, setCompany] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -231,6 +233,26 @@ export default function WorkOrderDetails() {
         locationData.room = room;
       }
       setLocation(locationData);
+
+      // Load hospital data
+      if (data.hospital_id) {
+        const { data: hospitalData } = await supabase
+          .from('hospitals')
+          .select('name, name_ar, logo_url')
+          .eq('id', data.hospital_id)
+          .single();
+        if (hospitalData) setHospital(hospitalData);
+      }
+
+      // Load company data
+      if (data.company_id) {
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('name, name_ar, logo_url')
+          .eq('id', data.company_id)
+          .single();
+        if (companyData) setCompany(companyData);
+      }
     } catch (error: any) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -643,16 +665,24 @@ export default function WorkOrderDetails() {
         <!-- Custom Header with Logo Placeholders -->
         <div class="pdf-header">
           <div class="logo-section">
-            <div class="logo-placeholder">
-              ${language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}
-            </div>
+            ${hospital?.logo_url ? `
+              <img src="${hospital.logo_url}" alt="Hospital Logo" style="max-height: 80px; max-width: 180px; object-fit: contain; margin-bottom: 10px;" />
+            ` : `
+              <div class="logo-placeholder">
+                ${language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}
+              </div>
+            `}
             <h1>${language === 'ar' ? 'نظام إدارة الصيانة' : 'Maintenance Management System'}</h1>
             <p>${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</p>
           </div>
           <div class="logo-section" style="text-align: ${language === 'ar' ? 'left' : 'right'};">
-            <div class="logo-placeholder" style="margin-${language === 'ar' ? 'right' : 'left'}: auto;">
-              ${language === 'ar' ? 'شعار شركة الصيانة' : 'Maintenance Company Logo'}
-            </div>
+            ${company?.logo_url ? `
+              <img src="${company.logo_url}" alt="Company Logo" style="max-height: 80px; max-width: 180px; object-fit: contain; margin-bottom: 10px; margin-${language === 'ar' ? 'right' : 'left'}: auto;" />
+            ` : `
+              <div class="logo-placeholder" style="margin-${language === 'ar' ? 'right' : 'left'}: auto;">
+                ${language === 'ar' ? 'شعار شركة الصيانة' : 'Maintenance Company Logo'}
+              </div>
+            `}
             <div class="report-info">
               <div class="code">${workOrder.code}</div>
               <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
