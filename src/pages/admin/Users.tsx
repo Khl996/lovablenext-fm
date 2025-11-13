@@ -54,12 +54,13 @@ export default function Users() {
   });
 
   useEffect(() => {
-    Promise.all([loadUsers(), loadHospitals(), loadLookupRoles()]);
-  }, []);
+    if (canManageUsers) {
+      Promise.all([loadUsers(), loadHospitals(), loadLookupRoles()]);
+    }
+  }, [canManageUsers, isGlobalAdmin, currentUserHospitalId]);
 
   const loadUsers = async () => {
     try {
-      console.log('Loading users - Starting...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -72,7 +73,6 @@ export default function Users() {
           hospitals(name, name_ar)
         `);
 
-      console.log('Profiles query result:', { profilesData, profilesError });
       if (profilesError) throw profilesError;
 
       // Get both old and new roles
@@ -134,13 +134,6 @@ export default function Users() {
         ? usersWithRoles 
         : usersWithRoles.filter((u: any) => u.hospital_id === currentUserHospitalId);
 
-      console.log('Final filtered users:', { 
-        isGlobalAdmin, 
-        currentUserHospitalId,
-        totalUsers: usersWithRoles.length,
-        filteredCount: filteredUsers.length,
-        filteredUsers 
-      });
       setUsers(filteredUsers);
     } catch (error) {
       console.error('Error loading users:', error);
