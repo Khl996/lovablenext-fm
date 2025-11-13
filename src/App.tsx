@@ -185,16 +185,6 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/admin/hospital" 
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Hospital />
-                    </AppLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
                 path="/admin/users"
                 element={
                   <ProtectedRoute>
