@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { WorkOrderWorkflow } from '@/components/WorkOrderWorkflow';
+import { WorkOrderActions } from '@/components/WorkOrderActions';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -98,6 +100,9 @@ export default function WorkOrderDetails() {
   const [reporterName, setReporterName] = useState<string>('');
   const [supervisorName, setSupervisorName] = useState<string>('');
   const [assignedTechnicianName, setAssignedTechnicianName] = useState<string>('');
+  const [engineerName, setEngineerName] = useState<string>('');
+  const [managerName, setManagerName] = useState<string>('');
+  const [assignedTeamName, setAssignedTeamName] = useState<string>('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [asset, setAsset] = useState<any>(null);
   const [location, setLocation] = useState<any>({});
@@ -186,6 +191,33 @@ export default function WorkOrderDetails() {
           .eq('id', data.assigned_to)
           .single();
         if (technician) setAssignedTechnicianName(technician.full_name);
+      }
+
+      if (data.engineer_approved_by) {
+        const { data: engineer } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.engineer_approved_by)
+          .single();
+        if (engineer) setEngineerName(engineer.full_name);
+      }
+
+      if (data.maintenance_manager_approved_by) {
+        const { data: manager } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', data.maintenance_manager_approved_by)
+          .single();
+        if (manager) setManagerName(manager.full_name);
+      }
+
+      if (data.assigned_team) {
+        const { data: team } = await supabase
+          .from('teams')
+          .select('name, name_ar')
+          .eq('id', data.assigned_team)
+          .single();
+        if (team) setAssignedTeamName(language === 'ar' ? team.name_ar : team.name);
       }
 
       // Load asset info
@@ -976,126 +1008,16 @@ export default function WorkOrderDetails() {
             </CardContent>
           </Card>
 
-          {/* Approval Workflow */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                {language === 'ar' ? 'مسار الموافقات' : 'Approval Workflow'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Technician Work */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {workOrder.technician_completed_at ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
-                  )}
-                  <span className="font-medium">{language === 'ar' ? 'عمل الفني' : 'Technician Work'}</span>
-                </div>
-                {workOrder.technician_completed_at && (
-                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
-                    <p>{format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</p>
-                    {workOrder.technician_notes && (
-                      <p className="text-foreground">{workOrder.technician_notes}</p>
-                    )}
-                  </div>
-                )}
-              </div>
 
-              <Separator />
-
-              {/* Supervisor Approval */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {workOrder.supervisor_approved_at ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
-                  )}
-                  <span className="font-medium">{language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approval'}</span>
-                </div>
-                {workOrder.supervisor_approved_at && (
-                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
-                    <p>{format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                    <p>{language === 'ar' ? 'بواسطة' : 'by'}: {supervisorName}</p>
-                    {workOrder.supervisor_notes && (
-                      <p className="text-foreground">{workOrder.supervisor_notes}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Engineer Approval */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {workOrder.engineer_approved_at ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
-                  )}
-                  <span className="font-medium">{language === 'ar' ? 'موافقة المهندس' : 'Engineer Approval'}</span>
-                </div>
-                {workOrder.engineer_approved_at && workOrder.engineer_approved_by && (
-                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
-                    <p>{format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                    {workOrder.engineer_notes && (
-                      <p className="text-foreground">{workOrder.engineer_notes}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Customer Review */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {workOrder.customer_reviewed_at ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
-                  )}
-                  <span className="font-medium">{language === 'ar' ? 'مراجعة المبلغ' : 'Customer Review'}</span>
-                </div>
-                {workOrder.customer_reviewed_at && (
-                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
-                    <p>{format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</p>
-                    <p>{language === 'ar' ? 'بواسطة' : 'by'}: {reporterName}</p>
-                    {workOrder.customer_feedback && (
-                      <p className="text-foreground">{workOrder.customer_feedback}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Final Approval */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {workOrder.maintenance_manager_approved_at ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
-                  )}
-                  <span className="font-medium">{language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</span>
-                </div>
-                {workOrder.maintenance_manager_approved_at && (
-                  <div className="ml-7 text-sm text-muted-foreground space-y-1">
-                    <p>{format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</p>
-                    {workOrder.maintenance_manager_notes && (
-                      <p className="text-foreground">{workOrder.maintenance_manager_notes}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Approval Workflow - Using new component */}
+          <WorkOrderWorkflow
+            workOrder={workOrder}
+            reporterName={reporterName}
+            supervisorName={supervisorName}
+            engineerName={engineerName}
+            managerName={managerName}
+            assignedTeamName={assignedTeamName}
+          />
 
           {/* Operations Log */}
           <Card>
@@ -1237,143 +1159,14 @@ export default function WorkOrderDetails() {
             </Card>
           )}
 
-          {/* Workflow Actions */}
-          {(
-            (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) ||
-            (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) ||
-            (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) ||
-            (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) ||
-            (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at)
-          ) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {workOrder.assigned_to === user?.id && !workOrder.technician_completed_at && (language === 'ar' ? 'إنهاء العمل' : 'Complete Work')}
-                  {!workOrder.supervisor_approved_at && workOrder.technician_completed_at && (language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approval')}
-                  {!workOrder.engineer_approved_at && workOrder.supervisor_approved_at && (language === 'ar' ? 'موافقة المهندس' : 'Engineer Approval')}
-                  {workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at && (language === 'ar' ? 'مراجعة المبلغ' : 'Customer Review')}
-                  {!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at && (language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'الملاحظات' : 'Notes'}</Label>
-                  <Textarea
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    placeholder={language === 'ar' ? 'أضف ملاحظة...' : 'Add a note...'}
-                    rows={4}
-                  />
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  onClick={async () => {
-                    if (!newNote.trim()) {
-                      toast({
-                        title: language === 'ar' ? 'خطأ' : 'Error',
-                        description: language === 'ar' ? 'الرجاء إضافة ملاحظات' : 'Please add notes',
-                        variant: 'destructive',
-                      });
-                      return;
-                    }
-
-                    setUpdating(true);
-                    try {
-                      let updates: any = {};
-
-                      if (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) {
-                        updates = {
-                          technician_completed_at: new Date().toISOString(),
-                          technician_notes: newNote,
-                          status: 'in_progress',
-                        };
-                      } else if (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) {
-                        updates = {
-                          supervisor_approved_by: user?.id,
-                          supervisor_approved_at: new Date().toISOString(),
-                          supervisor_notes: newNote,
-                        };
-                      } else if (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) {
-                        updates = {
-                          engineer_approved_by: user?.id,
-                          engineer_approved_at: new Date().toISOString(),
-                          engineer_notes: newNote,
-                        };
-                      } else if (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) {
-                        updates = {
-                          customer_reviewed_by: user?.id,
-                          customer_reviewed_at: new Date().toISOString(),
-                          customer_feedback: newNote,
-                        };
-                      } else if (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at) {
-                        updates = {
-                          maintenance_manager_approved_by: user?.id,
-                          maintenance_manager_approved_at: new Date().toISOString(),
-                          maintenance_manager_notes: newNote,
-                          status: 'completed',
-                        };
-                      }
-
-                      const { error } = await supabase
-                        .from('work_orders')
-                        .update(updates)
-                        .eq('id', workOrder.id);
-
-                      if (error) throw error;
-
-                      // Send appropriate notification based on the action
-                      let notificationAction: string | null = null;
-                      if (workOrder.assigned_to === user?.id && !workOrder.technician_completed_at) {
-                        notificationAction = 'completed';
-                      } else if (!workOrder.supervisor_approved_at && workOrder.technician_completed_at) {
-                        notificationAction = 'supervisor_approved';
-                      } else if (!workOrder.engineer_approved_at && workOrder.supervisor_approved_at) {
-                        notificationAction = 'engineer_approved';
-                      } else if (workOrder.reported_by === user?.id && !workOrder.customer_reviewed_at && workOrder.engineer_approved_at) {
-                        notificationAction = 'customer_reviewed';
-                      } else if (!workOrder.maintenance_manager_approved_at && workOrder.customer_reviewed_at) {
-                        notificationAction = 'final_approved';
-                      }
-
-                      if (notificationAction) {
-                        try {
-                          await supabase.functions.invoke('notify-work-order-updates', {
-                            body: {
-                              workOrderId: workOrder.id,
-                              action: notificationAction,
-                              performedBy: user?.id
-                            }
-                          });
-                        } catch (notifyError) {
-                          console.error('Failed to send notification:', notifyError);
-                        }
-                      }
-
-                      toast({
-                        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
-                        description: language === 'ar' ? 'تم حفظ الإجراء بنجاح' : 'Action saved successfully',
-                      });
-
-                      setNewNote('');
-                      loadWorkOrder();
-                    } catch (error: any) {
-                      toast({
-                        title: language === 'ar' ? 'خطأ' : 'Error',
-                        description: error.message,
-                        variant: 'destructive',
-                      });
-                    } finally {
-                      setUpdating(false);
-                    }
-                  }}
-                  disabled={updating}
-                >
-                  {updating ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          {/* Workflow Actions - Using new component */}
+          <WorkOrderActions 
+            workOrder={workOrder}
+            onActionComplete={() => {
+              loadWorkOrder();
+              loadOperations();
+            }}
+          />
 
           {/* Update Status & Actions */}
           {permissions.hasPermission('manage_work_orders') && (

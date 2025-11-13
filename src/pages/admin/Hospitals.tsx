@@ -65,7 +65,7 @@ export default function Hospitals() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHospitals(data || []);
+      setHospitals(data as any || []);
     } catch (error) {
       console.error('Error loading hospitals:', error);
       toast.error(t('errorOccurred'));
@@ -129,7 +129,7 @@ export default function Hospitals() {
         }
 
         // Update existing hospital
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('hospitals')
           .update({ ...formData, logo_url: logoUrl })
           .eq('id', editingHospital.id);
@@ -150,7 +150,7 @@ export default function Hospitals() {
         if (logoFile && newHospital) {
           const uploadedUrl = await uploadLogo(logoFile, newHospital.id);
           if (uploadedUrl) {
-            const { error: updateError } = await supabase
+            const { error: updateError } = await (supabase as any)
               .from('hospitals')
               .update({ logo_url: uploadedUrl })
               .eq('id', newHospital.id);
