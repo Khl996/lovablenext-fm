@@ -23,6 +23,7 @@ import Maintenance from "./pages/Maintenance";
 import WorkOrderDetails from "./pages/WorkOrderDetails";
 import Hospitals from "./pages/admin/Hospitals";
 import Companies from "./pages/admin/Companies";
+import Hospital from "./pages/admin/Hospital";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
@@ -185,7 +186,17 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/admin/users" 
+                path="/admin/hospital" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Hospital />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/users"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
