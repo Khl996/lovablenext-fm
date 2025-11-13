@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 import Maintenance from "./pages/Maintenance";
 import WorkOrderDetails from "./pages/WorkOrderDetails";
 import Hospitals from "./pages/admin/Hospitals";
+import Companies from "./pages/admin/Companies";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
@@ -169,6 +170,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Hospitals />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/companies" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Companies />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
