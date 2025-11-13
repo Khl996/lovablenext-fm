@@ -39,6 +39,8 @@ export default function Companies() {
     email: '',
     status: 'active',
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (hospitalId) {
@@ -64,6 +66,33 @@ export default function Companies() {
     }
   };
 
+  const uploadLogo = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingLogo(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `${hospitalId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error(language === 'ar' ? 'فشل رفع الشعار' : 'Failed to upload logo');
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,10 +102,24 @@ export default function Companies() {
     }
 
     try {
+      let logoUrl = formData.logo_url;
+
+      // Upload logo if a new file is selected
+      if (logoFile) {
+        const uploadedUrl = await uploadLogo(logoFile);
+        if (uploadedUrl) {
+          logoUrl = uploadedUrl;
+        } else {
+          return; // Stop if upload fails
+        }
+      }
+
+      const companyData = { ...formData, logo_url: logoUrl };
+
       if (editingCompany) {
         const { error } = await (supabase as any)
           .from('companies')
-          .update(formData)
+          .update(companyData)
           .eq('id', editingCompany.id);
 
         if (error) throw error;
@@ -84,7 +127,7 @@ export default function Companies() {
       } else {
         const { error } = await (supabase as any)
           .from('companies')
-          .insert([{ ...formData, hospital_id: hospitalId }]);
+          .insert([{ ...companyData, hospital_id: hospitalId }]);
 
         if (error) throw error;
         toast.success(language === 'ar' ? 'تم إضافة الشركة بنجاح' : 'Company added successfully');
@@ -101,6 +144,7 @@ export default function Companies() {
         email: '',
         status: 'active',
       });
+      setLogoFile(null);
       loadCompanies();
     } catch (error) {
       console.error('Error saving company:', error);
@@ -119,6 +163,7 @@ export default function Companies() {
       email: company.email || '',
       status: company.status,
     });
+    setLogoFile(null);
     setIsDialogOpen(true);
   };
 
@@ -170,6 +215,7 @@ export default function Companies() {
                 email: '',
                 status: 'active',
               });
+              setLogoFile(null);
             }}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة شركة' : 'Add Company'}
@@ -205,14 +251,32 @@ export default function Companies() {
               </div>
 
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'رابط الشعار' : 'Logo URL'}</Label>
-                <Input
-                  type="url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                />
-                {formData.logo_url && (
+                <Label>{language === 'ar' ? 'شعار الشركة' : 'Company Logo'}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setLogoFile(file);
+                        // Create preview URL
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setFormData({ ...formData, logo_url: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    disabled={uploadingLogo}
+                  />
+                  {uploadingLogo && (
+                    <div className="text-sm text-muted-foreground">
+                      {language === 'ar' ? 'جاري الرفع...' : 'Uploading...'}
+                    </div>
+                  )}
+                </div>
+                {(formData.logo_url || logoFile) && (
                   <div className="mt-2 p-4 border rounded-lg flex items-center justify-center bg-muted">
                     <img 
                       src={formData.logo_url} 
@@ -256,8 +320,10 @@ export default function Companies() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </Button>
-                <Button type="submit">
-                  {editingCompany 
+                <Button type="submit" disabled={uploadingLogo}>
+                  {uploadingLogo 
+                    ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                    : editingCompany 
                     ? (language === 'ar' ? 'تحديث' : 'Update')
                     : (language === 'ar' ? 'إضافة' : 'Add')}
                 </Button>
