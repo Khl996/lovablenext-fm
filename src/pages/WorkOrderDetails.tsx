@@ -90,20 +90,12 @@ export default function WorkOrderDetails() {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [operations, setOperations] = useState<OperationLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [newNote, setNewNote] = useState('');
-  const [newStatus, setNewStatus] = useState<string>('');
-  const [teams, setTeams] = useState<any[]>([]);
-  const [technicians, setTechnicians] = useState<any[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
-  const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [reporterName, setReporterName] = useState<string>('');
   const [supervisorName, setSupervisorName] = useState<string>('');
   const [assignedTechnicianName, setAssignedTechnicianName] = useState<string>('');
   const [engineerName, setEngineerName] = useState<string>('');
   const [managerName, setManagerName] = useState<string>('');
   const [assignedTeamName, setAssignedTeamName] = useState<string>('');
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [asset, setAsset] = useState<any>(null);
   const [location, setLocation] = useState<any>({});
   const [hospital, setHospital] = useState<any>(null);
@@ -113,42 +105,8 @@ export default function WorkOrderDetails() {
     if (id) {
       loadWorkOrder();
       loadOperations();
-      loadTeams();
-      loadTechnicians();
     }
   }, [id]);
-
-  const loadTechnicians = async () => {
-    if (!hospitalId) return;
-    try {
-      // Get users from the hospital
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('hospital_id', hospitalId);
-      
-      if (error) throw error;
-      setTechnicians(profiles || []);
-    } catch (error) {
-      console.error('Error loading technicians:', error);
-    }
-  };
-
-  const loadTeams = async () => {
-    if (!hospitalId) return;
-    try {
-      const { data, error } = await supabase
-        .from('teams')
-        .select('id, name, name_ar')
-        .eq('hospital_id', hospitalId)
-        .eq('status', 'active');
-      
-      if (error) throw error;
-      setTeams(data || []);
-    } catch (error) {
-      console.error('Error loading teams:', error);
-    }
-  };
 
   const loadWorkOrder = async () => {
     try {
@@ -161,9 +119,6 @@ export default function WorkOrderDetails() {
 
       if (error) throw error;
       setWorkOrder(data);
-      setNewStatus(data.status);
-      setSelectedTeam(data.assigned_team || '');
-      setSelectedTechnician(data.assigned_to || '');
 
       // Load reporter, supervisor, and assigned technician names
       if (data.reported_by) {
@@ -309,143 +264,6 @@ export default function WorkOrderDetails() {
       setOperations(data || []);
     } catch (error: any) {
       console.error('Error loading operations:', error);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!workOrder || !newStatus) return;
-
-    try {
-      setUpdating(true);
-      
-      const updates: any = { 
-        status: newStatus as any,
-      };
-
-      if (newNote) {
-        updates.work_notes = workOrder.work_notes 
-          ? `${workOrder.work_notes}\n\n[${format(new Date(), 'dd/MM/yyyy HH:mm')}]: ${newNote}`
-          : newNote;
-      }
-
-      if (selectedTeam && selectedTeam !== workOrder.assigned_team) {
-        updates.assigned_team = selectedTeam;
-      }
-
-      if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
-        updates.assigned_to = selectedTechnician;
-      }
-
-      // TODO: Implement photo upload to storage bucket
-      // For now, we'll just note in the log that photos were added
-      if (selectedFiles.length > 0) {
-        updates.work_notes = (updates.work_notes || workOrder.work_notes || '') + 
-          `\n[${selectedFiles.length} ${language === 'ar' ? 'صور مرفقة' : 'photos attached'}]`;
-      }
-
-      const { error } = await supabase
-        .from('work_orders')
-        .update(updates)
-        .eq('id', workOrder.id);
-
-      if (error) throw error;
-
-      // Send notification if technician was assigned
-      if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
-        try {
-          await supabase.functions.invoke('notify-work-order-updates', {
-            body: {
-              workOrderId: workOrder.id,
-              action: 'assigned',
-              performedBy: user?.id
-            }
-          });
-        } catch (notifyError) {
-          console.error('Failed to send notification:', notifyError);
-        }
-      }
-
-      // Send notification for status change
-      if (newStatus !== workOrder.status) {
-        try {
-          await supabase.functions.invoke('notify-work-order-updates', {
-            body: {
-              workOrderId: workOrder.id,
-              action: 'status_changed',
-              performedBy: user?.id
-            }
-          });
-        } catch (notifyError) {
-          console.error('Failed to send notification:', notifyError);
-        }
-      }
-
-      // Log the action in operations_log
-      if (user && hospitalId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single();
-
-        const logDescription = [];
-        if (newStatus !== workOrder.status) {
-          logDescription.push(`${language === 'ar' ? 'الحالة من' : 'Status from'} ${workOrder.status} ${language === 'ar' ? 'إلى' : 'to'} ${newStatus}`);
-        }
-        if (selectedTeam && selectedTeam !== workOrder.assigned_team) {
-          logDescription.push(`${language === 'ar' ? 'الفريق المعين' : 'Team assigned'}`);
-        }
-        if (selectedTechnician && selectedTechnician !== workOrder.assigned_to) {
-          logDescription.push(`${language === 'ar' ? 'الفني المعين' : 'Technician assigned'}`);
-        }
-        if (selectedFiles.length > 0) {
-          logDescription.push(`${selectedFiles.length} ${language === 'ar' ? 'صور مرفقة' : 'photos attached'}`);
-        }
-
-        await supabase.from('operations_log').insert({
-          hospital_id: hospitalId,
-          related_work_order: workOrder.id,
-          type: 'adjustment',
-          code: `OP-${Date.now()}`,
-          system_type: 'Work Order',
-          asset_name: workOrder.code,
-          location: workOrder.building_id || 'N/A',
-          technician_name: profile?.full_name || 'Unknown',
-          reason: logDescription.join(', '),
-          description: newNote || logDescription.join(', '),
-          notes: newNote,
-          performed_by: user.id,
-        });
-      }
-
-      toast({
-        title: language === 'ar' ? 'تم التحديث' : 'Updated',
-        description: language === 'ar' ? 'تم تحديث أمر العمل بنجاح' : 'Work order updated successfully',
-      });
-
-      loadWorkOrder();
-      loadOperations();
-      setNewNote('');
-      setSelectedFiles([]);
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -1167,72 +985,6 @@ export default function WorkOrderDetails() {
               loadOperations();
             }}
           />
-
-          {/* Update Status & Actions */}
-          {permissions.hasPermission('manage_work_orders') && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{language === 'ar' ? 'الإجراءات الإدارية' : 'Admin Actions'}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'الحالة الجديدة' : 'New Status'}</Label>
-                  <Select value={newStatus} onValueChange={setNewStatus}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {lookups.work_order_statuses?.filter(s => s.is_active && s.code).map((status) => (
-                        <SelectItem key={status.code} value={status.code}>
-                          {getLookupName(status, language)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'تعيين الفريق' : 'Assign Team'}</Label>
-                  <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={language === 'ar' ? 'اختر فريق' : 'Select team'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {language === 'ar' ? team.name_ar : team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'تعيين الفني' : 'Assign Technician'}</Label>
-                  <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={language === 'ar' ? 'اختر فني' : 'Select technician'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technicians.map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  onClick={handleUpdateStatus}
-                  disabled={updating}
-                >
-                  {updating ? (language === 'ar' ? 'جاري التحديث...' : 'Updating...') : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Export */}
           <Card>
