@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, Search, Filter } from 'lucide-react';
 import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
 
 interface UserData {
@@ -44,6 +44,9 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
+  const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -257,6 +260,31 @@ export default function Users() {
     return role;
   };
 
+  // Filter and search users
+  const filteredUsers = users.filter(user => {
+    // Search filter
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = searchQuery === '' || 
+      user.full_name.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.phone && user.phone.includes(searchQuery));
+
+    // Role filter
+    const matchesRole = selectedRoleFilter === 'all' || 
+      user.roles.some(r => r.role === selectedRoleFilter);
+
+    // Hospital filter (for global admins)
+    const matchesHospital = selectedHospitalFilter === 'all' || 
+      user.hospital_id === selectedHospitalFilter;
+
+    return matchesSearch && matchesRole && matchesHospital;
+  });
+
+  // Get unique roles from all users for filter options
+  const availableRoles = Array.from(new Set(
+    users.flatMap(u => u.roles.map(r => r.role))
+  ));
+
   if (!canManageUsers) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -400,8 +428,82 @@ export default function Users() {
         </Dialog>
       </div>
 
+      {/* Search and Filter Section */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={language === 'ar' ? 'بحث بالاسم، البريد الإلكتروني أو الهاتف...' : 'Search by name, email or phone...'}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* Role Filter */}
+            <div className="w-full md:w-64">
+              <Select value={selectedRoleFilter} onValueChange={setSelectedRoleFilter}>
+                <SelectTrigger>
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <SelectValue placeholder={language === 'ar' ? 'تصفية حسب الدور' : 'Filter by role'} />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {language === 'ar' ? 'جميع الأدوار' : 'All Roles'}
+                  </SelectItem>
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {getRoleLabel(role)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Hospital Filter (for global admins only) */}
+            {isGlobalAdmin && (
+              <div className="w-full md:w-64">
+                <Select value={selectedHospitalFilter} onValueChange={setSelectedHospitalFilter}>
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <SelectValue placeholder={language === 'ar' ? 'تصفية حسب المستشفى' : 'Filter by hospital'} />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {language === 'ar' ? 'جميع المستشفيات' : 'All Hospitals'}
+                    </SelectItem>
+                    {hospitals.map((hospital) => (
+                      <SelectItem key={hospital.id} value={hospital.id}>
+                        {language === 'ar' ? hospital.name_ar : hospital.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Results Count */}
+          <div className="mt-4 text-sm text-muted-foreground">
+            {language === 'ar' 
+              ? `عرض ${filteredUsers.length} من ${users.length} مستخدم`
+              : `Showing ${filteredUsers.length} of ${users.length} users`
+            }
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <Card 
             key={user.id} 
             className="cursor-pointer hover:border-primary/50 transition-colors"
@@ -445,12 +547,15 @@ export default function Users() {
         onUpdate={loadUsers}
       />
 
-      {users.length === 0 && (
+      {filteredUsers.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {language === 'ar' ? 'لا يوجد مستخدمين' : 'No users yet'}
+              {searchQuery || selectedRoleFilter !== 'all' || selectedHospitalFilter !== 'all'
+                ? (language === 'ar' ? 'لا توجد نتائج للبحث' : 'No results found')
+                : (language === 'ar' ? 'لا يوجد مستخدمين' : 'No users yet')
+              }
             </p>
           </CardContent>
         </Card>
