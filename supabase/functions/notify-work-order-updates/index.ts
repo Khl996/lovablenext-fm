@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface WorkOrderNotificationRequest {
   workOrderId: string;
-  action: 'assigned' | 'completed' | 'supervisor_approved' | 'engineer_approved' | 'customer_reviewed' | 'final_approved' | 'status_changed';
+  action: 'assigned' | 'completed' | 'supervisor_approved' | 'engineer_approved' | 'customer_reviewed' | 'final_approved' | 'status_changed' | 'rejected_by_technician';
   performedBy: string;
 }
 
@@ -61,32 +61,34 @@ serve(async (req: Request) => {
     // Determine notification recipients and message based on action
     switch (action) {
       case 'assigned':
-        // Notify the assigned technician
-        if (workOrder.assigned_to) {
-          notificationConfig.userIds = [workOrder.assigned_to];
-          notificationConfig.title = `New Work Order Assigned`;
-          notificationConfig.titleAr = `تم تعيين أمر عمل جديد`;
-          notificationConfig.body = `Work order ${workOrder.code} has been assigned to you`;
-          notificationConfig.bodyAr = `تم تعيين أمر العمل ${workOrder.code} لك`;
+        // Notify assigned team members
+        if (workOrder.assigned_team) {
+          const { data: teamMembers } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('team_id', workOrder.assigned_team);
+          
+          notificationConfig.userIds = teamMembers?.map(m => m.user_id) || [];
+          notificationConfig.title = 'New Work Order Assigned to Your Team';
+          notificationConfig.titleAr = 'تم تعيين بلاغ جديد لفريقك';
+          notificationConfig.body = `Work order ${workOrder.code} has been assigned to your team`;
+          notificationConfig.bodyAr = `تم تعيين البلاغ ${workOrder.code} لفريقك`;
         }
         break;
 
       case 'completed':
-        // Notify supervisors and reporter
+        // Notify supervisor for approval
         const { data: supervisors } = await supabase
           .from("user_roles")
           .select("user_id")
           .eq("role", "supervisor")
           .eq("hospital_id", workOrder.hospital_id);
         
-        notificationConfig.userIds = [
-          workOrder.reported_by,
-          ...(supervisors?.map(s => s.user_id) || [])
-        ];
-        notificationConfig.title = `Work Order Completed`;
-        notificationConfig.titleAr = `تم إنهاء أمر العمل`;
-        notificationConfig.body = `${performerName} completed work order ${workOrder.code}`;
-        notificationConfig.bodyAr = `${performerNameAr} أنهى أمر العمل ${workOrder.code}`;
+        notificationConfig.userIds = supervisors?.map(s => s.user_id) || [];
+        notificationConfig.title = 'Work Order Completed - Pending Approval';
+        notificationConfig.titleAr = 'تم إكمال البلاغ - بانتظار الاعتماد';
+        notificationConfig.body = `Work order ${workOrder.code} has been completed and needs your approval`;
+        notificationConfig.bodyAr = `تم إكمال البلاغ ${workOrder.code} ويحتاج لاعتمادك`;
         break;
 
       case 'supervisor_approved':
@@ -156,6 +158,21 @@ serve(async (req: Request) => {
         notificationConfig.titleAr = `تحديث أمر العمل`;
         notificationConfig.body = `Work order ${workOrder.code} status has been updated`;
         notificationConfig.bodyAr = `تم تحديث حالة أمر العمل ${workOrder.code}`;
+        break;
+      
+      case 'rejected_by_technician':
+        // Notify engineers to reassign
+        const { data: engineersForReject } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "maintenance_engineer")
+          .eq("hospital_id", workOrder.hospital_id);
+        
+        notificationConfig.userIds = engineersForReject?.map(e => e.user_id) || [];
+        notificationConfig.title = 'Work Order Rejected - Needs Reassignment';
+        notificationConfig.titleAr = 'تم رفض البلاغ - يحتاج إعادة توجيه';
+        notificationConfig.body = `Work order ${workOrder.code} has been rejected and needs reassignment`;
+        notificationConfig.bodyAr = `تم رفض البلاغ ${workOrder.code} ويحتاج إعادة توجيه`;
         break;
     }
 
