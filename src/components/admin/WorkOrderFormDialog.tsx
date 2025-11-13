@@ -43,6 +43,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       departmentId: null,
       roomId: null,
     } as LocationValue,
+    customLocation: '', // For "Other" location option
   });
 
   const [teams, setTeams] = useState<any[]>([]);
@@ -114,7 +115,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const loadCompanies = async () => {
     if (!hospitalId) return;
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('companies')
         .select('id, name, name_ar, logo_url')
         .eq('hospital_id', hospitalId)
@@ -241,6 +242,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         asset_id: '',
         company_id: '',
         location: { hospitalId: null, buildingId: null, floorId: null, departmentId: null, roomId: null },
+        customLocation: '',
       });
       setSelectedTeam('');
       setAttachments([]);
@@ -339,6 +341,15 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
               showHospital={false}
               required={false}
             />
+            <div className="mt-2">
+              <Label>{language === 'ar' ? 'أو أدخل موقع آخر' : 'Or enter custom location'}</Label>
+              <Input
+                value={formData.customLocation}
+                onChange={(e) => setFormData({ ...formData, customLocation: e.target.value })}
+                placeholder={language === 'ar' ? 'مثل: عيادة خارجية - الدور الأرضي' : 'e.g., External Clinic - Ground Floor'}
+                className="mt-1"
+              />
+            </div>
           </div>
 
           {/* Reporter Information - Auto-filled */}

@@ -245,11 +245,11 @@ export default function WorkOrderDetails() {
       }
 
       // Load company data
-      if (data.company_id) {
-        const { data: companyData } = await supabase
+      if ((data as any).company_id) {
+        const { data: companyData } = await (supabase as any)
           .from('companies')
           .select('name, name_ar, logo_url')
-          .eq('id', data.company_id)
+          .eq('id', (data as any).company_id)
           .single();
         if (companyData) setCompany(companyData);
       }
