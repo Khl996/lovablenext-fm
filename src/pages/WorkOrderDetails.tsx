@@ -430,23 +430,38 @@ export default function WorkOrderDetails() {
             color: #333;
           }
           
-          /* Header */
-          .pdf-header { 
+          /* Custom Header with Logo Placeholders */
+          .pdf-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid #2563eb;
-            padding-bottom: 20px; 
-            margin-bottom: 40px; 
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2563eb;
           }
-          .pdf-header .logo-section h1 {
-            font-size: 28px;
-            color: #2563eb;
+          .logo-section {
+            flex: 1;
+          }
+          .logo-placeholder {
+            width: 120px;
+            height: 60px;
+            border: 2px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            border-radius: 4px;
+          }
+          .pdf-header h1 {
+            font-size: 20px;
+            color: #1e293b;
             margin-bottom: 5px;
           }
-          .pdf-header .logo-section p {
+          .pdf-header p {
             font-size: 14px;
-            color: #666;
+            color: #64748b;
           }
           .pdf-header .report-info {
             text-align: ${language === 'ar' ? 'left' : 'right'};
@@ -625,15 +640,23 @@ export default function WorkOrderDetails() {
         </style>
       </head>
       <body>
-        <!-- Custom Header -->
+        <!-- Custom Header with Logo Placeholders -->
         <div class="pdf-header">
           <div class="logo-section">
+            <div class="logo-placeholder">
+              ${language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}
+            </div>
             <h1>${language === 'ar' ? 'نظام إدارة الصيانة' : 'Maintenance Management System'}</h1>
             <p>${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</p>
           </div>
-          <div class="report-info">
-            <div class="code">${workOrder.code}</div>
-            <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+          <div class="logo-section" style="text-align: ${language === 'ar' ? 'left' : 'right'};">
+            <div class="logo-placeholder" style="margin-${language === 'ar' ? 'right' : 'left'}: auto;">
+              ${language === 'ar' ? 'شعار شركة الصيانة' : 'Maintenance Company Logo'}
+            </div>
+            <div class="report-info">
+              <div class="code">${workOrder.code}</div>
+              <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+            </div>
           </div>
         </div>
 

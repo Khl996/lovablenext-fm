@@ -21,19 +21,19 @@ type WorkOrderFormProps = {
 
 export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrderFormProps) {
   const { language } = useLanguage();
-  const { user, hospitalId } = useCurrentUser();
+  const { user, hospitalId, profile } = useCurrentUser();
   const { toast } = useToast();
 
   const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_types']);
   const [issueTypeMappings, setIssueTypeMappings] = useState<any[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     issue_type: '',
     description: '',
     priority: '',
     urgency: '',
-    reporter_name: '',
-    reporter_contact: '',
+    asset_id: '',
     location: {
       hospitalId: null,
       buildingId: null,
@@ -59,6 +59,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     if (open && hospitalId) {
       loadTeams();
       loadIssueTypeMappings();
+      loadAssets();
     }
   }, [open, hospitalId]);
 
@@ -88,6 +89,22 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       setIssueTypeMappings(data || []);
     } catch (error) {
       console.error('Error loading issue type mappings:', error);
+    }
+  };
+
+  const loadAssets = async () => {
+    if (!hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('assets')
+        .select('id, code, name, name_ar')
+        .eq('hospital_id', hospitalId)
+        .eq('status', 'active')
+        .order('name');
+      if (error) throw error;
+      setAssets(data || []);
+    } catch (error) {
+      console.error('Error loading assets:', error);
     }
   };
 
@@ -143,7 +160,17 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.issue_type || !formData.description || !formData.reporter_name || !formData.reporter_contact) {
+    
+    if (!user || !hospitalId || !profile) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'You must be logged in',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.issue_type || !formData.description) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
@@ -162,11 +189,12 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         code,
         hospital_id: hospitalId!,
         issue_type: formData.issue_type,
-        description: `${formData.description}\n\n${language === 'ar' ? 'المبلغ' : 'Reporter'}: ${formData.reporter_name}\n${language === 'ar' ? 'رقم التواصل' : 'Contact'}: ${formData.reporter_contact}`,
+        description: `${formData.description}\n\n${language === 'ar' ? 'المبلغ' : 'Reporter'}: ${profile.full_name}${profile.phone ? `\n${language === 'ar' ? 'رقم التواصل' : 'Contact'}: ${profile.phone}` : ''}`,
         priority: formData.priority as any,
         urgency: formData.urgency || null,
         status: 'pending' as any,
         reported_by: user?.id!,
+        asset_id: formData.asset_id || null,
         building_id: formData.location.buildingId || null,
         floor_id: formData.location.floorId || null,
         department_id: formData.location.departmentId || null,
@@ -190,8 +218,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         description: '',
         priority: defaultPriority,
         urgency: '',
-        reporter_name: '',
-        reporter_contact: '',
+        asset_id: '',
         location: { hospitalId: null, buildingId: null, floorId: null, departmentId: null, roomId: null },
       });
       setSelectedTeam('');
@@ -293,23 +320,46 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{language === 'ar' ? 'اسم المبلغ' : 'Reporter Name'} *</Label>
-              <Input
-                value={formData.reporter_name}
-                onChange={(e) => setFormData({ ...formData, reporter_name: e.target.value })}
-                required
-              />
+          {/* Reporter Information - Auto-filled */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">
+              {language === 'ar' ? 'معلومات المبلغ' : 'Reporter Information'}
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم المبلغ' : 'Reporter Name'}</Label>
+                <div className="px-3 py-2 bg-muted rounded-md text-muted-foreground">
+                  {profile?.full_name || user?.email || '-'}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'رقم التواصل' : 'Contact Number'}</Label>
+                <div className="px-3 py-2 bg-muted rounded-md text-muted-foreground">
+                  {profile?.phone || (language === 'ar' ? 'غير محدد' : 'Not specified')}
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>{language === 'ar' ? 'رقم التواصل' : 'Contact Number'} *</Label>
-              <Input
-                value={formData.reporter_contact}
-                onChange={(e) => setFormData({ ...formData, reporter_contact: e.target.value })}
-                required
-              />
-            </div>
+          </div>
+
+          {/* Asset Selection */}
+          <div className="space-y-2">
+            <Label>{language === 'ar' ? 'الأصل' : 'Asset'}</Label>
+            <Select
+              value={formData.asset_id}
+              onValueChange={(value) => setFormData({ ...formData, asset_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={language === 'ar' ? 'اختر الأصل (اختياري)' : 'Select Asset (optional)'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{language === 'ar' ? 'بدون أصل' : 'No Asset'}</SelectItem>
+                {assets.map((asset) => (
+                  <SelectItem key={asset.id} value={asset.id}>
+                    {language === 'ar' ? asset.name_ar || asset.name : asset.name} ({asset.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
