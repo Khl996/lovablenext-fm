@@ -1053,6 +1053,7 @@ export type Database = {
           full_name_ar: string | null
           hospital_id: string | null
           id: string
+          last_activity_at: string | null
           phone: string | null
           updated_at: string
         }
@@ -1064,6 +1065,7 @@ export type Database = {
           full_name_ar?: string | null
           hospital_id?: string | null
           id: string
+          last_activity_at?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -1075,6 +1077,7 @@ export type Database = {
           full_name_ar?: string | null
           hospital_id?: string | null
           id?: string
+          last_activity_at?: string | null
           phone?: string | null
           updated_at?: string
         }
