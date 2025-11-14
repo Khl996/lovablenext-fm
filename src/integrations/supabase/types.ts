@@ -1752,6 +1752,7 @@ export type Database = {
     }
     Functions: {
       auto_close_pending_work_orders: { Args: never; Returns: undefined }
+      delete_user: { Args: { user_id: string }; Returns: undefined }
       get_user_hospital: { Args: { _user_id: string }; Returns: string }
       has_custom_role: {
         Args: { _role_code: string; _user_id: string }

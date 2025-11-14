@@ -257,8 +257,10 @@ export default function Users() {
     if (!userToDelete) return;
 
     try {
-      // Delete user from auth (this will cascade delete from other tables due to foreign keys)
-      const { error } = await supabase.rpc('delete_user', { user_id: userToDelete.id });
+      // Call edge function to delete user
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: userToDelete.id },
+      });
 
       if (error) throw error;
 
