@@ -37,8 +37,9 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Get the current user
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    // Extract JWT token and get the current user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
     if (userError || !user) {
       console.error('Auth error:', userError);
       throw new Error('Unauthorized');
