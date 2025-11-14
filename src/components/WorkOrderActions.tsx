@@ -123,15 +123,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
-      // Send notification
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'completed',
-          performedBy: user?.id,
-        },
-      });
-
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تم إكمال العمل بنجاح' : 'Work completed successfully',
@@ -173,15 +164,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
-
-      // Send notification to engineers
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'rejected_by_technician',
-          performedBy: user?.id,
-        },
-      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
@@ -226,14 +208,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'supervisor_approved',
-          performedBy: user?.id,
-        },
-      });
-
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تم اعتماد البلاغ' : 'Work order approved',
@@ -276,14 +250,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'engineer_approved',
-          performedBy: user?.id,
-        },
-      });
-
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تمت المراجعة بنجاح' : 'Review completed successfully',
@@ -316,14 +282,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
-
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'customer_reviewed',
-          performedBy: user?.id,
-        },
-      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
@@ -366,14 +324,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
-
-      await supabase.functions.invoke('notify-work-order-updates', {
-        body: {
-          workOrderId: workOrder.id,
-          action: 'final_approved',
-          performedBy: user?.id,
-        },
-      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',

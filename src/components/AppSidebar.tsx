@@ -20,7 +20,6 @@ import {
   GitBranch,
   Award,
   Database,
-  Bell,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -38,7 +37,6 @@ import { NavLink } from '@/components/NavLink';
 
 const mainItems = [
   { title: 'dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'notifications', titleAr: 'الإشعارات', url: '/notifications-settings', icon: Bell },
   { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
   { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permission: 'view_assets' },
   { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },

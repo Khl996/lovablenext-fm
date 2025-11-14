@@ -16,7 +16,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Install from "./pages/Install";
-import NotificationsSettings from "./pages/NotificationsSettings";
 import Facilities from "./pages/Facilities";
 import Settings from "./pages/Settings";
 import Maintenance from "./pages/Maintenance";
@@ -106,14 +105,6 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/install" element={<Install />} />
-              <Route 
-                path="/notifications-settings" 
-                element={
-                  <ProtectedRoute>
-                    <NotificationsSettings />
-                  </ProtectedRoute>
-                } 
-              />
               <Route 
                 path="/dashboard"
                 element={
