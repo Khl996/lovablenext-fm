@@ -34,6 +34,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   // Determine what action the current user can take
+  const canStartWork = workOrder.assigned_team && 
+    (workOrder.status === 'pending' || workOrder.status === 'assigned') &&
+    !workOrder.start_time;
+  
   const canCompletework = workOrder.assigned_team && 
     workOrder.status === 'in_progress' &&
     !workOrder.technician_completed_at;
@@ -59,6 +63,37 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const canFinalApprove = (workOrder.customer_reviewed_at || workOrder.status === 'auto_closed') && 
     !workOrder.maintenance_manager_approved_at &&
     permissions.hasPermission('work_orders.final_approve');
+
+  const handleStartWork = async () => {
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('work_orders')
+        .update({
+          status: 'in_progress' as any,
+          start_time: new Date().toISOString(),
+        })
+        .eq('id', workOrder.id);
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم بنجاح' : 'Success',
+        description: language === 'ar' ? 'تم بدء العمل' : 'Work started',
+      });
+
+      onActionComplete();
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCompleteWork = async () => {
     if (!notes.trim()) {
@@ -354,7 +389,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   };
 
   // If no action is available, don't render
-  if (!canCompletework && !canApproveAsSupervisor && !canReviewAsEngineer && 
+  if (!canStartWork && !canCompletework && !canApproveAsSupervisor && !canReviewAsEngineer && 
       !canCloseAsReporter && !canFinalApprove) {
     return null;
   }
@@ -364,6 +399,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
       <Card>
         <CardHeader>
           <CardTitle>
+            {canStartWork && (language === 'ar' ? 'بدء العمل' : 'Start Work')}
             {canCompletework && (language === 'ar' ? 'إكمال العمل' : 'Complete Work')}
             {canApproveAsSupervisor && (language === 'ar' ? 'اعتماد المشرف' : 'Supervisor Approval')}
             {canReviewAsEngineer && (language === 'ar' ? 'مراجعة المهندس' : 'Engineer Review')}
@@ -372,18 +408,31 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>{language === 'ar' ? 'الملاحظات' : 'Notes'} *</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={language === 'ar' ? 'أضف ملاحظاتك...' : 'Add your notes...'}
-              rows={4}
-              required
-            />
-          </div>
+          {!canStartWork && (
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'الملاحظات' : 'Notes'} *</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={language === 'ar' ? 'أضف ملاحظاتك...' : 'Add your notes...'}
+                rows={4}
+                required
+              />
+            </div>
+          )}
 
           <div className="flex gap-2">
+            {canStartWork && (
+              <Button
+                onClick={handleStartWork}
+                disabled={loading}
+                className="w-full"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'بدء العمل' : 'Start Work'}
+              </Button>
+            )}
+
             {canCompletework && (
               <>
                 <Button
