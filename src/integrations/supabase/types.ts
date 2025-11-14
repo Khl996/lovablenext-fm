@@ -206,6 +206,56 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          hospital_id: string
+          id: string
+          logo_url: string | null
+          name: string
+          name_ar: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          hospital_id: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          name_ar: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          hospital_id?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          name_ar?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           code: string
@@ -291,6 +341,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          logo_url: string | null
           name: string
           name_ar: string
           notes: string | null
@@ -307,6 +358,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           name_ar: string
           notes?: string | null
@@ -323,6 +375,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           name_ar?: string
           notes?: string | null
@@ -1449,8 +1502,10 @@ export type Database = {
           assigned_at: string | null
           assigned_team: string | null
           assigned_to: string | null
+          auto_closed_at: string | null
           building_id: string | null
           code: string
+          company_id: string | null
           created_at: string
           customer_feedback: string | null
           customer_rating: number | null
@@ -1476,6 +1531,7 @@ export type Database = {
           notify_supervisor: boolean | null
           original_issue_type: string | null
           parts_used: Json | null
+          pending_closure_since: string | null
           photos: string[] | null
           priority: string
           redirect_reason: string | null
@@ -1483,6 +1539,7 @@ export type Database = {
           redirected_to: string | null
           reported_at: string
           reported_by: string
+          reporter_notes: string | null
           resolution_time: number | null
           response_time: number | null
           reviewed_at: string | null
@@ -1508,8 +1565,10 @@ export type Database = {
           assigned_at?: string | null
           assigned_team?: string | null
           assigned_to?: string | null
+          auto_closed_at?: string | null
           building_id?: string | null
           code: string
+          company_id?: string | null
           created_at?: string
           customer_feedback?: string | null
           customer_rating?: number | null
@@ -1535,6 +1594,7 @@ export type Database = {
           notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
+          pending_closure_since?: string | null
           photos?: string[] | null
           priority?: string
           redirect_reason?: string | null
@@ -1542,6 +1602,7 @@ export type Database = {
           redirected_to?: string | null
           reported_at?: string
           reported_by: string
+          reporter_notes?: string | null
           resolution_time?: number | null
           response_time?: number | null
           reviewed_at?: string | null
@@ -1567,8 +1628,10 @@ export type Database = {
           assigned_at?: string | null
           assigned_team?: string | null
           assigned_to?: string | null
+          auto_closed_at?: string | null
           building_id?: string | null
           code?: string
+          company_id?: string | null
           created_at?: string
           customer_feedback?: string | null
           customer_rating?: number | null
@@ -1594,6 +1657,7 @@ export type Database = {
           notify_supervisor?: boolean | null
           original_issue_type?: string | null
           parts_used?: Json | null
+          pending_closure_since?: string | null
           photos?: string[] | null
           priority?: string
           redirect_reason?: string | null
@@ -1601,6 +1665,7 @@ export type Database = {
           redirected_to?: string | null
           reported_at?: string
           reported_by?: string
+          reporter_notes?: string | null
           resolution_time?: number | null
           response_time?: number | null
           reviewed_at?: string | null
@@ -1642,6 +1707,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "work_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "work_orders_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
@@ -1676,6 +1748,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_close_pending_work_orders: { Args: never; Returns: undefined }
       get_user_hospital: { Args: { _user_id: string }; Returns: string }
       has_custom_role: {
         Args: { _role_code: string; _user_id: string }
@@ -1702,6 +1775,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_role_by_code: {
+        Args: { _role_code: string; _user_id: string }
         Returns: boolean
       }
     }
@@ -1737,6 +1814,11 @@ export type Database = {
         | "customer_rejected"
         | "completed"
         | "cancelled"
+        | "pending_supervisor_approval"
+        | "pending_engineer_review"
+        | "pending_reporter_closure"
+        | "rejected_by_technician"
+        | "auto_closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1897,6 +1979,11 @@ export const Constants = {
         "customer_rejected",
         "completed",
         "cancelled",
+        "pending_supervisor_approval",
+        "pending_engineer_review",
+        "pending_reporter_closure",
+        "rejected_by_technician",
+        "auto_closed",
       ],
     },
   },
