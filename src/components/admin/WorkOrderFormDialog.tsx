@@ -227,18 +227,27 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       if (error) throw error;
 
       // Send email notification to team members
-      if (newWorkOrder && selectedTeam) {
+      if (newWorkOrder?.id && selectedTeam) {
+        console.log('Sending email notification for work order:', newWorkOrder.id);
         try {
-          await supabase.functions.invoke('send-work-order-email', {
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-work-order-email', {
             body: {
               workOrderId: newWorkOrder.id,
               eventType: 'new_work_order',
             },
           });
+          
+          if (emailError) {
+            console.error('Email notification error:', emailError);
+          } else {
+            console.log('Email notification sent successfully:', emailResult);
+          }
         } catch (emailError) {
           console.error('Error sending email notification:', emailError);
           // Don't fail the whole operation if email fails
         }
+      } else {
+        console.log('Skipping email: newWorkOrder =', newWorkOrder?.id, 'selectedTeam =', selectedTeam);
       }
 
       toast({

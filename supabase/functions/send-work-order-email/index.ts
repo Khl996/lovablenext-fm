@@ -25,9 +25,11 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { workOrderId, eventType, recipientEmail }: EmailRequest = await req.json();
     
-    console.log("Processing email notification:", { workOrderId, eventType });
+    console.log("Processing email notification:", { workOrderId, eventType, recipientEmail });
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    console.log("Fetching work order with ID:", workOrderId);
 
     // Fetch work order details
     const { data: workOrder, error: woError } = await supabase
@@ -39,10 +41,18 @@ const handler = async (req: Request): Promise<Response> => {
         teams (name, name_ar)
       `)
       .eq("id", workOrderId)
-      .single();
+      .maybeSingle();
 
-    if (woError || !workOrder) {
-      throw new Error("Work order not found");
+    console.log("Work order fetch result:", { workOrder, woError });
+
+    if (woError) {
+      console.error("Database error fetching work order:", woError);
+      throw new Error(`Database error: ${woError.message}`);
+    }
+
+    if (!workOrder) {
+      console.error("Work order not found with ID:", workOrderId);
+      throw new Error(`Work order not found with ID: ${workOrderId}`);
     }
 
     // Determine email subject and body based on event type
