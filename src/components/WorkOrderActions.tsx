@@ -68,22 +68,18 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('work_orders')
         .update({
           status: 'in_progress' as any,
           start_time: new Date().toISOString(),
         })
-        .eq('id', workOrder.id)
-        .select()
-        .single();
+        .eq('id', workOrder.id);
 
       if (error) {
         console.error('Error starting work:', error);
         throw error;
       }
-
-      console.log('Work started successfully:', data);
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
