@@ -49,8 +49,45 @@ const handler = async (req: Request): Promise<Response> => {
     let subject = "";
     let htmlContent = "";
     let toEmail = recipientEmail || workOrder.profiles?.email;
+    let toEmails: string[] = [];
+
+    // For new work orders, get team members' emails
+    if (eventType === "new_work_order" && workOrder.assigned_team) {
+      const { data: teamMembers, error: teamError } = await supabase
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", workOrder.assigned_team);
+
+      if (!teamError && teamMembers) {
+        const userIds = teamMembers.map(tm => tm.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("email")
+          .in("id", userIds);
+
+        if (!profilesError && profiles) {
+          toEmails = profiles.map(p => p.email).filter(email => email);
+        }
+      }
+    }
 
     switch (eventType) {
+      case "new_work_order":
+        subject = `بلاغ صيانة جديد ${workOrder.code}`;
+        htmlContent = `
+          <div dir="rtl" style="font-family: Arial, sans-serif;">
+            <h2>بلاغ صيانة جديد</h2>
+            <p>تم إنشاء بلاغ صيانة جديد برقم: <strong>${workOrder.code}</strong></p>
+            <p>نوع المشكلة: ${workOrder.issue_type}</p>
+            <p>الوصف: ${workOrder.description}</p>
+            <p>الأولوية: ${workOrder.priority}</p>
+            <p>الجهاز: ${workOrder.assets?.name_ar || workOrder.assets?.name || "غير محدد"}</p>
+            <p>المبلغ: ${workOrder.profiles?.full_name || "غير محدد"}</p>
+            <p>يرجى المتابعة والعمل على هذا البلاغ في أقرب وقت ممكن.</p>
+          </div>
+        `;
+        break;
+
       case "work_started":
         subject = `تم بدء العمل على الطلب ${workOrder.code}`;
         htmlContent = `
@@ -146,7 +183,10 @@ const handler = async (req: Request): Promise<Response> => {
         `;
     }
 
-    if (!toEmail) {
+    // Determine recipients
+    const recipients = toEmails.length > 0 ? toEmails : (toEmail ? [toEmail] : []);
+
+    if (recipients.length === 0) {
       console.warn("No recipient email found, skipping email send");
       return new Response(
         JSON.stringify({ message: "No recipient email found" }),
@@ -157,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email via Resend
     const emailResponse = await resend.emails.send({
       from: "نظام الصيانة <onboarding@resend.dev>",
-      to: [toEmail],
+      to: recipients,
       subject,
       html: htmlContent,
     });

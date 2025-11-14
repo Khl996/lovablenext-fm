@@ -205,7 +205,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       // TODO: Upload photos to storage first, then save URLs
       // For now, we'll skip photos to avoid errors
       
-      const { error } = await supabase.from('work_orders').insert([{
+      const { data: newWorkOrder, error } = await supabase.from('work_orders').insert([{
         code,
         hospital_id: hospitalId!,
         issue_type: formData.issue_type,
@@ -222,9 +222,24 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         assigned_team: selectedTeam || null,
         company_id: formData.company_id || null,
         photos: null,
-      }]);
+      }]).select().single();
 
       if (error) throw error;
+
+      // Send email notification to team members
+      if (newWorkOrder && selectedTeam) {
+        try {
+          await supabase.functions.invoke('send-work-order-email', {
+            body: {
+              workOrderId: newWorkOrder.id,
+              eventType: 'new_work_order',
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending email notification:', emailError);
+          // Don't fail the whole operation if email fails
+        }
+      }
 
       toast({
         title: language === 'ar' ? 'تم الإنشاء' : 'Created',
