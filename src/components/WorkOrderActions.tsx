@@ -81,6 +81,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         throw error;
       }
 
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "work_started" },
+      });
+
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تم بدء العمل' : 'Work started',
@@ -123,6 +128,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "work_completed" },
+      });
+
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تم إكمال العمل بنجاح' : 'Work completed successfully',
@@ -164,6 +174,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
+
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "rejected_by_technician" },
+      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
@@ -208,6 +223,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "supervisor_approved" },
+      });
+
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تم اعتماد البلاغ' : 'Work order approved',
@@ -250,6 +270,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       if (error) throw error;
 
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "engineer_approved" },
+      });
+
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
         description: language === 'ar' ? 'تمت المراجعة بنجاح' : 'Review completed successfully',
@@ -282,6 +307,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
+
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "customer_reviewed" },
+      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
@@ -324,6 +354,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         .eq('id', workOrder.id);
 
       if (error) throw error;
+
+      // Send email notification
+      supabase.functions.invoke("send-work-order-email", {
+        body: { workOrderId: workOrder.id, eventType: "final_approved" },
+      });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
