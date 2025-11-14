@@ -1121,7 +1121,7 @@ export type Database = {
           created_at: string
           id: string
           permission_key: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: Database["public"]["Enums"]["app_role"] | null
           role_code: string | null
         }
         Insert: {
@@ -1129,7 +1129,7 @@ export type Database = {
           created_at?: string
           id?: string
           permission_key: string
-          role: Database["public"]["Enums"]["app_role"]
+          role?: Database["public"]["Enums"]["app_role"] | null
           role_code?: string | null
         }
         Update: {
@@ -1137,7 +1137,7 @@ export type Database = {
           created_at?: string
           id?: string
           permission_key?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: Database["public"]["Enums"]["app_role"] | null
           role_code?: string | null
         }
         Relationships: [
