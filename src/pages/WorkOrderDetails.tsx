@@ -640,6 +640,7 @@ export default function WorkOrderDetails() {
               <div class="workflow-item completed">
                 <div class="step-title">${language === 'ar' ? 'إنهاء الفني' : 'Technician Completed'}</div>
                 <div class="step-detail">${format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${assignedTechnicianName ? `<div class="step-detail">${language === 'ar' ? 'بواسطة' : 'By'}: ${assignedTechnicianName}</div>` : ''}
                 ${workOrder.technician_notes ? `<div class="step-detail">${workOrder.technician_notes}</div>` : ''}
               </div>
             ` : ''}
@@ -647,6 +648,7 @@ export default function WorkOrderDetails() {
               <div class="workflow-item completed">
                 <div class="step-title">${language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approved'}</div>
                 <div class="step-detail">${format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${supervisorName ? `<div class="step-detail">${language === 'ar' ? 'بواسطة' : 'By'}: ${supervisorName}</div>` : ''}
                 ${workOrder.supervisor_notes ? `<div class="step-detail">${workOrder.supervisor_notes}</div>` : ''}
               </div>
             ` : ''}
@@ -654,6 +656,7 @@ export default function WorkOrderDetails() {
               <div class="workflow-item completed">
                 <div class="step-title">${language === 'ar' ? 'موافقة المهندس' : 'Engineer Approved'}</div>
                 <div class="step-detail">${format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${engineerName ? `<div class="step-detail">${language === 'ar' ? 'بواسطة' : 'By'}: ${engineerName}</div>` : ''}
                 ${workOrder.engineer_notes ? `<div class="step-detail">${workOrder.engineer_notes}</div>` : ''}
               </div>
             ` : ''}
@@ -669,6 +672,7 @@ export default function WorkOrderDetails() {
               <div class="workflow-item completed">
                 <div class="step-title">${language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval'}</div>
                 <div class="step-detail">${format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+                ${managerName ? `<div class="step-detail">${language === 'ar' ? 'بواسطة' : 'By'}: ${managerName}</div>` : ''}
                 ${workOrder.maintenance_manager_notes ? `<div class="step-detail">${workOrder.maintenance_manager_notes}</div>` : ''}
               </div>
             ` : ''}
