@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, User, Search, Filter } from 'lucide-react';
+import { Plus, User, Search, Filter, Trash2, Clock } from 'lucide-react';
 import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 interface UserData {
   id: string;
@@ -21,6 +24,7 @@ interface UserData {
   phone: string | null;
   hospital_id: string | null;
   hospital_name?: string;
+  last_activity_at?: string | null;
   roles: Array<{
     id: string;
     role: string;
@@ -47,6 +51,8 @@ export default function Users() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -73,6 +79,7 @@ export default function Users() {
           email,
           phone,
           hospital_id,
+          last_activity_at,
           hospitals(name, name_ar)
         `);
 
@@ -128,6 +135,7 @@ export default function Users() {
           phone: profile.phone,
           hospital_id: profile.hospital_id,
           hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
+          last_activity_at: profile.last_activity_at,
           roles: [...systemRoles, ...customRolesList],
         };
       });
@@ -242,6 +250,38 @@ export default function Users() {
     } catch (error: any) {
       console.error('Error adding user:', error);
       toast.error(error.message || t('errorOccurred'));
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      // Delete user from auth (this will cascade delete from other tables due to foreign keys)
+      const { error } = await supabase.rpc('delete_user', { user_id: userToDelete.id });
+
+      if (error) throw error;
+
+      toast.success(language === 'ar' ? 'تم حذف المستخدم بنجاح' : 'User deleted successfully');
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      loadUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error(error.message || (language === 'ar' ? 'حدث خطأ أثناء حذف المستخدم' : 'Error deleting user'));
+    }
+  };
+
+  const formatLastActivity = (lastActivity: string | null | undefined) => {
+    if (!lastActivity) return language === 'ar' ? 'لم يسجل نشاط' : 'No activity';
+    
+    try {
+      return formatDistanceToNow(new Date(lastActivity), {
+        addSuffix: true,
+        locale: language === 'ar' ? ar : undefined,
+      });
+    } catch {
+      return language === 'ar' ? 'غير معروف' : 'Unknown';
     }
   };
 
@@ -506,8 +546,7 @@ export default function Users() {
         {filteredUsers.map((user) => (
           <Card 
             key={user.id} 
-            className="cursor-pointer hover:border-primary/50 transition-colors"
-            onClick={() => setSelectedUser(user)}
+            className="hover:border-primary/50 transition-colors relative"
           >
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -515,9 +554,23 @@ export default function Users() {
                   <User className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">{user.full_name}</CardTitle>
+                  <CardTitle className="text-lg truncate cursor-pointer" onClick={() => setSelectedUser(user)}>
+                    {user.full_name}
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground truncate" dir="ltr">{user.email}</p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setUserToDelete(user);
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -527,6 +580,10 @@ export default function Users() {
               {user.hospital_name && (
                 <p className="text-sm text-muted-foreground">{user.hospital_name}</p>
               )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>{formatLastActivity(user.last_activity_at)}</span>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {user.roles.map((role) => (
                   <Badge key={role.id} variant="secondary">
@@ -538,6 +595,28 @@ export default function Users() {
           </Card>
         ))}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === 'ar' ? 'تأكيد حذف المستخدم' : 'Confirm User Deletion'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === 'ar' 
+                ? `هل أنت متأكد من حذف المستخدم "${userToDelete?.full_name}"؟ هذا الإجراء لا يمكن التراجع عنه.`
+                : `Are you sure you want to delete user "${userToDelete?.full_name}"? This action cannot be undone.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">
+              {language === 'ar' ? 'حذف' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <UserDetailsSheet
         user={selectedUser}
