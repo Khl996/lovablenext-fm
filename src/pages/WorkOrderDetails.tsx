@@ -108,6 +108,48 @@ export default function WorkOrderDetails() {
     }
   }, [id]);
 
+  // Realtime subscription for work order updates
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel('work-order-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'work_orders',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          const newData = payload.new as WorkOrder;
+          const oldData = payload.old as WorkOrder;
+          
+          // Check if status changed
+          if (newData.status !== oldData.status) {
+            const statusItem = lookups.work_order_statuses?.find(s => s.code === newData.status);
+            const statusName = getLookupName(statusItem || null, language);
+            toast({
+              title: language === 'ar' ? 'تم تحديث حالة أمر العمل' : 'Work Order Status Updated',
+              description: language === 'ar' 
+                ? `تم تغيير الحالة إلى: ${statusName}`
+                : `Status changed to: ${statusName}`,
+            });
+          }
+          
+          // Reload data to get updated information
+          loadWorkOrder();
+          loadOperations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, language, lookups]);
+
   const loadWorkOrder = async () => {
     try {
       setLoading(true);
