@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { NotificationPromptBanner } from '@/components/NotificationPromptBanner';
 
 interface DashboardStats {
   totalAssets: number;
@@ -120,8 +121,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-        {/* Install PWA Banner */}
-        {!isInstalled && showInstallBanner && (
+      {/* Notification Prompt Banner */}
+      <NotificationPromptBanner />
+
+      {/* Install PWA Banner */}
+      {!isInstalled && showInstallBanner && (
           <Alert className="bg-primary/5 border-primary/20">
             <Download className="h-4 w-4 text-primary" />
             <AlertDescription className="flex items-center justify-between gap-4">
