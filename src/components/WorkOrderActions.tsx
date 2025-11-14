@@ -308,7 +308,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
       const { error } = await supabase
         .from('work_orders')
         .update({
-          status: 'closed' as any,
+          status: 'completed' as any,
           customer_reviewed_at: new Date().toISOString(),
           customer_reviewed_by: user?.id,
           reporter_notes: notes,
