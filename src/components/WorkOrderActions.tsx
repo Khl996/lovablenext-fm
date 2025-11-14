@@ -68,15 +68,22 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('work_orders')
         .update({
           status: 'in_progress' as any,
           start_time: new Date().toISOString(),
         })
-        .eq('id', workOrder.id);
+        .eq('id', workOrder.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error starting work:', error);
+        throw error;
+      }
+
+      console.log('Work started successfully:', data);
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
@@ -85,6 +92,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
       onActionComplete();
     } catch (error: any) {
+      console.error('Failed to start work:', error);
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: error.message,
