@@ -37,7 +37,6 @@ const handler = async (req: Request): Promise<Response> => {
       .select(`
         *,
         assets (name, name_ar),
-        profiles!work_orders_reported_by_fkey (full_name, email),
         teams (name, name_ar)
       `)
       .eq("id", workOrderId)
@@ -55,10 +54,23 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Work order not found with ID: ${workOrderId}`);
     }
 
+    // Fetch reporter profile separately
+    let reporterProfile = null;
+    if (workOrder.reported_by) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", workOrder.reported_by)
+        .maybeSingle();
+      
+      reporterProfile = profile;
+      console.log("Reporter profile:", reporterProfile);
+    }
+
     // Determine email subject and body based on event type
     let subject = "";
     let htmlContent = "";
-    let toEmail = recipientEmail || workOrder.profiles?.email;
+    let toEmail = recipientEmail || reporterProfile?.email;
     let toEmails: string[] = [];
 
     // For new work orders, get team members' emails
@@ -92,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p>الوصف: ${workOrder.description}</p>
             <p>الأولوية: ${workOrder.priority}</p>
             <p>الجهاز: ${workOrder.assets?.name_ar || workOrder.assets?.name || "غير محدد"}</p>
-            <p>المبلغ: ${workOrder.profiles?.full_name || "غير محدد"}</p>
+            <p>المبلغ: ${reporterProfile?.full_name || "غير محدد"}</p>
             <p>يرجى المتابعة والعمل على هذا البلاغ في أقرب وقت ممكن.</p>
           </div>
         `;
