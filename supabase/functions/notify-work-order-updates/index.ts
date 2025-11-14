@@ -28,13 +28,7 @@ serve(async (req: Request) => {
     // Get work order details
     const { data: workOrder, error: woError } = await supabase
       .from("work_orders")
-      .select(`
-        *,
-        reporter:reported_by(full_name, full_name_ar),
-        technician:assigned_to(full_name, full_name_ar),
-        supervisor:supervisor_approved_by(full_name, full_name_ar),
-        engineer:engineer_approved_by(full_name, full_name_ar)
-      `)
+      .select("*")
       .eq("id", workOrderId)
       .single();
 

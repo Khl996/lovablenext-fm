@@ -49,7 +49,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const canApproveAsSupervisor = workOrder.technician_completed_at && 
     !workOrder.supervisor_approved_at &&
     workOrder.status !== 'rejected_by_technician' &&
-    permissions.hasPermission('work_orders.approve_as_supervisor');
+    permissions.hasPermission('work_orders.approve');
   
   const canReviewAsEngineer = workOrder.supervisor_approved_at && 
     !workOrder.engineer_approved_at &&
