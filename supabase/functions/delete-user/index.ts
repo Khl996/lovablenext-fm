@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
@@ -25,10 +26,10 @@ Deno.serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Create client with user's auth token to check permissions
-    const supabaseClient = createClient(
+    // Create client with anon key + user's auth token to check permissions
+    const userClient = createClient(
       supabaseUrl,
-      supabaseServiceKey,
+      supabaseAnonKey,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -37,13 +38,18 @@ Deno.serve(async (req) => {
     );
 
     // Get the current user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin
-    const { data: roles, error: rolesError } = await supabaseClient
+    console.log('User authenticated:', user.id);
+
+    // Check if user is admin using service role client
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: roles, error: rolesError } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id);
@@ -61,6 +67,8 @@ Deno.serve(async (req) => {
       throw new Error('Permission denied: Only admins can delete users');
     }
 
+    console.log('Admin permission verified');
+
     const { userId }: DeleteUserRequest = await req.json();
 
     if (!userId) {
@@ -68,9 +76,6 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Admin ${user.id} deleting user ${userId}`);
-
-    // Create admin client for deletion
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Delete user from auth (this will cascade to other tables due to foreign keys)
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
