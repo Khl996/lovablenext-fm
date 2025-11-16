@@ -54,7 +54,7 @@ const adminItems = [
   { title: 'issueTypes', titleAr: 'ربط أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch, permission: 'manage_users' },
   { title: 'specializations', titleAr: 'التخصصات', url: '/admin/specializations', icon: Award, permission: 'manage_users' },
   { title: 'lookupTables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database, permission: 'manage_users' },
-  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
+  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings, permission: 'manage_users' },
 ];
 
 export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {

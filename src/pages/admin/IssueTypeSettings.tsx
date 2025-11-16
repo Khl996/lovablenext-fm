@@ -12,11 +12,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { useNavigate } from 'react-router-dom';
 
 export default function IssueTypeSettings() {
   const { language } = useLanguage();
-  const { hospitalId } = useCurrentUser();
+  const { hospitalId, permissions } = useCurrentUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Check if user has permission to access settings
+  useEffect(() => {
+    if (!permissions.hasPermission('manage_users')) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar'
+          ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
+          : 'You do not have permission to access this page',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+    }
+  }, [permissions, navigate, language]);
 
   const [mappings, setMappings] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
