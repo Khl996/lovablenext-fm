@@ -27,6 +27,7 @@ import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
 import Assets from "./pages/admin/Assets";
 import AssetDetails from "./pages/admin/AssetDetails";
+import MaintenanceTaskDetails from "./pages/admin/MaintenanceTaskDetails";
 import WorkOrders from './pages/admin/WorkOrders';
 import Teams from './pages/admin/Teams';
 import OperationsLog from './pages/OperationsLog';
@@ -222,6 +223,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <AssetDetails />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/maintenance/:code"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MaintenanceTaskDetails />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
