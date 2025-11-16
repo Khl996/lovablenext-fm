@@ -153,29 +153,41 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   };
 
   const generateCode = async () => {
-    // Format: WO-[HospitalCode]-YYYYMM-####
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    
-    // Get hospital code (first 3 letters or HOS if not available)
-    const { data: hospital } = await supabase
-      .from('hospitals')
-      .select('name')
-      .eq('id', hospitalId!)
-      .single();
-    
-    const hospitalCode = hospital?.name?.substring(0, 3).toUpperCase() || 'HOS';
-    
-    // Get count of work orders this month to generate sequential number
-    const { count } = await supabase
-      .from('work_orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('hospital_id', hospitalId!)
-      .gte('created_at', `${year}-${month}-01`);
-    
-    const sequential = ((count || 0) + 1).toString().padStart(4, '0');
-    return `WO-${hospitalCode}-${year}${month}-${sequential}`;
+    if (!hospitalId) return '';
+
+    try {
+      // Get hospital code
+      const { data: hospital } = await supabase
+        .from('hospitals')
+        .select('code')
+        .eq('id', hospitalId)
+        .single();
+
+      const hospitalCode = hospital?.code || 'HOS';
+      
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      
+      // Get count of work orders today
+      const { count } = await supabase
+        .from('work_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('hospital_id', hospitalId)
+        .gte('created_at', `${year}-${month}-${day}T00:00:00`)
+        .lt('created_at', `${year}-${month}-${day}T23:59:59`);
+
+      const sequential = ((count || 0) + 1).toString().padStart(4, '0');
+      return `${hospitalCode}-${year}${month}${day}-${sequential}`;
+    } catch (error) {
+      console.error('Error generating work order code:', error);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      return `WO-${year}${month}${day}-0001`;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

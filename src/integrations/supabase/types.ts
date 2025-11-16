@@ -338,6 +338,7 @@ export type Database = {
       hospitals: {
         Row: {
           address: string | null
+          code: string
           created_at: string
           email: string | null
           id: string
@@ -355,6 +356,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          code: string
           created_at?: string
           email?: string | null
           id?: string
@@ -372,6 +374,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          code?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -439,6 +442,7 @@ export type Database = {
       }
       lookup_asset_categories: {
         Row: {
+          category_code: string | null
           code: string
           created_at: string | null
           description: string | null
@@ -452,6 +456,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          category_code?: string | null
           code: string
           created_at?: string | null
           description?: string | null
@@ -465,6 +470,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          category_code?: string | null
           code?: string
           created_at?: string | null
           description?: string | null

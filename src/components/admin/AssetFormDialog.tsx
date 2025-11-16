@@ -91,25 +91,37 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     if (!hospitalId) return '';
 
     try {
-      const { data, error } = await supabase
-        .from('assets')
+      // Get hospital code
+      const { data: hospital } = await supabase
+        .from('hospitals')
         .select('code')
-        .eq('hospital_id', hospitalId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .eq('id', hospitalId)
+        .single();
 
-      if (error) throw error;
+      const hospitalCode = hospital?.code || 'HOS';
 
-      let nextNumber = 1;
-      if (data && data.length > 0) {
-        const lastCode = data[0].code;
-        const match = lastCode.match(/AST-(\d+)/);
-        if (match) {
-          nextNumber = parseInt(match[1]) + 1;
-        }
+      // Get category code if category is selected
+      let categoryCode = 'AST';
+      if (formData.category) {
+        const { data: categories } = await supabase
+          .from('lookup_asset_categories')
+          .select('category_code')
+          .eq('hospital_id', hospitalId)
+          .eq('code', formData.category)
+          .maybeSingle();
+        
+        categoryCode = categories?.category_code || formData.category.substring(0, 3).toUpperCase();
       }
 
-      return `AST-${nextNumber.toString().padStart(4, '0')}`;
+      // Get count of assets with same hospital and category
+      const { count } = await supabase
+        .from('assets')
+        .select('*', { count: 'exact', head: true })
+        .eq('hospital_id', hospitalId)
+        .eq('category', formData.category as any);
+      
+      const nextNumber = (count || 0) + 1;
+      return `${hospitalCode}-${categoryCode}-${nextNumber.toString().padStart(4, '0')}`;
     } catch (error) {
       console.error('Error generating code:', error);
       return `AST-${Date.now().toString().slice(-4)}`;
