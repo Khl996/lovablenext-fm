@@ -40,6 +40,7 @@ export default function Companies() {
     status: 'active',
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
@@ -108,6 +109,11 @@ export default function Companies() {
       return;
     }
 
+    if (!hospitalId) {
+      toast.error(language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك' : 'No hospital associated with your account');
+      return;
+    }
+
     try {
       let logoUrl = formData.logo_url;
 
@@ -121,7 +127,20 @@ export default function Companies() {
         }
       }
 
-      const companyData = { ...formData, logo_url: logoUrl };
+      // Prepare company data without logo_url if it's empty or still a preview
+      const companyData: any = {
+        name: formData.name,
+        name_ar: formData.name_ar,
+        contact_person: formData.contact_person || null,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        status: formData.status,
+      };
+
+      // Only include logo_url if it's a valid URL (not a DataURL)
+      if (logoUrl && !logoUrl.startsWith('data:')) {
+        companyData.logo_url = logoUrl;
+      }
 
       if (editingCompany) {
         const { error } = await (supabase as any)
@@ -152,6 +171,7 @@ export default function Companies() {
         status: 'active',
       });
       setLogoFile(null);
+      setLogoPreview(null);
       loadCompanies();
     } catch (error) {
       console.error('Error saving company:', error);
@@ -237,6 +257,7 @@ export default function Companies() {
                 status: 'active',
               });
               setLogoFile(null);
+              setLogoPreview(null);
             }}>
               <Plus className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'إضافة شركة' : 'Add Company'}
@@ -284,7 +305,7 @@ export default function Companies() {
                         // Create preview URL
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                          setFormData({ ...formData, logo_url: reader.result as string });
+                          setLogoPreview(reader.result as string);
                         };
                         reader.readAsDataURL(file);
                       }
@@ -297,10 +318,10 @@ export default function Companies() {
                     </div>
                   )}
                 </div>
-                {(formData.logo_url || logoFile) && (
+                {(logoPreview || (formData.logo_url && !logoFile)) && (
                   <div className="mt-2 p-4 border rounded-lg flex items-center justify-center bg-muted">
                     <img 
-                      src={formData.logo_url} 
+                      src={logoPreview || formData.logo_url} 
                       alt="Logo preview" 
                       className="max-h-20 object-contain"
                       onError={(e) => {
