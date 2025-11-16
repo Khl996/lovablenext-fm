@@ -252,7 +252,7 @@ export default function Maintenance() {
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="space-y-6">
           <div className="flex justify-end">
-            {permissions.hasPermission('manage_maintenance') && (
+            {permissions.hasPermission('execute_maintenance') && (
               <Button onClick={() => setShowTaskDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
@@ -361,7 +361,7 @@ export default function Maintenance() {
         {/* Plans Tab */}
         <TabsContent value="plans" className="space-y-6">
           <div className="flex justify-end">
-            {permissions.hasPermission('manage_maintenance') && (
+            {permissions.hasPermission('manage_maintenance_plans') && (
               <Button onClick={() => setShowPlanDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 {language === 'ar' ? 'إضافة خطة' : 'Add Plan'}
