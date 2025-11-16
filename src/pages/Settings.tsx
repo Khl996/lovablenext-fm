@@ -17,6 +17,18 @@ export default function Settings() {
   const { permissions } = useCurrentUser();
   const navigate = useNavigate();
 
+  // Check if user has permission to access settings
+  useEffect(() => {
+    if (!permissions.hasPermission('manage_users')) {
+      toast.error(
+        language === 'ar'
+          ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
+          : 'You do not have permission to access this page'
+      );
+      navigate('/dashboard');
+    }
+  }, [permissions, navigate, language]);
+
   const [generalSettings, setGeneralSettings] = useState({
     systemName: 'FMS',
     systemNameAr: 'نظام إدارة المرافق',
