@@ -26,6 +26,7 @@ import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
 import Locations from "./pages/admin/Locations";
 import Assets from "./pages/admin/Assets";
+import AssetDetails from "./pages/admin/AssetDetails";
 import WorkOrders from './pages/admin/WorkOrders';
 import Teams from './pages/admin/Teams';
 import OperationsLog from './pages/OperationsLog';
@@ -206,11 +207,21 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/admin/assets" 
+                path="/admin/assets"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
                       <Assets />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/assets/:code"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <AssetDetails />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

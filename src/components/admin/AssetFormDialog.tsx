@@ -241,6 +241,9 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
       };
 
       if (asset) {
+        // Update QR code URL if code changed
+        payload.qr_code = `${window.location.origin}/admin/assets/${asset.code}`;
+        
         const { error } = await supabase
           .from('assets')
           .update(payload)
@@ -249,6 +252,9 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
         if (error) throw error;
       } else {
         payload.code = generatedCode;
+        // Set QR code URL for new asset
+        payload.qr_code = `${window.location.origin}/admin/assets/${generatedCode}`;
+        
         const { error } = await supabase
           .from('assets')
           .insert([payload]);
