@@ -317,6 +317,17 @@ export default function Hospitals() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="code">{language === 'ar' ? 'رمز المستشفى' : 'Hospital Code'}</Label>
+                <Input
+                  id="code"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  required
+                  placeholder={language === 'ar' ? 'مثال: HOS001' : 'Example: HOS001'}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="name">{t('hospitalName')}</Label>
                 <Input
                   id="name"

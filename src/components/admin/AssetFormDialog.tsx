@@ -204,6 +204,13 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     }
   }, [open, asset, hospitalId]);
 
+  // Regenerate code when category changes (only for new assets)
+  useEffect(() => {
+    if (open && !asset && formData.category) {
+      generateAssetCode().then(code => setGeneratedCode(code));
+    }
+  }, [formData.category]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
