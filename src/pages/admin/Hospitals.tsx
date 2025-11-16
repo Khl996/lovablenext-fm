@@ -16,6 +16,7 @@ interface HospitalData {
   id: string;
   name: string;
   name_ar: string;
+  code: string;
   logo_url: string | null;
   type: string | null;
   address: string | null;
@@ -25,6 +26,7 @@ interface HospitalData {
   suspended_at: string | null;
   suspended_by: string | null;
   suspension_reason: string | null;
+  notes?: string | null;
 }
 
 export default function Hospitals() {
@@ -43,11 +45,13 @@ export default function Hospitals() {
   const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
+    code: '',
     logo_url: '',
     type: '',
     address: '',
     phone: '',
     email: '',
+    notes: '',
   });
 
   const canSuspend = permissions.hasPermission('hospitals.suspend');
@@ -61,7 +65,7 @@ export default function Hospitals() {
     try {
       const { data, error } = await supabase
         .from('hospitals')
-        .select('id, name, name_ar, logo_url, type, address, phone, email, status, suspended_at, suspended_by, suspension_reason')
+        .select('id, name, name_ar, code, logo_url, type, address, phone, email, status, suspended_at, suspended_by, suspension_reason, notes')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -104,7 +108,7 @@ export default function Hospitals() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.name_ar) {
+    if (!formData.name || !formData.name_ar || !formData.code) {
       toast.error(t('fillRequired'));
       return;
     }
@@ -168,11 +172,13 @@ export default function Hospitals() {
       setFormData({
         name: '',
         name_ar: '',
+        code: '',
         logo_url: '',
         type: '',
         address: '',
         phone: '',
         email: '',
+        notes: '',
       });
       loadHospitals();
     } catch (error) {
@@ -186,11 +192,13 @@ export default function Hospitals() {
     setFormData({
       name: hospital.name,
       name_ar: hospital.name_ar,
+      code: hospital.code || '',
       logo_url: hospital.logo_url || '',
       type: hospital.type || '',
       address: hospital.address || '',
       phone: hospital.phone || '',
       email: hospital.email || '',
+      notes: hospital.notes || '',
     });
     setLogoFile(null);
     setIsDialogOpen(true);
@@ -201,15 +209,17 @@ export default function Hospitals() {
     if (!open) {
       setEditingHospital(null);
       setLogoFile(null);
-      setFormData({
-        name: '',
-        name_ar: '',
-        logo_url: '',
-        type: '',
-        address: '',
-        phone: '',
-        email: '',
-      });
+    setFormData({
+      name: '',
+      name_ar: '',
+      code: '',
+      logo_url: '',
+      type: '',
+      address: '',
+      phone: '',
+      email: '',
+      notes: '',
+    });
     }
   };
 
