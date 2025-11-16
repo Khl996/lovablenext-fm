@@ -62,6 +62,8 @@ export default function Maintenance() {
     if (hospitalId) {
       loadPlans();
       loadTasks();
+    } else {
+      setLoading(false);
     }
   }, [hospitalId, statusFilter, typeFilter]);
 
@@ -165,6 +167,20 @@ export default function Maintenance() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!hospitalId) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' : 'No hospital associated with your account. Please contact administrator.'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

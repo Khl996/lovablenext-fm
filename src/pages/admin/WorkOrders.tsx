@@ -63,9 +63,15 @@ export default function WorkOrders() {
     reportedDate: language === 'ar' ? 'تاريخ البلاغ' : 'Reported Date',
   };
 
+  const { hospitalId } = useCurrentUser();
+
   useEffect(() => {
-    loadWorkOrders();
-  }, []);
+    if (hospitalId) {
+      loadWorkOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [hospitalId]);
 
   const loadWorkOrders = async () => {
     try {
@@ -146,6 +152,20 @@ export default function WorkOrders() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!hospitalId) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' : 'No hospital associated with your account. Please contact administrator.'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
