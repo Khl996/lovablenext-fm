@@ -29,7 +29,7 @@ const tableMap = {
 
 export default function LookupTables() {
   const { language } = useLanguage();
-  const { hospitalId, permissions, loading: userLoading } = useCurrentUser();
+  const { hospitalId, permissions, loading: userLoading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -38,7 +38,7 @@ export default function LookupTables() {
     // Don't check permissions while still loading
     if (userLoading || permissions.loading) return;
     
-    if (!permissions.hasPermission('manage_users')) {
+    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar'
@@ -48,7 +48,7 @@ export default function LookupTables() {
       });
       navigate('/dashboard');
     }
-  }, [permissions, userLoading, navigate, language, toast]);
+  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, userLoading, navigate, language, toast]);
 
   const [selectedTable, setSelectedTable] = useState<LookupTableName>('priorities');
   const [data, setData] = useState<LookupItem[]>([]);

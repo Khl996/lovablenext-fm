@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { language } = useLanguage();
-  const { permissions, loading } = useCurrentUser();
+  const { permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
   const navigate = useNavigate();
 
   // Check if user has permission to access settings
@@ -22,7 +22,7 @@ export default function Settings() {
     // Don't check permissions while still loading
     if (loading || permissions.loading) return;
     
-    if (!permissions.hasPermission('manage_users')) {
+    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
       toast.error(
         language === 'ar'
           ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
@@ -30,7 +30,7 @@ export default function Settings() {
       );
       navigate('/dashboard');
     }
-  }, [permissions, loading, navigate, language]);
+  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, loading, navigate, language]);
 
   const [generalSettings, setGeneralSettings] = useState({
     systemName: 'FMS',

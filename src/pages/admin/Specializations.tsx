@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Specializations() {
   const { language } = useLanguage();
-  const { hospitalId, permissions, loading } = useCurrentUser();
+  const { hospitalId, permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -26,7 +26,7 @@ export default function Specializations() {
     // Don't check permissions while still loading
     if (loading || permissions.loading) return;
     
-    if (!permissions.hasPermission('manage_users')) {
+    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar'
@@ -36,7 +36,7 @@ export default function Specializations() {
       });
       navigate('/dashboard');
     }
-  }, [permissions, loading, navigate, language, toast]);
+  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, loading, navigate, language, toast]);
 
   const [specializations, setSpecializations] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
