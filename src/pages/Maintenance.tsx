@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Wrench } from 'lucide-react';
+import { Search, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Wrench, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { MaintenanceTaskFormDialog } from '@/components/admin/MaintenanceTaskFormDialog';
+import { MaintenancePlanFormDialog } from '@/components/admin/MaintenancePlanFormDialog';
 
 type MaintenanceTask = {
   id: string;
@@ -45,6 +46,7 @@ export default function Maintenance() {
   const { t, language } = useLanguage();
   const { hospitalId, permissions } = useCurrentUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [plans, setPlans] = useState<MaintenancePlan[]>([]);
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
@@ -53,6 +55,7 @@ export default function Maintenance() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MaintenancePlan | null>(null);
 
   useEffect(() => {
@@ -178,12 +181,6 @@ export default function Maintenance() {
             {language === 'ar' ? 'إدارة خطط ومهام الصيانة' : 'Manage maintenance plans and tasks'}
           </p>
         </div>
-        {permissions.hasPermission('manage_maintenance') && (
-          <Button onClick={() => setShowTaskDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
-          </Button>
-        )}
       </div>
 
       {/* Stats Cards */}
@@ -239,98 +236,218 @@ export default function Maintenance() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder={language === 'ar' ? 'النوع' : 'Type'} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{language === 'ar' ? 'الكل' : 'All'}</SelectItem>
-                <SelectItem value="preventive">{language === 'ar' ? 'وقائية' : 'Preventive'}</SelectItem>
-                <SelectItem value="corrective">{language === 'ar' ? 'تصحيحية' : 'Corrective'}</SelectItem>
-                <SelectItem value="predictive">{language === 'ar' ? 'تنبؤية' : 'Predictive'}</SelectItem>
-                <SelectItem value="emergency">{language === 'ar' ? 'طارئة' : 'Emergency'}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder={language === 'ar' ? 'الحالة' : 'Status'} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{language === 'ar' ? 'الكل' : 'All'}</SelectItem>
-                <SelectItem value="scheduled">{language === 'ar' ? 'مجدولة' : 'Scheduled'}</SelectItem>
-                <SelectItem value="in_progress">{language === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</SelectItem>
-                <SelectItem value="completed">{language === 'ar' ? 'مكتملة' : 'Completed'}</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Tabs */}
+      <Tabs defaultValue="tasks" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="tasks">
+            <Wrench className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'المهام' : 'Tasks'}
+          </TabsTrigger>
+          <TabsTrigger value="plans">
+            <FileText className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'الخطط' : 'Plans'}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks" className="space-y-6">
+          <div className="flex justify-end">
+            {permissions.hasPermission('manage_maintenance') && (
+              <Button onClick={() => setShowTaskDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
+              </Button>
+            )}
           </div>
-        </CardHeader>
-        <CardContent>
-          {filteredTasks.length === 0 ? (
-            <div className="text-center py-12">
-              <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                {language === 'ar' ? 'لا توجد مهام صيانة' : 'No maintenance tasks found'}
-              </p>
-            </div>
-          ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{language === 'ar' ? 'الرمز' : 'Code'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'المهمة' : 'Task'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'تاريخ البداية' : 'Start Date'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'تاريخ النهاية' : 'End Date'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'التقدم' : 'Progress'}</TableHead>
-                    <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTasks.map((task) => (
-                    <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-medium">{task.code}</TableCell>
-                      <TableCell>{language === 'ar' ? task.name_ar : task.name}</TableCell>
-                      <TableCell>{getTypeBadge(task.type)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(task.start_date), 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(task.end_date), 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary transition-all" 
-                              style={{ width: `${task.progress || 0}%` }}
-                            />
-                          </div>
-                          <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(task.status)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder={language === 'ar' ? 'النوع' : 'Type'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'ar' ? 'الكل' : 'All'}</SelectItem>
+                    <SelectItem value="preventive">{language === 'ar' ? 'وقائية' : 'Preventive'}</SelectItem>
+                    <SelectItem value="corrective">{language === 'ar' ? 'تصحيحية' : 'Corrective'}</SelectItem>
+                    <SelectItem value="predictive">{language === 'ar' ? 'تنبؤية' : 'Predictive'}</SelectItem>
+                    <SelectItem value="routine">{language === 'ar' ? 'روتينية' : 'Routine'}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder={language === 'ar' ? 'الحالة' : 'Status'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'ar' ? 'الكل' : 'All'}</SelectItem>
+                    <SelectItem value="scheduled">{language === 'ar' ? 'مجدولة' : 'Scheduled'}</SelectItem>
+                    <SelectItem value="in_progress">{language === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</SelectItem>
+                    <SelectItem value="completed">{language === 'ar' ? 'مكتملة' : 'Completed'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-12">
+                  <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    {language === 'ar' ? 'لا توجد مهام صيانة' : 'No maintenance tasks found'}
+                  </p>
+                </div>
+              ) : (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'الرمز' : 'Code'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'المهمة' : 'Task'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'تاريخ البداية' : 'Start Date'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'تاريخ النهاية' : 'End Date'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'التقدم' : 'Progress'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTasks.map((task) => (
+                        <TableRow 
+                          key={task.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/admin/maintenance/${task.code}`)}
+                        >
+                          <TableCell className="font-medium">{task.code}</TableCell>
+                          <TableCell>{language === 'ar' ? task.name_ar : task.name}</TableCell>
+                          <TableCell>{getTypeBadge(task.type)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(task.start_date), 'dd/MM/yyyy')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(task.end_date), 'dd/MM/yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary transition-all" 
+                                  style={{ width: `${task.progress || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(task.status)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Plans Tab */}
+        <TabsContent value="plans" className="space-y-6">
+          <div className="flex justify-end">
+            {permissions.hasPermission('manage_maintenance') && (
+              <Button onClick={() => setShowPlanDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'إضافة خطة' : 'Add Plan'}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => (
+              <Card key={plan.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{language === 'ar' ? plan.name_ar : plan.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{plan.code}</p>
+                    </div>
+                    <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
+                      {plan.status === 'active' 
+                        ? (language === 'ar' ? 'نشط' : 'Active')
+                        : (language === 'ar' ? 'منتهي' : 'Completed')}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">{language === 'ar' ? 'السنة' : 'Year'}</span>
+                    <span className="font-semibold">{plan.year}</span>
+                  </div>
+                  {plan.department && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{language === 'ar' ? 'القسم' : 'Department'}</span>
+                      <span className="font-medium">{plan.department}</span>
+                    </div>
+                  )}
+                  {plan.budget && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{language === 'ar' ? 'الميزانية' : 'Budget'}</span>
+                      <span className="font-semibold">{plan.budget.toLocaleString()} {language === 'ar' ? 'ريال' : 'SAR'}</span>
+                    </div>
+                  )}
+                  {plan.completion_rate !== null && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-muted-foreground">{language === 'ar' ? 'نسبة الإنجاز' : 'Completion'}</span>
+                        <span className="font-semibold">{plan.completion_rate}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all" 
+                          style={{ width: `${plan.completion_rate}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+            {plans.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  {language === 'ar' ? 'لا توجد خطط صيانة' : 'No maintenance plans found'}
+                </p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <MaintenanceTaskFormDialog
+        open={showTaskDialog}
+        onOpenChange={setShowTaskDialog}
+        onSuccess={() => {
+          loadTasks();
+          setShowTaskDialog(false);
+        }}
+      />
+
+      <MaintenancePlanFormDialog
+        open={showPlanDialog}
+        onOpenChange={setShowPlanDialog}
+        onSuccess={() => {
+          loadPlans();
+          setShowPlanDialog(false);
+        }}
+      />
     </div>
   );
 }
