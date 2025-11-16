@@ -27,6 +27,8 @@ export default function Facilities() {
   useEffect(() => {
     if (hospitalId) {
       loadFacilities();
+    } else {
+      setLoading(false);
     }
   }, [hospitalId]);
 
@@ -103,6 +105,20 @@ export default function Facilities() {
             <Skeleton key={i} className="h-48" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (!hospitalId) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' : 'No hospital associated with your account. Please contact administrator.'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

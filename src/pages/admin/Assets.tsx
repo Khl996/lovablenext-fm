@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -108,6 +109,8 @@ export default function Assets() {
     if (hospitalId) {
       loadAssets();
       loadBuildings();
+    } else {
+      setLoading(false);
     }
   }, [hospitalId, statusFilter, categoryFilter, locationFilter, buildingFilter]);
 
@@ -324,6 +327,20 @@ export default function Assets() {
           <h3 className="text-lg font-semibold mb-2">{t('accessDenied')}</h3>
           <p className="text-muted-foreground">{t('noPermission')}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!hospitalId) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' : 'No hospital associated with your account. Please contact administrator.'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
