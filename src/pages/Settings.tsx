@@ -109,16 +109,19 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <SettingsIcon className="h-8 w-8" />
-          {language === 'ar' ? 'الإعدادات' : 'Settings'}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {language === 'ar' 
-            ? 'إدارة إعدادات النظام والتفضيلات' 
-            : 'Manage system settings and preferences'}
-        </p>
+      <div className="flex items-center gap-3">
+        <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-10 w-10" />
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <SettingsIcon className="h-8 w-8" />
+            {language === 'ar' ? 'الإعدادات' : 'Settings'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {language === 'ar' 
+              ? 'إدارة إعدادات نظام متقن' 
+              : 'Manage Mutqan system settings'}
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">

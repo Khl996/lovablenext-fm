@@ -87,15 +87,15 @@ export default function Install() {
       <Card className="max-w-2xl w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-            <Download className="w-10 h-10 text-primary" />
+            <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-12 w-12" />
           </div>
           <CardTitle className="text-3xl mb-2">
-            {language === 'ar' ? 'ثبّت التطبيق' : 'Install the App'}
+            {language === 'ar' ? 'ثبّت متقن' : 'Install Mutqan'}
           </CardTitle>
           <CardDescription className="text-base">
             {language === 'ar' 
-              ? 'استخدم التطبيق بسهولة من الشاشة الرئيسية لهاتفك'
-              : 'Use the app easily from your phone home screen'}
+              ? 'استخدم نظام متقن بسهولة من الشاشة الرئيسية لهاتفك'
+              : 'Use Mutqan system easily from your phone home screen'}
           </CardDescription>
         </CardHeader>
 

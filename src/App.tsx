@@ -51,6 +51,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           {/* Header */}
           <header className="h-14 border-b flex items-center px-4 bg-card sticky top-0 z-10 gap-4">
             <SidebarTrigger />
+            
+            {/* Logo and Title - visible on mobile when sidebar is collapsed */}
+            <div className="flex items-center gap-2 sm:hidden">
+              <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-6 w-6" />
+              <span className="font-bold text-sm">
+                {language === 'ar' ? 'متقن' : 'Mutqan'}
+              </span>
+            </div>
+            
             <div className="flex-1"></div>
             
             {/* User Info */}

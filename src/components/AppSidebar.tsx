@@ -99,15 +99,13 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   return (
     <Sidebar side={side} className={isCollapsed ? 'w-14' : 'w-60'}>
       <SidebarContent>
-        {/* Logo */}
+        {/* Logo Header */}
         <div className="p-4 border-b flex items-center gap-3">
-          <div className="bg-primary/5 p-2 rounded-lg border border-border">
-            <Building2 className="h-5 w-5 text-primary" />
-          </div>
+          <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-8 w-8 flex-shrink-0" />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <h2 className="text-sm font-semibold truncate">
-                {language === 'ar' ? 'نظام إدارة المرافق' : 'FMS'}
+                {language === 'ar' ? 'متقن' : 'Mutqan'}
               </h2>
             </div>
           )}
