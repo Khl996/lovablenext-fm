@@ -31,17 +31,15 @@ const Index = () => {
       <div className="container max-w-3xl mx-auto px-6 text-center space-y-12">
         {/* Logo */}
         <div className="flex justify-center">
-          <div className="bg-primary/5 p-8 rounded-2xl border border-border">
-            <Building2 className="h-16 w-16 text-primary" />
-          </div>
+          <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-32 w-32" />
         </div>
 
         {/* Main Heading */}
         <div className="space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
             {language === 'ar' 
-              ? 'نظام إدارة المرافق' 
-              : 'Facility Management System'}
+              ? 'متقن' 
+              : 'Mutqan'}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             {language === 'ar' 
