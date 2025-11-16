@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, User, Search, Filter, Trash2, Clock } from 'lucide-react';
+import { Plus, User, Search, Filter, Trash2, Clock, Eye } from 'lucide-react';
 import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
@@ -556,23 +556,33 @@ export default function Users() {
                   <User className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate cursor-pointer" onClick={() => setSelectedUser(user)}>
+                  <CardTitle className="text-lg truncate">
                     {user.full_name}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground truncate" dir="ltr">{user.email}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setUserToDelete(user);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUserToDelete(user);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
