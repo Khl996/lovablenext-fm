@@ -73,7 +73,7 @@ export default function Auth() {
           <CardHeader className="space-y-2 text-center">
             <div className="flex justify-center mb-2">
               <div className="bg-primary/5 p-4 rounded-xl border border-border">
-                <Building2 className="h-10 w-10 text-primary" />
+                <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-16 w-16" />
               </div>
             </div>
             <CardTitle className="text-2xl font-semibold">
@@ -81,8 +81,8 @@ export default function Auth() {
             </CardTitle>
             <CardDescription>
               {language === 'ar' 
-                ? 'الوصول إلى النظام' 
-                : 'Access the system'}
+                ? 'الوصول إلى متقن' 
+                : 'Access Mutqan'}
             </CardDescription>
           </CardHeader>
           <CardContent>
