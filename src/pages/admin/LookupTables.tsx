@@ -29,12 +29,15 @@ const tableMap = {
 
 export default function LookupTables() {
   const { language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { hospitalId, permissions, loading: userLoading } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Check if user has permission to access settings
   useEffect(() => {
+    // Don't check permissions while still loading
+    if (userLoading || permissions.loading) return;
+    
     if (!permissions.hasPermission('manage_users')) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -45,7 +48,7 @@ export default function LookupTables() {
       });
       navigate('/dashboard');
     }
-  }, [permissions, navigate, language]);
+  }, [permissions, userLoading, navigate, language, toast]);
 
   const [selectedTable, setSelectedTable] = useState<LookupTableName>('priorities');
   const [data, setData] = useState<LookupItem[]>([]);

@@ -17,12 +17,15 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Specializations() {
   const { language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { hospitalId, permissions, loading } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Check if user has permission to access settings
   useEffect(() => {
+    // Don't check permissions while still loading
+    if (loading || permissions.loading) return;
+    
     if (!permissions.hasPermission('manage_users')) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
@@ -33,7 +36,7 @@ export default function Specializations() {
       });
       navigate('/dashboard');
     }
-  }, [permissions, navigate, language]);
+  }, [permissions, loading, navigate, language, toast]);
 
   const [specializations, setSpecializations] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);

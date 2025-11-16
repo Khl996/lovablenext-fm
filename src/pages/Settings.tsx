@@ -14,11 +14,14 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { language } = useLanguage();
-  const { permissions } = useCurrentUser();
+  const { permissions, loading } = useCurrentUser();
   const navigate = useNavigate();
 
   // Check if user has permission to access settings
   useEffect(() => {
+    // Don't check permissions while still loading
+    if (loading || permissions.loading) return;
+    
     if (!permissions.hasPermission('manage_users')) {
       toast.error(
         language === 'ar'
@@ -27,7 +30,7 @@ export default function Settings() {
       );
       navigate('/dashboard');
     }
-  }, [permissions, navigate, language]);
+  }, [permissions, loading, navigate, language]);
 
   const [generalSettings, setGeneralSettings] = useState({
     systemName: 'FMS',
