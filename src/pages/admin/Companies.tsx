@@ -45,10 +45,17 @@ export default function Companies() {
   useEffect(() => {
     if (hospitalId) {
       loadCompanies();
+    } else {
+      setLoading(false);
     }
   }, [hospitalId]);
 
   const loadCompanies = async () => {
+    if (!hospitalId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const { data, error } = await (supabase as any)
         .from('companies')
@@ -189,6 +196,20 @@ export default function Companies() {
 
   if (loading) {
     return <div className="p-8">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</div>;
+  }
+
+  if (!hospitalId) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' : 'No hospital associated with your account. Please contact administrator.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
