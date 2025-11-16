@@ -1497,6 +1497,44 @@ export type Database = {
           },
         ]
       }
+      work_order_updates: {
+        Row: {
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          message: string
+          update_type: string
+          user_id: string
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message: string
+          update_type: string
+          user_id: string
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message?: string
+          update_type?: string
+          user_id?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_updates_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           actions_taken: Json | null
@@ -1528,6 +1566,8 @@ export type Database = {
           is_redirected: boolean | null
           issue_type: string
           labor_time: number | null
+          last_reassigned_at: string | null
+          last_reassigned_by: string | null
           maintenance_manager_approved_at: string | null
           maintenance_manager_approved_by: string | null
           maintenance_manager_notes: string | null
@@ -1537,9 +1577,15 @@ export type Database = {
           pending_closure_since: string | null
           photos: string[] | null
           priority: string
+          reassignment_count: number | null
+          reassignment_reason: string | null
           redirect_reason: string | null
           redirected_by: string | null
           redirected_to: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          rejection_stage: string | null
           reported_at: string
           reported_by: string
           reporter_notes: string | null
@@ -1591,6 +1637,8 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type: string
           labor_time?: number | null
+          last_reassigned_at?: string | null
+          last_reassigned_by?: string | null
           maintenance_manager_approved_at?: string | null
           maintenance_manager_approved_by?: string | null
           maintenance_manager_notes?: string | null
@@ -1600,9 +1648,15 @@ export type Database = {
           pending_closure_since?: string | null
           photos?: string[] | null
           priority?: string
+          reassignment_count?: number | null
+          reassignment_reason?: string | null
           redirect_reason?: string | null
           redirected_by?: string | null
           redirected_to?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          rejection_stage?: string | null
           reported_at?: string
           reported_by: string
           reporter_notes?: string | null
@@ -1654,6 +1708,8 @@ export type Database = {
           is_redirected?: boolean | null
           issue_type?: string
           labor_time?: number | null
+          last_reassigned_at?: string | null
+          last_reassigned_by?: string | null
           maintenance_manager_approved_at?: string | null
           maintenance_manager_approved_by?: string | null
           maintenance_manager_notes?: string | null
@@ -1663,9 +1719,15 @@ export type Database = {
           pending_closure_since?: string | null
           photos?: string[] | null
           priority?: string
+          reassignment_count?: number | null
+          reassignment_reason?: string | null
           redirect_reason?: string | null
           redirected_by?: string | null
           redirected_to?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          rejection_stage?: string | null
           reported_at?: string
           reported_by?: string
           reporter_notes?: string | null

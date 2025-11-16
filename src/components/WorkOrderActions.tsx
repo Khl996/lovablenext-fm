@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, MessageSquare, RefreshCw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { WorkOrderReassignDialog } from '@/components/admin/WorkOrderReassignDialog';
+import { WorkOrderUpdateDialog } from '@/components/admin/WorkOrderUpdateDialog';
 
 type WorkOrderActionsProps = {
   workOrder: any;
@@ -32,6 +34,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showReassignDialog, setShowReassignDialog] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [rejectStage, setRejectStage] = useState('');
 
   // Determine what action the current user can take
   const canStartWork = workOrder.assigned_team && 
@@ -63,6 +68,12 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const canFinalApprove = (workOrder.customer_reviewed_at || workOrder.status === 'auto_closed') && 
     !workOrder.maintenance_manager_approved_at &&
     permissions.hasPermission('work_orders.final_approve');
+
+  const canReassign = permissions.hasPermission('work_orders.approve') || 
+    permissions.hasPermission('work_orders.manage');
+
+  const canAddUpdate = workOrder.assigned_team && 
+    (workOrder.status === 'assigned' || workOrder.status === 'in_progress');
 
   const handleStartWork = async () => {
     try {
@@ -163,29 +174,58 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
+      // Determine the previous status to revert to
+      let previousStatus = 'pending';
+      if (rejectStage === 'technician') {
+        previousStatus = 'assigned';
+      } else if (rejectStage === 'supervisor') {
+        previousStatus = 'in_progress';
+      } else if (rejectStage === 'engineer') {
+        previousStatus = 'pending_supervisor_approval';
+      }
+
       const { error } = await supabase
         .from('work_orders')
         .update({
-          status: 'rejected_by_technician' as any,
-          technician_notes: notes,
-          redirect_reason: notes,
-          is_redirected: true,
+          status: previousStatus as any,
+          rejected_at: new Date().toISOString(),
+          rejected_by: user?.id,
+          rejection_reason: notes,
+          rejection_stage: rejectStage,
+          ...(rejectStage === 'technician' && { technician_notes: notes }),
+          ...(rejectStage === 'supervisor' && { supervisor_notes: notes }),
+          ...(rejectStage === 'engineer' && { engineer_notes: notes }),
         })
         .eq('id', workOrder.id);
 
       if (error) throw error;
 
+      // Add update log
+      await supabase.from('work_order_updates').insert({
+        work_order_id: workOrder.id,
+        user_id: user?.id,
+        update_type: 'issue',
+        message: language === 'ar' 
+          ? `تم الرفض من ${rejectStage === 'technician' ? 'الفني' : rejectStage === 'supervisor' ? 'المشرف' : 'المهندس'}: ${notes}`
+          : `Rejected by ${rejectStage}: ${notes}`,
+      });
+
       // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "rejected_by_technician" },
+      await supabase.functions.invoke('send-work-order-email', {
+        body: { 
+          workOrderId: workOrder.id, 
+          eventType: 'rejected',
+          rejectionStage: rejectStage
+        },
       });
 
       toast({
         title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم رفض البلاغ' : 'Work order rejected',
+        description: language === 'ar' ? 'تم رفض أمر العمل وإرجاعه' : 'Work order rejected and returned',
       });
 
       setShowRejectDialog(false);
+      setNotes('');
       onActionComplete();
     } catch (error: any) {
       toast({
@@ -433,37 +473,68 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
                   {language === 'ar' ? 'إكمال' : 'Complete'}
                 </Button>
                 <Button
-                  onClick={() => setShowRejectDialog(true)}
+                  onClick={() => {
+                    setRejectStage('technician');
+                    setShowRejectDialog(true);
+                  }}
                   disabled={loading}
                   variant="destructive"
                   className="flex-1"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  {language === 'ar' ? 'رفض' : 'Reject'}
+                  {language === 'ar' ? 'رفض وإرجاع' : 'Reject & Return'}
                 </Button>
               </>
             )}
 
             {canApproveAsSupervisor && (
-              <Button
-                onClick={handleSupervisorApproval}
-                disabled={loading}
-                className="flex-1"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                {language === 'ar' ? 'اعتماد' : 'Approve'}
-              </Button>
+              <>
+                <Button
+                  onClick={handleSupervisorApproval}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'اعتماد' : 'Approve'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRejectStage('supervisor');
+                    setShowRejectDialog(true);
+                  }}
+                  disabled={loading}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'رفض وإرجاع' : 'Reject & Return'}
+                </Button>
+              </>
             )}
 
             {canReviewAsEngineer && (
-              <Button
-                onClick={handleEngineerReview}
-                disabled={loading}
-                className="flex-1"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                {language === 'ar' ? 'مراجعة واعتماد' : 'Review & Approve'}
-              </Button>
+              <>
+                <Button
+                  onClick={handleEngineerReview}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'مراجعة واعتماد' : 'Review & Approve'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRejectStage('engineer');
+                    setShowRejectDialog(true);
+                  }}
+                  disabled={loading}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'رفض وإرجاع' : 'Reject & Return'}
+                </Button>
+              </>
             )}
 
             {canCloseAsReporter && (
@@ -488,6 +559,30 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
               </Button>
             )}
           </div>
+
+          {canReassign && (
+            <Button
+              variant="outline"
+              onClick={() => setShowReassignDialog(true)}
+              disabled={loading}
+              className="w-full mt-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إعادة إسناد' : 'Reassign'}
+            </Button>
+          )}
+
+          {canAddUpdate && (
+            <Button
+              variant="outline"
+              onClick={() => setShowUpdateDialog(true)}
+              disabled={loading}
+              className="w-full mt-2"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة ملاحظة' : 'Add Update'}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -497,20 +592,49 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             <AlertDialogTitle>
               {language === 'ar' ? 'تأكيد الرفض' : 'Confirm Rejection'}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              {language === 'ar' 
-                ? 'هل أنت متأكد من رفض هذا البلاغ؟ سيتم إعادة توجيهه إلى المهندس.' 
-                : 'Are you sure you want to reject this work order? It will be redirected to the engineer.'}
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                {language === 'ar'
+                  ? 'هل أنت متأكد من رفض أمر العمل وإرجاعه للمرحلة السابقة؟'
+                  : 'Are you sure you want to reject and return this work order?'}
+              </p>
+              <div className="space-y-2">
+                <Label>
+                  {language === 'ar' ? 'سبب الرفض' : 'Rejection Reason'}
+                </Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={language === 'ar' ? 'اكتب سبب الرفض...' : 'Enter rejection reason...'}
+                  rows={4}
+                />
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReject} disabled={loading}>
-              {language === 'ar' ? 'تأكيد الرفض' : 'Confirm Rejection'}
+            <AlertDialogCancel onClick={() => setNotes('')}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleReject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {language === 'ar' ? 'رفض' : 'Reject'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <WorkOrderReassignDialog
+        open={showReassignDialog}
+        onOpenChange={setShowReassignDialog}
+        workOrder={workOrder}
+        onSuccess={onActionComplete}
+      />
+
+      <WorkOrderUpdateDialog
+        open={showUpdateDialog}
+        onOpenChange={setShowUpdateDialog}
+        workOrderId={workOrder.id}
+        onSuccess={onActionComplete}
+      />
     </>
   );
 }
