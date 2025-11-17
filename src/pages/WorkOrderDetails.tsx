@@ -344,70 +344,109 @@ export default function WorkOrderDetails() {
             color: #333;
           }
           
-          /* Custom Header with Logo */
+          /* Professional Header with Hospital & Company Logos */
           .pdf-header {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            margin-bottom: 30px;
-            padding: 25px;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: 12px;
-            border: 2px solid #2563eb;
+            gap: 30px;
+            margin-bottom: 35px;
+            padding: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
           }
-          .logo-section {
+          
+          .logo-container {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
           }
+          
+          .logo-container.hospital {
+            justify-self: start;
+          }
+          
+          .logo-container.company {
+            justify-self: end;
+          }
+          
           .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             object-fit: contain;
+            border-radius: 8px;
+            padding: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
           }
-          .system-info h1 {
-            font-size: 22px;
-            color: #1e293b;
-            margin-bottom: 5px;
-            font-weight: 700;
-          }
-          .system-info p {
-            font-size: 13px;
+          
+          .logo-label {
+            font-size: 11px;
             color: #64748b;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
-          .report-info {
-            text-align: ${language === 'ar' ? 'left' : 'right'};
+          
+          .header-center {
+            text-align: center;
+            padding: 0 20px;
           }
-          .report-info .code {
+          
+          .system-title {
             font-size: 26px;
-            font-weight: bold;
-            color: #2563eb;
+            color: #1e293b;
             margin-bottom: 8px;
-            letter-spacing: 1px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
           }
-          .report-info .date {
+          
+          .report-subtitle {
+            font-size: 15px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 15px;
+          }
+          
+          .report-code {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2563eb;
+            margin-bottom: 10px;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+          }
+          
+          .report-date {
             font-size: 12px;
             color: #64748b;
             background: white;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
             display: inline-block;
+            border: 1px solid #e2e8f0;
           }
 
-          /* Status Bar with Location */
+          /* Status Summary Bar */
           .status-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 30px;
             padding: 20px;
-            background: #f8fafc;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 12px;
             border: 1px solid #e2e8f0;
           }
           .status-item {
             text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
             padding: 15px;
             background: white;
             border-radius: 8px;
@@ -582,22 +621,27 @@ export default function WorkOrderDetails() {
         </style>
       </head>
       <body>
-        <!-- Custom Header with Mutqan Logo -->
+        <!-- Professional Header with Hospital & Company Logos -->
         <div class="pdf-header">
-          <div class="logo-section">
-            <img src="/mutqan-logo.png" alt="Mutqan Logo" class="logo-img" />
-            <div class="system-info">
-              <h1>${language === 'ar' ? 'نظام مُتقَن لإدارة الصيانة' : 'Mutqan Maintenance System'}</h1>
-              <p>${language === 'ar' ? 'تقرير أمر عمل تفصيلي' : 'Detailed Work Order Report'}</p>
-            </div>
+          <div class="logo-container hospital">
+            ${hospital?.logo_url ? `<img src="${hospital.logo_url}" alt="Hospital Logo" class="logo-img" />` : `<div class="logo-img" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px;">${language === 'ar' ? 'شعار المستشفى' : 'Hospital'}</div>`}
+            <div class="logo-label">${language === 'ar' ? (hospital?.name_ar || 'المستشفى') : (hospital?.name || 'Hospital')}</div>
           </div>
-          <div class="report-info">
-            <div class="code">${workOrder.code}</div>
-            <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+          
+          <div class="header-center">
+            <div class="system-title">${language === 'ar' ? 'نظام مُتقَن لإدارة الصيانة' : 'Mutqan Maintenance System'}</div>
+            <div class="report-subtitle">${language === 'ar' ? 'تقرير أمر عمل تفصيلي' : 'Detailed Work Order Report'}</div>
+            <div class="report-code">${workOrder.code}</div>
+            <div class="report-date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+          </div>
+          
+          <div class="logo-container company">
+            ${company?.logo_url ? `<img src="${company.logo_url}" alt="Company Logo" class="logo-img" />` : `<div class="logo-img" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px;">${language === 'ar' ? 'شعار الشركة' : 'Company'}</div>`}
+            <div class="logo-label">${language === 'ar' ? (company?.name_ar || 'الشركة') : (company?.name || 'Company')}</div>
           </div>
         </div>
 
-        <!-- Status Summary Bar with Location -->
+        <!-- Status Summary Bar -->
         <div class="status-bar">
           <div class="status-item">
             <div class="label">${language === 'ar' ? 'الحالة' : 'Status'}</div>
@@ -615,13 +659,17 @@ export default function WorkOrderDetails() {
             <div class="label">${language === 'ar' ? 'المبلغ' : 'Reporter'}</div>
             <div class="value">${reporterName}</div>
           </div>
-          ${locationStr ? `
-          <div class="location-full">
-            <div class="label">${language === 'ar' ? '📍 موقع البلاغ / الصيانة' : '📍 Report / Maintenance Location'}</div>
-            <div class="value">${locationStr}</div>
-          </div>
-          ` : ''}
         </div>
+
+        <!-- Location Section -->
+        ${locationStr ? `
+        <div class="section">
+          <h3 class="section-title">${language === 'ar' ? '📍 موقع البلاغ / الصيانة' : '📍 Report / Maintenance Location'}</h3>
+          <div class="info-item" style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); padding: 20px; border-radius: 10px; border: 2px solid #dbeafe;">
+            <div class="value" style="font-size: 17px; font-weight: 600; color: #1e40af;">${locationStr}</div>
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Basic Information -->
         <div class="section">
