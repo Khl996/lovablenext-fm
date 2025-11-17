@@ -75,21 +75,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     // For new work orders, get team members' emails
     if (eventType === "new_work_order" && workOrder.assigned_team) {
+      console.log("Fetching team members for team:", workOrder.assigned_team);
       const { data: teamMembers, error: teamError } = await supabase
         .from("team_members")
         .select("user_id")
         .eq("team_id", workOrder.assigned_team);
 
-      if (!teamError && teamMembers) {
+      console.log("Team members result:", { teamMembers, teamError });
+
+      if (!teamError && teamMembers && teamMembers.length > 0) {
         const userIds = teamMembers.map(tm => tm.user_id);
+        console.log("Fetching profiles for user IDs:", userIds);
+        
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
           .select("email")
           .in("id", userIds);
 
+        console.log("Profiles result:", { profiles, profilesError });
+
         if (!profilesError && profiles) {
           toEmails = profiles.map(p => p.email).filter(email => email);
+          console.log("Team member emails found:", toEmails);
         }
+      } else {
+        console.log("No team members found for this team");
       }
     }
 
@@ -207,6 +217,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Determine recipients
     const recipients = toEmails.length > 0 ? toEmails : (toEmail ? [toEmail] : []);
+    
+    console.log("Final recipients list:", recipients);
+    console.log("toEmails:", toEmails, "toEmail:", toEmail);
 
     if (recipients.length === 0) {
       console.warn("No recipient email found, skipping email send");
