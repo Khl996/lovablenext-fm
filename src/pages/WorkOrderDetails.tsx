@@ -339,7 +339,7 @@ export default function WorkOrderDetails() {
           @media print {
             @page {
               size: A4;
-              margin: 10mm;
+              margin: 8mm;
             }
             body {
               print-color-adjust: exact;
@@ -350,21 +350,21 @@ export default function WorkOrderDetails() {
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 15px; 
-            line-height: 1.4;
+            padding: 8px; 
+            line-height: 1.3;
             color: #333;
           }
           
           /* Professional Header with Hospital & Company Logos */
           .pdf-header {
             display: grid;
-            grid-template-columns: 100px 1fr 100px;
+            grid-template-columns: 70px 1fr 70px;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding: 12px 20px;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
             background: #ffffff;
-            border-radius: 6px;
+            border-radius: 4px;
             border: 1px solid #e2e8f0;
           }
           
@@ -383,46 +383,46 @@ export default function WorkOrderDetails() {
           }
           
           .logo-img {
-            width: 100px;
-            height: 100px;
+            width: 70px;
+            height: 70px;
             object-fit: contain;
             background: #ffffff;
           }
           
           .header-center {
             text-align: center;
-            padding: 0 10px;
+            padding: 0 8px;
           }
           
           .system-title {
-            font-size: 14px;
+            font-size: 12px;
             color: #1e293b;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: 700;
             letter-spacing: -0.2px;
           }
           
           .report-subtitle {
-            font-size: 10px;
+            font-size: 9px;
             color: #64748b;
             font-weight: 500;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
           }
           
           .report-code {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
             color: #2563eb;
-            margin-bottom: 5px;
-            letter-spacing: 0.8px;
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
           }
           
           .report-date {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
             background: white;
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 3px;
             display: inline-block;
             border: 1px solid #e2e8f0;
           }
@@ -431,131 +431,130 @@ export default function WorkOrderDetails() {
           .status-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 12px;
-            padding: 10px;
+            gap: 5px;
+            margin-bottom: 8px;
+            padding: 6px;
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border-radius: 6px;
+            border-radius: 4px;
             border: 1px solid #e2e8f0;
           }
           .status-item {
             text-align: center;
-            padding: 8px;
+            padding: 5px;
             background: white;
-            border-radius: 4px;
+            border-radius: 3px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 2px rgba(0,0,0,0.03);
           }
           .status-item .label {
-            font-size: 8px;
+            font-size: 7px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 4px;
-            letter-spacing: 0.3px;
+            margin-bottom: 3px;
+            letter-spacing: 0.2px;
           }
           .status-item .value {
-            font-size: 11px;
+            font-size: 9px;
             font-weight: bold;
             color: #1e293b;
           }
           .location-full {
             grid-column: span 4;
             text-align: ${language === 'ar' ? 'right' : 'left'};
-            padding: 8px;
+            padding: 5px;
             background: white;
-            border-radius: 4px;
+            border-radius: 3px;
             border: 1px solid #e2e8f0;
           }
           .location-full .label {
-            font-size: 8px;
+            font-size: 7px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 4px;
-            letter-spacing: 0.3px;
+            margin-bottom: 3px;
+            letter-spacing: 0.2px;
           }
           .location-full .value {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             color: #2563eb;
           }
           
           /* Sections */
           .section { 
-            margin: 12px 0; 
-            page-break-inside: avoid;
+            margin: 6px 0; 
             background: white;
-            padding: 8px;
+            padding: 5px;
             border: 1px solid #e2e8f0;
-            border-radius: 4px;
+            border-radius: 3px;
           }
           .section-title { 
-            font-size: 11px; 
+            font-size: 9px; 
             font-weight: bold; 
             color: #1e293b;
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-            border-bottom: 1.5px solid #e2e8f0;
+            margin-bottom: 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #e2e8f0;
           }
           
           .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            margin-top: 6px;
+            gap: 4px;
+            margin-top: 4px;
           }
           .info-item {
-            padding: 6px;
+            padding: 4px;
             background: #f8fafc;
-            border-radius: 4px;
+            border-radius: 3px;
           }
           .label { 
             font-weight: 600; 
             color: #64748b; 
-            font-size: 8px;
+            font-size: 7px;
             text-transform: uppercase;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
           }
           .value { 
             color: #1e293b;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 500;
           }
           
           /* Workflow */
           .workflow-timeline { 
-            margin: 8px 0;
+            margin: 4px 0;
             position: relative;
-            padding-${language === 'ar' ? 'right' : 'left'}: 15px;
+            padding-${language === 'ar' ? 'right' : 'left'}: 12px;
           }
           .workflow-timeline::before {
             content: '';
             position: absolute;
-            ${language === 'ar' ? 'right' : 'left'}: 6px;
+            ${language === 'ar' ? 'right' : 'left'}: 5px;
             top: 0;
             bottom: 0;
-            width: 2px;
+            width: 1.5px;
             background: #e2e8f0;
           }
           .workflow-item { 
-            padding: 6px 10px;
-            margin: 5px 0;
+            padding: 4px 8px;
+            margin: 3px 0;
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 4px;
+            border-radius: 3px;
             position: relative;
           }
           .workflow-item::before {
             content: '';
             position: absolute;
-            ${language === 'ar' ? 'right' : 'left'}: -10px;
-            top: 10px;
-            width: 8px;
-            height: 8px;
+            ${language === 'ar' ? 'right' : 'left'}: -8px;
+            top: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: white;
-            border: 2px solid #cbd5e1;
+            border: 1.5px solid #cbd5e1;
           }
           .workflow-item.completed::before { 
             background: #22c55e;
@@ -564,37 +563,55 @@ export default function WorkOrderDetails() {
           .workflow-item .step-title {
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 3px;
-            font-size: 9px;
+            margin-bottom: 2px;
+            font-size: 8px;
           }
           .workflow-item .step-detail {
-            font-size: 8px;
+            font-size: 7px;
             color: #64748b;
-            margin: 2px 0;
+            margin: 1px 0;
           }
           
           /* Table */
           table { 
             width: 100%; 
             border-collapse: collapse; 
-            margin: 8px 0;
+            margin: 4px 0;
             background: white;
           }
           th, td { 
             border: 1px solid #e2e8f0; 
-            padding: 6px; 
+            padding: 4px; 
             text-align: ${language === 'ar' ? 'right' : 'left'};
           }
           th { 
             background: #f8fafc;
             font-weight: 600;
             color: #475569;
-            font-size: 9px;
+            font-size: 7px;
             text-transform: uppercase;
           }
           td {
             color: #1e293b;
-            font-size: 9px;
+            font-size: 8px;
+          }
+          
+          /* Photos */
+          .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-top: 4px;
+          }
+          .photo-item {
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+          }
+          .photo-img {
+            width: 100%;
+            height: 55px;
+            object-fit: cover;
           }
           
           /* Footer */
