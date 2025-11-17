@@ -877,6 +877,7 @@ export default function WorkOrderDetails() {
           <WorkOrderWorkflow
             workOrder={workOrder}
             reporterName={reporterName}
+            assignedTechnicianName={assignedTechnicianName}
             supervisorName={supervisorName}
             engineerName={engineerName}
             managerName={managerName}

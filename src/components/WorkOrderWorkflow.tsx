@@ -18,6 +18,7 @@ type WorkflowStep = {
 type WorkOrderWorkflowProps = {
   workOrder: any;
   reporterName: string;
+  assignedTechnicianName: string;
   supervisorName: string;
   engineerName: string;
   managerName: string;
@@ -27,6 +28,7 @@ type WorkOrderWorkflowProps = {
 export function WorkOrderWorkflow({
   workOrder,
   reporterName,
+  assignedTechnicianName,
   supervisorName,
   engineerName,
   managerName,
@@ -55,6 +57,7 @@ export function WorkOrderWorkflow({
       titleAr: 'تم إنجاز العمل من الفني',
       completed: !!workOrder.technician_completed_at || workOrder.status === 'rejected_by_technician',
       timestamp: workOrder.technician_completed_at,
+      userName: assignedTechnicianName,
       notes: workOrder.technician_notes,
       rejected: workOrder.status === 'rejected_by_technician',
       pending: !workOrder.technician_completed_at && workOrder.assigned_team && workOrder.status !== 'rejected_by_technician',
@@ -82,7 +85,7 @@ export function WorkOrderWorkflow({
       titleAr: 'إغلاق المبلغ',
       completed: !!workOrder.customer_reviewed_at || workOrder.status === 'auto_closed',
       timestamp: workOrder.customer_reviewed_at || workOrder.auto_closed_at,
-      userName: reporterName,
+      userName: workOrder.customer_reviewed_at ? reporterName : undefined,
       notes: workOrder.reporter_notes,
       pending: workOrder.engineer_approved_at && !workOrder.customer_reviewed_at && workOrder.status !== 'auto_closed',
     },
