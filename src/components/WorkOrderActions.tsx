@@ -79,13 +79,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'in_progress' as any,
-          start_time: new Date().toISOString(),
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_start_work', {
+        _work_order_id: workOrder.id
+      });
 
       if (error) {
         console.error('Error starting work:', error);
@@ -128,14 +124,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'pending_supervisor_approval' as any,
-          technician_completed_at: new Date().toISOString(),
-          technician_notes: notes,
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_complete_work', {
+        _work_order_id: workOrder.id,
+        _technician_notes: notes
+      });
 
       if (error) throw error;
 
@@ -174,29 +166,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      // Determine the previous status to revert to
-      let previousStatus = 'pending';
-      if (rejectStage === 'technician') {
-        previousStatus = 'assigned';
-      } else if (rejectStage === 'supervisor') {
-        previousStatus = 'in_progress';
-      } else if (rejectStage === 'engineer') {
-        previousStatus = 'pending_supervisor_approval';
-      }
-
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: previousStatus as any,
-          rejected_at: new Date().toISOString(),
-          rejected_by: user?.id,
-          rejection_reason: notes,
-          rejection_stage: rejectStage,
-          ...(rejectStage === 'technician' && { technician_notes: notes }),
-          ...(rejectStage === 'supervisor' && { supervisor_notes: notes }),
-          ...(rejectStage === 'engineer' && { engineer_notes: notes }),
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_reject', {
+        _work_order_id: workOrder.id,
+        _rejection_reason: notes,
+        _rejection_stage: rejectStage
+      });
 
       if (error) throw error;
 
@@ -251,15 +225,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'pending_engineer_review' as any,
-          supervisor_approved_at: new Date().toISOString(),
-          supervisor_approved_by: user?.id,
-          supervisor_notes: notes,
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_supervisor_approve', {
+        _work_order_id: workOrder.id,
+        _supervisor_notes: notes
+      });
 
       if (error) throw error;
 
@@ -298,15 +267,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'pending_reporter_closure' as any,
-          engineer_approved_at: new Date().toISOString(),
-          engineer_approved_by: user?.id,
-          engineer_notes: notes,
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_engineer_review', {
+        _work_order_id: workOrder.id,
+        _engineer_notes: notes
+      });
 
       if (error) throw error;
 
@@ -336,15 +300,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'completed' as any,
-          customer_reviewed_at: new Date().toISOString(),
-          customer_reviewed_by: user?.id,
-          reporter_notes: notes,
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_reporter_closure', {
+        _work_order_id: workOrder.id,
+        _reporter_notes: notes || ''
+      });
 
       if (error) throw error;
 
@@ -383,15 +342,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('work_orders')
-        .update({
-          status: 'completed' as any,
-          maintenance_manager_approved_at: new Date().toISOString(),
-          maintenance_manager_approved_by: user?.id,
-          maintenance_manager_notes: notes,
-        })
-        .eq('id', workOrder.id);
+      const { error } = await supabase.rpc('work_order_final_approve', {
+        _work_order_id: workOrder.id,
+        _manager_notes: notes
+      });
 
       if (error) throw error;
 
