@@ -334,7 +334,7 @@ export default function WorkOrderDetails() {
       <html dir="${language === 'ar' ? 'rtl' : 'ltr'}">
       <head>
         <meta charset="UTF-8">
-        <title>${workOrder.code} - ${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</title>
+        <title>${workOrder.code} - ${language === 'ar' ? 'بلاغ صيانة - نظام مُتقَن' : 'Maintenance Report - Mutqan System'}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
@@ -344,81 +344,109 @@ export default function WorkOrderDetails() {
             color: #333;
           }
           
-          /* Custom Header with Logo Placeholders */
+          /* Custom Header with Logo */
           .pdf-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #2563eb;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            border: 2px solid #2563eb;
           }
           .logo-section {
-            flex: 1;
-          }
-          .logo-placeholder {
-            width: 120px;
-            height: 60px;
-            border: 2px dashed #cbd5e1;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: #94a3b8;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            gap: 15px;
           }
-          .pdf-header h1 {
-            font-size: 20px;
+          .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+          }
+          .system-info h1 {
+            font-size: 22px;
             color: #1e293b;
             margin-bottom: 5px;
+            font-weight: 700;
           }
-          .pdf-header p {
-            font-size: 14px;
+          .system-info p {
+            font-size: 13px;
             color: #64748b;
+            font-weight: 500;
           }
-          .pdf-header .report-info {
+          .report-info {
             text-align: ${language === 'ar' ? 'left' : 'right'};
           }
-          .pdf-header .report-info .code {
-            font-size: 24px;
+          .report-info .code {
+            font-size: 26px;
             font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
+            color: #2563eb;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
           }
-          .pdf-header .report-info .date {
+          .report-info .date {
             font-size: 12px;
-            color: #666;
+            color: #64748b;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: inline-block;
           }
 
-          /* Status Bar */
+          /* Status Bar with Location */
           .status-bar {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 30px;
-            padding: 15px;
+            padding: 20px;
             background: #f8fafc;
-            border-radius: 8px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
           }
           .status-item {
-            flex: 1;
             text-align: center;
-            padding: 10px;
+            padding: 15px;
             background: white;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
           }
           .status-item .label {
             font-size: 11px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
           }
           .status-item .value {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #1e293b;
+          }
+          .location-full {
+            grid-column: span 4;
+            text-align: ${language === 'ar' ? 'right' : 'left'};
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+          }
+          .location-full .label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+          }
+          .location-full .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2563eb;
           }
           
           /* Sections */
@@ -554,35 +582,22 @@ export default function WorkOrderDetails() {
         </style>
       </head>
       <body>
-        <!-- Custom Header with Logo Placeholders -->
+        <!-- Custom Header with Mutqan Logo -->
         <div class="pdf-header">
           <div class="logo-section">
-            ${hospital?.logo_url ? `
-              <img src="${hospital.logo_url}" alt="Hospital Logo" style="max-height: 80px; max-width: 180px; object-fit: contain; margin-bottom: 10px;" />
-            ` : `
-              <div class="logo-placeholder">
-                ${language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}
-              </div>
-            `}
-            <h1>${language === 'ar' ? 'نظام إدارة الصيانة' : 'Maintenance Management System'}</h1>
-            <p>${language === 'ar' ? 'بلاغ صيانة' : 'Maintenance Report'}</p>
-          </div>
-          <div class="logo-section" style="text-align: ${language === 'ar' ? 'left' : 'right'};">
-            ${company?.logo_url ? `
-              <img src="${company.logo_url}" alt="Company Logo" style="max-height: 80px; max-width: 180px; object-fit: contain; margin-bottom: 10px; margin-${language === 'ar' ? 'right' : 'left'}: auto;" />
-            ` : `
-              <div class="logo-placeholder" style="margin-${language === 'ar' ? 'right' : 'left'}: auto;">
-                ${language === 'ar' ? 'شعار شركة الصيانة' : 'Maintenance Company Logo'}
-              </div>
-            `}
-            <div class="report-info">
-              <div class="code">${workOrder.code}</div>
-              <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+            <img src="/mutqan-logo.png" alt="Mutqan Logo" class="logo-img" />
+            <div class="system-info">
+              <h1>${language === 'ar' ? 'نظام مُتقَن لإدارة الصيانة' : 'Mutqan Maintenance System'}</h1>
+              <p>${language === 'ar' ? 'تقرير أمر عمل تفصيلي' : 'Detailed Work Order Report'}</p>
             </div>
+          </div>
+          <div class="report-info">
+            <div class="code">${workOrder.code}</div>
+            <div class="date">${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
           </div>
         </div>
 
-        <!-- Status Summary Bar -->
+        <!-- Status Summary Bar with Location -->
         <div class="status-bar">
           <div class="status-item">
             <div class="label">${language === 'ar' ? 'الحالة' : 'Status'}</div>
@@ -596,6 +611,16 @@ export default function WorkOrderDetails() {
             <div class="label">${language === 'ar' ? 'تاريخ البلاغ' : 'Reported Date'}</div>
             <div class="value">${format(new Date(workOrder.reported_at), 'dd/MM/yyyy')}</div>
           </div>
+          <div class="status-item">
+            <div class="label">${language === 'ar' ? 'المبلغ' : 'Reporter'}</div>
+            <div class="value">${reporterName}</div>
+          </div>
+          ${locationStr ? `
+          <div class="location-full">
+            <div class="label">${language === 'ar' ? '📍 موقع البلاغ / الصيانة' : '📍 Report / Maintenance Location'}</div>
+            <div class="value">${locationStr}</div>
+          </div>
+          ` : ''}
         </div>
 
         <!-- Basic Information -->
@@ -748,7 +773,7 @@ export default function WorkOrderDetails() {
 
         <!-- Footer -->
         <div class="pdf-footer">
-          <p>${language === 'ar' ? 'تم إنشاء هذا التقرير تلقائيًا بواسطة نظام إدارة الصيانة' : 'This report was automatically generated by Maintenance Management System'}</p>
+          <p>${language === 'ar' ? 'تم إنشاء هذا التقرير تلقائيًا بواسطة نظام مُتقَن لإدارة الصيانة' : 'This report was automatically generated by Mutqan Maintenance Management System'}</p>
           <p>${language === 'ar' ? 'تاريخ الطباعة:' : 'Print Date:'} ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
         </div>
 
