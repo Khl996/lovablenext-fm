@@ -347,22 +347,20 @@ export default function WorkOrderDetails() {
           /* Professional Header with Hospital & Company Logos */
           .pdf-header {
             display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            grid-template-columns: 180px 1fr 180px;
             align-items: center;
-            gap: 25px;
+            gap: 30px;
             margin-bottom: 30px;
-            padding: 20px 30px;
+            padding: 25px 35px;
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
           }
           
           .logo-container {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
           }
           
           .logo-container.hospital {
@@ -374,27 +372,15 @@ export default function WorkOrderDetails() {
           }
           
           .logo-img {
-            width: 140px;
-            height: 140px;
+            width: 180px;
+            height: 180px;
             object-fit: contain;
-            border-radius: 12px;
-            padding: 10px;
-            background: #fafafa;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          }
-          
-          .logo-label {
-            font-size: 10px;
-            color: #6b7280;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
+            background: #ffffff;
           }
           
           .header-center {
             text-align: center;
-            padding: 0 15px;
+            padding: 0 20px;
           }
           
           .system-title {
@@ -626,7 +612,6 @@ export default function WorkOrderDetails() {
         <div class="pdf-header">
           <div class="logo-container hospital">
             ${hospital?.logo_url ? `<img src="${hospital.logo_url}" alt="Hospital Logo" class="logo-img" />` : `<div class="logo-img" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px;">${language === 'ar' ? 'شعار المستشفى' : 'Hospital'}</div>`}
-            <div class="logo-label">${language === 'ar' ? (hospital?.name_ar || 'المستشفى') : (hospital?.name || 'Hospital')}</div>
           </div>
           
           <div class="header-center">
@@ -638,7 +623,6 @@ export default function WorkOrderDetails() {
           
           <div class="logo-container company">
             ${company?.logo_url ? `<img src="${company.logo_url}" alt="Company Logo" class="logo-img" />` : `<div class="logo-img" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px;">${language === 'ar' ? 'شعار الشركة' : 'Company'}</div>`}
-            <div class="logo-label">${language === 'ar' ? (company?.name_ar || 'الشركة') : (company?.name || 'Company')}</div>
           </div>
         </div>
 
