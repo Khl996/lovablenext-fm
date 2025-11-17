@@ -358,7 +358,7 @@ export default function WorkOrderDetails() {
           /* Professional Header with Hospital & Company Logos */
           .pdf-header {
             display: grid;
-            grid-template-columns: 70px 1fr 70px;
+            grid-template-columns: 90px 1fr 90px;
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
@@ -383,8 +383,8 @@ export default function WorkOrderDetails() {
           }
           
           .logo-img {
-            width: 70px;
-            height: 70px;
+            width: 90px;
+            height: 90px;
             object-fit: contain;
             background: #ffffff;
           }
