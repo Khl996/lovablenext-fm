@@ -349,20 +349,20 @@ export default function WorkOrderDetails() {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            gap: 30px;
-            margin-bottom: 35px;
-            padding: 30px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border-radius: 16px;
-            border: 2px solid #e2e8f0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            gap: 25px;
+            margin-bottom: 30px;
+            padding: 20px 30px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
           }
           
           .logo-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
           }
           
           .logo-container.hospital {
@@ -374,50 +374,51 @@ export default function WorkOrderDetails() {
           }
           
           .logo-img {
-            width: 90px;
-            height: 90px;
+            width: 140px;
+            height: 140px;
             object-fit: contain;
-            border-radius: 8px;
-            padding: 8px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
           }
           
           .logo-label {
-            font-size: 11px;
-            color: #64748b;
+            font-size: 10px;
+            color: #6b7280;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
           }
           
           .header-center {
             text-align: center;
-            padding: 0 20px;
+            padding: 0 15px;
           }
           
           .system-title {
-            font-size: 26px;
+            font-size: 22px;
             color: #1e293b;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
           }
           
           .report-subtitle {
-            font-size: 15px;
+            font-size: 13px;
             color: #64748b;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
           }
           
           .report-code {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 800;
             color: #2563eb;
-            margin-bottom: 10px;
-            letter-spacing: 1.5px;
-            text-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+            margin-bottom: 8px;
+            letter-spacing: 1.2px;
+            text-shadow: 0 2px 4px rgba(37, 99, 235, 0.12);
           }
           
           .report-date {
@@ -1116,11 +1117,6 @@ export default function WorkOrderDetails() {
                 <Download className="h-4 w-4 mr-2" />
                 {language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
               </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                {language === 'ar' 
-                  ? 'يتضمن ترويسة المستشفى والشعارات وسجل الإجراءات الكامل' 
-                  : 'Includes hospital header, logos, and full action history'}
-              </p>
             </CardContent>
           </Card>
         </div>
