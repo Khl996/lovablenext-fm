@@ -1821,7 +1821,33 @@ export type Database = {
     Functions: {
       auto_close_pending_work_orders: { Args: never; Returns: undefined }
       delete_user: { Args: { user_id: string }; Returns: undefined }
+      get_asset_financial_info: {
+        Args: { _asset_id: string }
+        Returns: {
+          depreciation_annual: number
+          purchase_cost: number
+          purchase_date: string
+          supplier: string
+          warranty_expiry: string
+          warranty_provider: string
+        }[]
+      }
+      get_user_contact_info: {
+        Args: { _user_id: string }
+        Returns: {
+          email: string
+          phone: string
+        }[]
+      }
       get_user_hospital: { Args: { _user_id: string }; Returns: string }
+      get_work_order_feedback: {
+        Args: { _work_order_id: string }
+        Returns: {
+          customer_feedback: string
+          customer_rating: number
+          customer_reviewed_at: string
+        }[]
+      }
       has_custom_role: {
         Args: { _role_code: string; _user_id: string }
         Returns: boolean
