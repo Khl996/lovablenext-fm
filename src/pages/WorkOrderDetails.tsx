@@ -336,24 +336,35 @@ export default function WorkOrderDetails() {
         <meta charset="UTF-8">
         <title>${workOrder.code} - ${language === 'ar' ? 'بلاغ صيانة - نظام مُتقَن' : 'Maintenance Report - Mutqan System'}</title>
         <style>
+          @media print {
+            @page {
+              size: A4;
+              margin: 10mm;
+            }
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+          
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 40px; 
-            line-height: 1.8;
+            padding: 15px; 
+            line-height: 1.4;
             color: #333;
           }
           
           /* Professional Header with Hospital & Company Logos */
           .pdf-header {
             display: grid;
-            grid-template-columns: 180px 1fr 180px;
+            grid-template-columns: 100px 1fr 100px;
             align-items: center;
-            gap: 30px;
-            margin-bottom: 30px;
-            padding: 25px 35px;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 12px 20px;
             background: #ffffff;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
           }
           
@@ -372,47 +383,46 @@ export default function WorkOrderDetails() {
           }
           
           .logo-img {
-            width: 180px;
-            height: 180px;
+            width: 100px;
+            height: 100px;
             object-fit: contain;
             background: #ffffff;
           }
           
           .header-center {
             text-align: center;
-            padding: 0 20px;
+            padding: 0 10px;
           }
           
           .system-title {
-            font-size: 22px;
+            font-size: 14px;
             color: #1e293b;
-            margin-bottom: 6px;
-            font-weight: 800;
-            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
           }
           
           .report-subtitle {
-            font-size: 13px;
+            font-size: 10px;
             color: #64748b;
-            font-weight: 600;
-            margin-bottom: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
           }
           
           .report-code {
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 16px;
+            font-weight: 700;
             color: #2563eb;
-            margin-bottom: 8px;
-            letter-spacing: 1.2px;
-            text-shadow: 0 2px 4px rgba(37, 99, 235, 0.12);
+            margin-bottom: 5px;
+            letter-spacing: 0.8px;
           }
           
           .report-date {
-            font-size: 12px;
+            font-size: 9px;
             color: #64748b;
             background: white;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 4px;
             display: inline-block;
             border: 1px solid #e2e8f0;
           }
@@ -421,135 +431,131 @@ export default function WorkOrderDetails() {
           .status-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-            padding: 20px;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 10px;
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border-radius: 12px;
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
           }
           .status-item {
             text-align: center;
-            padding: 12px;
+            padding: 8px;
             background: white;
-            border-radius: 8px;
-            border: 1px solid #f1f5f9;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
+            border-radius: 4px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
           }
           .status-item .label {
-            font-size: 11px;
+            font-size: 8px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
           }
           .status-item .value {
-            font-size: 15px;
+            font-size: 11px;
             font-weight: bold;
             color: #1e293b;
           }
           .location-full {
             grid-column: span 4;
             text-align: ${language === 'ar' ? 'right' : 'left'};
-            padding: 15px;
+            padding: 8px;
             background: white;
-            border-radius: 8px;
+            border-radius: 4px;
             border: 1px solid #e2e8f0;
           }
           .location-full .label {
-            font-size: 11px;
+            font-size: 8px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
           }
           .location-full .value {
-            font-size: 15px;
+            font-size: 10px;
             font-weight: 600;
             color: #2563eb;
           }
           
           /* Sections */
           .section { 
-            margin: 30px 0; 
+            margin: 12px 0; 
             page-break-inside: avoid;
             background: white;
-            padding: 20px;
+            padding: 8px;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 4px;
           }
           .section-title { 
-            font-size: 18px; 
+            font-size: 11px; 
             font-weight: bold; 
             color: #1e293b;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+            border-bottom: 1.5px solid #e2e8f0;
           }
           
           .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-top: 15px;
+            gap: 6px;
+            margin-top: 6px;
           }
           .info-item {
-            padding: 12px;
+            padding: 6px;
             background: #f8fafc;
-            border-radius: 6px;
+            border-radius: 4px;
           }
           .label { 
             font-weight: 600; 
             color: #64748b; 
-            font-size: 12px;
+            font-size: 8px;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
           }
           .value { 
             color: #1e293b;
-            font-size: 15px;
+            font-size: 10px;
             font-weight: 500;
           }
           
           /* Workflow */
           .workflow-timeline { 
-            margin: 20px 0;
+            margin: 8px 0;
             position: relative;
-            padding-${language === 'ar' ? 'right' : 'left'}: 30px;
+            padding-${language === 'ar' ? 'right' : 'left'}: 15px;
           }
           .workflow-timeline::before {
             content: '';
             position: absolute;
-            ${language === 'ar' ? 'right' : 'left'}: 10px;
+            ${language === 'ar' ? 'right' : 'left'}: 6px;
             top: 0;
             bottom: 0;
             width: 2px;
             background: #e2e8f0;
           }
           .workflow-item { 
-            padding: 15px 20px;
-            margin: 15px 0;
+            padding: 6px 10px;
+            margin: 5px 0;
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 4px;
             position: relative;
           }
           .workflow-item::before {
             content: '';
             position: absolute;
-            ${language === 'ar' ? 'right' : 'left'}: -25px;
-            top: 20px;
-            width: 12px;
-            height: 12px;
+            ${language === 'ar' ? 'right' : 'left'}: -10px;
+            top: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: white;
-            border: 3px solid #cbd5e1;
+            border: 2px solid #cbd5e1;
           }
           .workflow-item.completed::before { 
             background: #22c55e;
@@ -558,36 +564,37 @@ export default function WorkOrderDetails() {
           .workflow-item .step-title {
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
+            font-size: 9px;
           }
           .workflow-item .step-detail {
-            font-size: 13px;
+            font-size: 8px;
             color: #64748b;
-            margin: 4px 0;
+            margin: 2px 0;
           }
           
           /* Table */
           table { 
             width: 100%; 
             border-collapse: collapse; 
-            margin: 20px 0;
+            margin: 8px 0;
             background: white;
           }
           th, td { 
             border: 1px solid #e2e8f0; 
-            padding: 12px; 
+            padding: 6px; 
             text-align: ${language === 'ar' ? 'right' : 'left'};
           }
           th { 
             background: #f8fafc;
             font-weight: 600;
             color: #475569;
-            font-size: 13px;
+            font-size: 9px;
             text-transform: uppercase;
           }
           td {
             color: #1e293b;
-            font-size: 14px;
+            font-size: 9px;
           }
           
           /* Footer */
