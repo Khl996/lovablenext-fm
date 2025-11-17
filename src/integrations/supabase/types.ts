@@ -1853,6 +1853,38 @@ export type Database = {
         Args: { _role_code: string; _user_id: string }
         Returns: boolean
       }
+      work_order_complete_work: {
+        Args: { _technician_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_engineer_review: {
+        Args: { _engineer_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_final_approve: {
+        Args: { _manager_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_reject: {
+        Args: {
+          _rejection_reason: string
+          _rejection_stage: string
+          _work_order_id: string
+        }
+        Returns: undefined
+      }
+      work_order_reporter_closure: {
+        Args: { _reporter_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_start_work: {
+        Args: { _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_supervisor_approve: {
+        Args: { _supervisor_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
