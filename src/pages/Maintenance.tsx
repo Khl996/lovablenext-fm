@@ -10,11 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Wrench, FileText } from 'lucide-react';
+import { Search, Plus, Calendar, AlertTriangle, CheckCircle2, Clock, Wrench, FileText, LayoutGrid, List, GitCommit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { MaintenanceTaskFormDialog } from '@/components/admin/MaintenanceTaskFormDialog';
 import { MaintenancePlanFormDialog } from '@/components/admin/MaintenancePlanFormDialog';
+import { MaintenanceStats } from '@/components/maintenance/MaintenanceStats';
+import { MaintenanceChart } from '@/components/maintenance/MaintenanceChart';
+import { KanbanBoard } from '@/components/maintenance/KanbanBoard';
+import { TimelineView } from '@/components/maintenance/TimelineView';
+import { ExportButton } from '@/components/maintenance/ExportButton';
 
 type MaintenanceTask = {
   id: string;
@@ -57,6 +62,8 @@ export default function Maintenance() {
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MaintenancePlan | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'timeline'>('table');
+  const [planSearchQuery, setPlanSearchQuery] = useState('');
 
   useEffect(() => {
     if (hospitalId) {
