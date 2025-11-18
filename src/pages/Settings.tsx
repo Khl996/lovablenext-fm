@@ -461,6 +461,17 @@ export default function Settings() {
                 />
               </div>
 
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/notification-settings')}
+                >
+                  <Bell className="h-4 w-4" />
+                  {language === 'ar' ? 'إعدادات التنبيهات المتقدمة' : 'Advanced Notification Settings'}
+                </Button>
+              </div>
+
               <Button onClick={handleSaveNotifications}>
                 {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
               </Button>
