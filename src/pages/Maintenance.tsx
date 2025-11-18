@@ -292,12 +292,10 @@ export default function Maintenance() {
                     </Button>
                   </div>
                   <ExportButton data={filteredTasks} filename="maintenance_tasks" language={language} />
-                  {permissions?.['maintenance.manage'] && (
-                    <Button onClick={() => setShowTaskDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
-                    </Button>
-                  )}
+                  <Button onClick={() => setShowTaskDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -412,12 +410,10 @@ export default function Maintenance() {
                 <CardTitle>{language === 'ar' ? 'خطط الصيانة' : 'Maintenance Plans'}</CardTitle>
                 <div className="flex items-center gap-2">
                   <ExportButton data={filteredPlans} filename="maintenance_plans" language={language} />
-                  {permissions?.['maintenance.manage'] && (
-                    <Button onClick={() => setShowPlanDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {language === 'ar' ? 'إضافة خطة' : 'Add Plan'}
-                    </Button>
-                  )}
+                  <Button onClick={() => setShowPlanDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {language === 'ar' ? 'إضافة خطة' : 'Add Plan'}
+                  </Button>
                 </div>
               </div>
             </CardHeader>
