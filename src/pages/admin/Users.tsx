@@ -195,46 +195,33 @@ export default function Users() {
     }
 
     try {
-      // Create user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
+      // Call Edge Function to create user without logging out current user
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName,
+          phone: formData.phone,
+          hospitalId: formData.role === 'global_admin' ? null : (formData.hospitalId || null),
+          roles: [{
+            role: formData.role,
+            hospitalId: formData.role === 'global_admin' ? null : (formData.hospitalId || null),
+          }],
+        }),
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('User creation failed');
+      const result = await response.json();
 
-      // Wait for trigger to create profile, then update additional fields
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone || null,
-          hospital_id: formData.hospitalId || null,
-        });
-
-      if (profileError) throw profileError;
-
-      // Assign role using user_custom_roles for all roles
-      const { error: roleError } = await supabase
-        .from('user_custom_roles')
-        .insert([{
-          user_id: authData.user.id,
-          role_code: formData.role,
-          hospital_id: formData.role === 'global_admin' ? null : (formData.hospitalId || null),
-        }]);
-
-      if (roleError) throw roleError;
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user');
+      }
 
       toast.success(t('userAdded'));
       setIsDialogOpen(false);
