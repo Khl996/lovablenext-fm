@@ -43,6 +43,7 @@ const mainItems = [
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: Wrench },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History, permission: 'view_operations_log' },
   { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound, permission: 'view_teams' },
+  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
 ];
 
 const adminItems = [

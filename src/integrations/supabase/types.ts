@@ -887,6 +887,98 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          days_before_due: number | null
+          email_enabled: boolean | null
+          id: string
+          in_app_enabled: boolean | null
+          overdue_tasks: boolean | null
+          task_assignments: boolean | null
+          task_completions: boolean | null
+          upcoming_tasks: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_before_due?: number | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          overdue_tasks?: boolean | null
+          task_assignments?: boolean | null
+          task_completions?: boolean | null
+          upcoming_tasks?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_before_due?: number | null
+          email_enabled?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          overdue_tasks?: boolean | null
+          task_assignments?: boolean | null
+          task_completions?: boolean | null
+          upcoming_tasks?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          message_ar: string
+          related_task_id: string | null
+          title: string
+          title_ar: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          message_ar: string
+          related_task_id?: string | null
+          title: string
+          title_ar: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          message_ar?: string
+          related_task_id?: string | null
+          title?: string
+          title_ar?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_related_task_id_fkey"
+            columns: ["related_task_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operations_log: {
         Row: {
           actual_duration: number | null

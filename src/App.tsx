@@ -9,6 +9,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useCurrentUser } from "./hooks/useCurrentUser";
+import { NotificationBell } from "./components/NotificationBell";
 import { Languages, LogOut } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { useLanguage } from "./contexts/LanguageContext";
@@ -34,6 +35,7 @@ import OperationsLog from './pages/OperationsLog';
 import IssueTypeSettings from './pages/admin/IssueTypeSettings';
 import Specializations from './pages/admin/Specializations';
 import LookupTables from './pages/admin/LookupTables';
+import NotificationSettings from './pages/NotificationSettings';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +63,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             
             <div className="flex-1"></div>
+            
+            {/* Notification Bell */}
+            <NotificationBell />
             
             {/* User Info */}
             {profile && (
@@ -302,6 +307,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <LookupTables />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/notification-settings" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <NotificationSettings />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
