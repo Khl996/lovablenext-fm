@@ -65,13 +65,13 @@ export default function RolePermissions() {
       setPermissions(permsResult.data || []);
       setRolePermissions(rolePermsResult.data || []);
 
-      // Build matrix
+      // Build matrix using only role_code for consistency
       const matrix: Record<string, Record<string, boolean>> = {};
       systemRoles.forEach((role) => {
         matrix[role.code] = {};
         (permsResult.data || []).forEach((perm) => {
           const hasPermission = (rolePermsResult.data || []).some(
-            (rp) => (rp.role_code === role.code || rp.role === role.code) && rp.permission_key === perm.key && rp.allowed
+            (rp) => rp.role_code === role.code && rp.permission_key === perm.key && rp.allowed
           );
           matrix[role.code][perm.key] = hasPermission;
         });
@@ -167,23 +167,16 @@ export default function RolePermissions() {
       const { error: deleteError } = await supabase.from('role_permissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (deleteError) throw deleteError;
 
-      // Insert new permissions with role_code
-      const newPermissions: Array<{ role_code: string; permission_key: string; allowed: boolean; role?: string }> = [];
+      // Insert new permissions using role_code only
+      const newPermissions: Array<{ role_code: string; permission_key: string; allowed: boolean }> = [];
       Object.entries(permissionMatrix).forEach(([roleCode, perms]) => {
         Object.entries(perms).forEach(([permKey, allowed]) => {
           if (allowed) {
-            const perm: any = {
+            newPermissions.push({
               role_code: roleCode,
               permission_key: permKey,
               allowed: true,
-            };
-            
-            // For global_admin, also set the role field for backward compatibility
-            if (roleCode === 'global_admin') {
-              perm.role = 'global_admin';
-            }
-            
-            newPermissions.push(perm);
+            });
           }
         });
       });
@@ -191,7 +184,7 @@ export default function RolePermissions() {
       if (newPermissions.length > 0) {
         const { error: insertError } = await supabase
           .from('role_permissions')
-          .insert(newPermissions as any);
+          .insert(newPermissions);
         if (insertError) throw insertError;
       }
 
