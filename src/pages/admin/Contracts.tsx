@@ -52,7 +52,10 @@ export default function Contracts() {
   }, [profile?.hospital_id]);
 
   const loadData = async () => {
-    if (!profile?.hospital_id) return;
+    if (!profile?.hospital_id) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
