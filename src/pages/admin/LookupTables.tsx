@@ -279,7 +279,7 @@ export default function LookupTables() {
       </div>
 
       <Tabs value={selectedTable} onValueChange={(v) => setSelectedTable(v as LookupTableName)}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="w-full justify-start">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {language === 'ar' ? tab.labelAr : tab.labelEn}
