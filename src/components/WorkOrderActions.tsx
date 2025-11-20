@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,17 +37,57 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [showReassignDialog, setShowReassignDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [rejectStage, setRejectStage] = useState('');
+  const [isTeamMember, setIsTeamMember] = useState(false);
+  const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
+
+  // Check if current user is a member of the assigned team
+  useEffect(() => {
+    const checkTeamMembership = async () => {
+      if (!user?.id || !workOrder.assigned_team) {
+        setIsTeamMember(false);
+        setCheckingTeamMembership(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('team_id', workOrder.assigned_team)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking team membership:', error);
+          setIsTeamMember(false);
+        } else {
+          setIsTeamMember(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking team membership:', error);
+        setIsTeamMember(false);
+      } finally {
+        setCheckingTeamMembership(false);
+      }
+    };
+
+    checkTeamMembership();
+  }, [user?.id, workOrder.assigned_team]);
 
   // Determine what action the current user can take
-  const canStartWork = workOrder.assigned_team && 
+  // Technician actions - require team membership
+  const canStartWork = isTeamMember && 
+    workOrder.assigned_team && 
     (workOrder.status === 'pending' || workOrder.status === 'assigned') &&
     !workOrder.start_time;
   
-  const canCompletework = workOrder.assigned_team && 
+  const canCompletework = isTeamMember && 
+    workOrder.assigned_team && 
     workOrder.status === 'in_progress' &&
     !workOrder.technician_completed_at;
   
-  const canReject = workOrder.assigned_team && 
+  const canReject = isTeamMember && 
+    workOrder.assigned_team && 
     workOrder.status === 'in_progress' &&
     !workOrder.technician_completed_at;
   
@@ -370,6 +410,17 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
       setLoading(false);
     }
   };
+
+  // Show loading while checking team membership
+  if (checkingTeamMembership) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // If no action is available, don't render
   if (!canStartWork && !canCompletework && !canApproveAsSupervisor && !canReviewAsEngineer && 

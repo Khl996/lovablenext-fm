@@ -177,12 +177,10 @@ export default function WorkOrders() {
           <h1 className="text-3xl font-bold">{t.title}</h1>
           <p className="text-muted-foreground mt-1">{t.description}</p>
         </div>
-        {permissions.hasPermission('users.create') && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t.addNew}
-          </Button>
-        )}
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          {t.addNew}
+        </Button>
       </div>
 
       <Card>
