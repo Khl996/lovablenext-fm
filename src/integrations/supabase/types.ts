@@ -206,6 +206,202 @@ export type Database = {
           },
         ]
       }
+      calibration_records: {
+        Row: {
+          adjustments_made: string | null
+          approved_at: string | null
+          approved_by: string | null
+          asset_id: string
+          calibration_date: string
+          certificate_number: string | null
+          certificate_url: string | null
+          code: string
+          cost: number | null
+          created_at: string | null
+          created_by: string
+          hospital_id: string
+          id: string
+          measurements: Json | null
+          next_calibration_date: string | null
+          notes: string | null
+          performed_by: string
+          report_url: string | null
+          result: string
+          schedule_id: string
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          adjustments_made?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id: string
+          calibration_date: string
+          certificate_number?: string | null
+          certificate_url?: string | null
+          code: string
+          cost?: number | null
+          created_at?: string | null
+          created_by: string
+          hospital_id: string
+          id?: string
+          measurements?: Json | null
+          next_calibration_date?: string | null
+          notes?: string | null
+          performed_by: string
+          report_url?: string | null
+          result: string
+          schedule_id: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          adjustments_made?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id?: string
+          calibration_date?: string
+          certificate_number?: string | null
+          certificate_url?: string | null
+          code?: string
+          cost?: number | null
+          created_at?: string | null
+          created_by?: string
+          hospital_id?: string
+          id?: string
+          measurements?: Json | null
+          next_calibration_date?: string | null
+          notes?: string | null
+          performed_by?: string
+          report_url?: string | null
+          result?: string
+          schedule_id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calibration_records_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_records_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_records_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "calibration_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_records_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calibration_schedules: {
+        Row: {
+          asset_id: string
+          calibration_standard: string | null
+          code: string
+          created_at: string | null
+          frequency_months: number
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          last_calibration_date: string | null
+          next_calibration_date: string
+          notes: string | null
+          notification_days_before: number | null
+          priority: string | null
+          responsible_team: string | null
+          status: string | null
+          tolerance_range: string | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          asset_id: string
+          calibration_standard?: string | null
+          code: string
+          created_at?: string | null
+          frequency_months: number
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          last_calibration_date?: string | null
+          next_calibration_date: string
+          notes?: string | null
+          notification_days_before?: number | null
+          priority?: string | null
+          responsible_team?: string | null
+          status?: string | null
+          tolerance_range?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          asset_id?: string
+          calibration_standard?: string | null
+          code?: string
+          created_at?: string | null
+          frequency_months?: number
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_calibration_date?: string | null
+          next_calibration_date?: string
+          notes?: string | null
+          notification_days_before?: number | null
+          priority?: string | null
+          responsible_team?: string | null
+          status?: string | null
+          tolerance_range?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calibration_schedules_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_schedules_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_schedules_responsible_team_fkey"
+            columns: ["responsible_team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibration_schedules_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           contact_person: string | null
@@ -252,6 +448,277 @@ export type Database = {
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          attached_assets: string[] | null
+          auto_renew: boolean | null
+          code: string
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          contract_type: string
+          created_at: string | null
+          created_by: string
+          currency: string | null
+          description: string | null
+          documents: string[] | null
+          end_date: string
+          hospital_id: string
+          id: string
+          kpis: Json | null
+          payment_terms: string | null
+          renewal_notice_days: number | null
+          scope_of_work: string | null
+          start_date: string
+          status: string | null
+          terminated_at: string | null
+          termination_reason: string | null
+          terms_and_conditions: string | null
+          title: string
+          title_ar: string
+          updated_at: string | null
+          value: number
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attached_assets?: string[] | null
+          auto_renew?: boolean | null
+          code: string
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          contract_type: string
+          created_at?: string | null
+          created_by: string
+          currency?: string | null
+          description?: string | null
+          documents?: string[] | null
+          end_date: string
+          hospital_id: string
+          id?: string
+          kpis?: Json | null
+          payment_terms?: string | null
+          renewal_notice_days?: number | null
+          scope_of_work?: string | null
+          start_date: string
+          status?: string | null
+          terminated_at?: string | null
+          termination_reason?: string | null
+          terms_and_conditions?: string | null
+          title: string
+          title_ar: string
+          updated_at?: string | null
+          value: number
+          vendor_id?: string | null
+          vendor_name: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          attached_assets?: string[] | null
+          auto_renew?: boolean | null
+          code?: string
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          contract_type?: string
+          created_at?: string | null
+          created_by?: string
+          currency?: string | null
+          description?: string | null
+          documents?: string[] | null
+          end_date?: string
+          hospital_id?: string
+          id?: string
+          kpis?: Json | null
+          payment_terms?: string | null
+          renewal_notice_days?: number | null
+          scope_of_work?: string | null
+          start_date?: string
+          status?: string | null
+          terminated_at?: string | null
+          termination_reason?: string | null
+          terms_and_conditions?: string | null
+          title?: string
+          title_ar?: string
+          updated_at?: string | null
+          value?: number
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_categories: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_categories_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      costs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          asset_id: string | null
+          category_id: string | null
+          code: string
+          cost_date: string
+          cost_type: string
+          created_at: string | null
+          created_by: string
+          currency: string | null
+          description: string
+          description_ar: string
+          hospital_id: string
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          quantity: number | null
+          total_cost: number | null
+          unit_cost: number
+          updated_at: string | null
+          vendor: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id?: string | null
+          category_id?: string | null
+          code: string
+          cost_date?: string
+          cost_type: string
+          created_at?: string | null
+          created_by: string
+          currency?: string | null
+          description: string
+          description_ar: string
+          hospital_id: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          quantity?: number | null
+          total_cost?: number | null
+          unit_cost: number
+          updated_at?: string | null
+          vendor?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_id?: string | null
+          category_id?: string | null
+          code?: string
+          cost_date?: string
+          cost_type?: string
+          created_at?: string | null
+          created_by?: string
+          currency?: string | null
+          description?: string
+          description_ar?: string
+          hospital_id?: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          quantity?: number | null
+          total_cost?: number | null
+          unit_cost?: number
+          updated_at?: string | null
+          vendor?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cost_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1507,6 +1974,169 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_breaches: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          actual_time: string | null
+          breach_duration_minutes: number | null
+          breach_type: string
+          corrective_action: string | null
+          created_at: string | null
+          expected_time: string
+          hospital_id: string
+          id: string
+          penalty_applied: number | null
+          resolved_at: string | null
+          root_cause: string | null
+          sla_id: string
+          status: string | null
+          updated_at: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actual_time?: string | null
+          breach_duration_minutes?: number | null
+          breach_type: string
+          corrective_action?: string | null
+          created_at?: string | null
+          expected_time: string
+          hospital_id: string
+          id?: string
+          penalty_applied?: number | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          sla_id: string
+          status?: string | null
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actual_time?: string | null
+          breach_duration_minutes?: number | null
+          breach_type?: string
+          corrective_action?: string | null
+          created_at?: string | null
+          expected_time?: string
+          hospital_id?: string
+          id?: string
+          penalty_applied?: number | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          sla_id?: string
+          status?: string | null
+          updated_at?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_breaches_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_breaches_sla_id_fkey"
+            columns: ["sla_id"]
+            isOneToOne: false
+            referencedRelation: "sla_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_breaches_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_definitions: {
+        Row: {
+          applies_to: string
+          asset_category: string | null
+          availability_target: number | null
+          code: string
+          contract_id: string | null
+          created_at: string | null
+          description: string | null
+          escalation_matrix: Json | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          issue_types: string[] | null
+          name: string
+          name_ar: string
+          penalty_per_breach: number | null
+          priority: string
+          resolution_time_hours: number
+          response_time_hours: number
+          updated_at: string | null
+        }
+        Insert: {
+          applies_to: string
+          asset_category?: string | null
+          availability_target?: number | null
+          code: string
+          contract_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          escalation_matrix?: Json | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          issue_types?: string[] | null
+          name: string
+          name_ar: string
+          penalty_per_breach?: number | null
+          priority: string
+          resolution_time_hours: number
+          response_time_hours: number
+          updated_at?: string | null
+        }
+        Update: {
+          applies_to?: string
+          asset_category?: string | null
+          availability_target?: number | null
+          code?: string
+          contract_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          escalation_matrix?: Json | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          issue_types?: string[] | null
+          name?: string
+          name_ar?: string
+          penalty_per_breach?: number | null
+          priority?: string
+          resolution_time_hours?: number
+          response_time_hours?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_definitions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_definitions_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
             referencedColumns: ["id"]
           },
         ]

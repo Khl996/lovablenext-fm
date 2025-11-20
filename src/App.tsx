@@ -37,6 +37,10 @@ import IssueTypeSettings from './pages/admin/IssueTypeSettings';
 import Specializations from './pages/admin/Specializations';
 import LookupTables from './pages/admin/LookupTables';
 import NotificationSettings from './pages/NotificationSettings';
+import Costs from './pages/admin/Costs';
+import Contracts from './pages/admin/Contracts';
+import SLA from './pages/admin/SLA';
+import Calibration from './pages/admin/Calibration';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -328,6 +332,46 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <NotificationSettings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/costs" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Costs />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/contracts" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Contracts />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/sla" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SLA />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/calibration" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Calibration />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
