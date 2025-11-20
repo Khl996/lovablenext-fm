@@ -10,19 +10,27 @@ import {
   Building2, 
   Package, 
   ClipboardList, 
-  CheckCircle2, 
-  Globe,
-  LogOut,
+  CheckCircle2,
   Download,
-  X
+  X,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { WorkOrdersChart } from '@/components/dashboard/WorkOrdersChart';
+import { InventoryStatusChart } from '@/components/dashboard/InventoryStatusChart';
+import { TeamPerformanceCard } from '@/components/dashboard/TeamPerformanceCard';
+import { RecentAlertsCard } from '@/components/dashboard/RecentAlertsCard';
 
 interface DashboardStats {
   activeWorkOrders: number;
   completedWorkOrders: number;
   overdueTasks: number;
   dailyReports: number;
+  totalAssets: number;
+  lowStockItems: number;
+  completionRate: number;
+  avgResponseTime: number;
 }
 
 export default function Dashboard() {
@@ -35,6 +43,10 @@ export default function Dashboard() {
     completedWorkOrders: 0,
     overdueTasks: 0,
     dailyReports: 0,
+    totalAssets: 0,
+    lowStockItems: 0,
+    completionRate: 0,
+    avgResponseTime: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
   const [showInstallBanner, setShowInstallBanner] = useState(true);
@@ -55,38 +67,78 @@ export default function Dashboard() {
     try {
       setLoadingStats(true);
 
-      // Load daily reports count (work orders reported today)
       const today = new Date().toISOString().split('T')[0];
-      const { count: dailyReportsCount } = await supabase
-        .from('work_orders')
-        .select('*', { count: 'exact', head: true })
-        .gte('reported_at', today);
 
-      // Load active work orders count
-      const { count: workOrdersCount } = await supabase
-        .from('work_orders')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'assigned', 'in_progress']);
+      const [
+        dailyReports,
+        activeOrders,
+        completedOrders,
+        overdueTasks,
+        assets,
+        inventoryItems,
+        allOrders,
+      ] = await Promise.all([
+        supabase
+          .from('work_orders')
+          .select('*', { count: 'exact', head: true })
+          .gte('reported_at', today),
+        supabase
+          .from('work_orders')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['pending', 'assigned', 'in_progress']),
+        supabase
+          .from('work_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'completed'),
+        supabase
+          .from('maintenance_tasks')
+          .select('*', { count: 'exact', head: true })
+          .lt('end_date', new Date().toISOString())
+          .neq('status', 'completed'),
+        supabase
+          .from('assets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active'),
+        supabase
+          .from('inventory_items')
+          .select('current_quantity, min_quantity'),
+        supabase
+          .from('work_orders')
+          .select('created_at, assigned_at')
+          .not('assigned_at', 'is', null)
+          .limit(100),
+      ]);
 
-      // Load completed work orders count
-      const { count: completedCount } = await supabase
-        .from('work_orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+      const lowStock = inventoryItems.data?.filter(
+        item => item.min_quantity && item.current_quantity <= item.min_quantity
+      ).length || 0;
 
-      // Load overdue tasks count (maintenance tasks past due date)
-      const now = new Date().toISOString();
-      const { count: overdueCount } = await supabase
-        .from('maintenance_tasks')
-        .select('*', { count: 'exact', head: true })
-        .lt('end_date', now)
-        .neq('status', 'completed');
+      const totalOrders = (activeOrders.count || 0) + (completedOrders.count || 0);
+      const completionRate = totalOrders > 0
+        ? Math.round(((completedOrders.count || 0) / totalOrders) * 100)
+        : 0;
+
+      const avgResponse = allOrders.data?.reduce((acc, order) => {
+        if (order.assigned_at) {
+          const diff = new Date(order.assigned_at).getTime() - new Date(order.created_at).getTime();
+          return acc + diff / (1000 * 60 * 60);
+        }
+        return acc;
+      }, 0) || 0;
+
+      const avgResponseTime = allOrders.data?.length
+        ? Math.round(avgResponse / allOrders.data.length)
+        : 0;
 
       setStats({
-        activeWorkOrders: workOrdersCount || 0,
-        completedWorkOrders: completedCount || 0,
-        overdueTasks: overdueCount || 0,
-        dailyReports: dailyReportsCount || 0,
+        activeWorkOrders: activeOrders.count || 0,
+        completedWorkOrders: completedOrders.count || 0,
+        overdueTasks: overdueTasks.count || 0,
+        dailyReports: dailyReports.count || 0,
+        totalAssets: assets.count || 0,
+        lowStockItems: lowStock,
+        completionRate,
+        avgResponseTime,
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -159,83 +211,118 @@ export default function Dashboard() {
           </Alert>
         )}
 
-        {/* Stats Grid */}
+        {/* KPI Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-blue-500"
+            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-info"
             onClick={() => navigate('/admin/work-orders')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {language === 'ar' ? 'البلاغات اليومية' : 'Daily Reports'}
               </CardTitle>
-              <ClipboardList className="h-5 w-5 text-blue-500" />
+              <ClipboardList className="h-5 w-5 text-info" />
             </CardHeader>
             <CardContent>
               {loadingStats ? (
                 <div className="h-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                <div className="text-3xl font-bold">{stats.dailyReports}</div>
+                <>
+                  <div className="text-3xl font-bold">{stats.dailyReports}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {language === 'ar' ? 'اليوم' : 'Today'}
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
 
           <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-orange-500"
+            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-warning"
             onClick={() => navigate('/admin/work-orders?status=active')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {language === 'ar' ? 'أوامر العمل النشطة' : 'Active Work Orders'}
               </CardTitle>
-              <ClipboardList className="h-5 w-5 text-orange-500" />
+              <ClipboardList className="h-5 w-5 text-warning" />
             </CardHeader>
             <CardContent>
               {loadingStats ? (
                 <div className="h-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                <div className="text-3xl font-bold">{stats.activeWorkOrders}</div>
+                <>
+                  <div className="text-3xl font-bold">{stats.activeWorkOrders}</div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3 text-success" />
+                    <p className="text-xs text-muted-foreground">
+                      {stats.completionRate}% {language === 'ar' ? 'معدل الإنجاز' : 'completion'}
+                    </p>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
 
           <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-green-500"
-            onClick={() => navigate('/admin/work-orders?status=completed')}
+            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-success"
+            onClick={() => navigate('/admin/assets')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {language === 'ar' ? 'أوامر العمل المنتهية' : 'Completed Work Orders'}
+                {language === 'ar' ? 'الأصول النشطة' : 'Active Assets'}
               </CardTitle>
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <Package className="h-5 w-5 text-success" />
             </CardHeader>
             <CardContent>
               {loadingStats ? (
                 <div className="h-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                <div className="text-3xl font-bold">{stats.completedWorkOrders}</div>
+                <>
+                  <div className="text-3xl font-bold">{stats.totalAssets}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {language === 'ar' ? 'قيد التشغيل' : 'Operational'}
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
 
           <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-red-500"
-            onClick={() => navigate('/maintenance')}
+            className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-destructive"
+            onClick={() => navigate('/admin/inventory')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {language === 'ar' ? 'المهام المتأخرة' : 'Overdue Tasks'}
+                {language === 'ar' ? 'مخزون منخفض' : 'Low Stock Items'}
               </CardTitle>
-              <Package className="h-5 w-5 text-red-500" />
+              <TrendingDown className="h-5 w-5 text-destructive" />
             </CardHeader>
             <CardContent>
               {loadingStats ? (
                 <div className="h-8 bg-muted animate-pulse rounded"></div>
               ) : (
-                <div className="text-3xl font-bold text-red-500">{stats.overdueTasks}</div>
+                <>
+                  <div className="text-3xl font-bold text-destructive">{stats.lowStockItems}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {language === 'ar' ? 'يحتاج تعبئة' : 'Needs restocking'}
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <WorkOrdersChart />
+          <InventoryStatusChart />
+        </div>
+
+        {/* Performance & Alerts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TeamPerformanceCard />
+          <RecentAlertsCard />
         </div>
 
         {/* Quick Access Modules */}
