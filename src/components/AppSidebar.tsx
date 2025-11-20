@@ -20,6 +20,10 @@ import {
   GitBranch,
   Award,
   Database,
+  DollarSign,
+  FileSignature,
+  Timer,
+  Gauge,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -53,6 +57,10 @@ const adminItems = [
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
   { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield, permission: 'manage_users' },
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
+  { title: 'costs', titleAr: 'التكاليف', url: '/admin/costs', icon: DollarSign, permission: 'manage_users' },
+  { title: 'contracts', titleAr: 'العقود', url: '/admin/contracts', icon: FileSignature, permission: 'manage_users' },
+  { title: 'sla', titleAr: 'SLA', url: '/admin/sla', icon: Timer, permission: 'manage_users' },
+  { title: 'calibration', titleAr: 'المعايرة', url: '/admin/calibration', icon: Gauge, permission: 'manage_users' },
   { title: 'issueTypes', titleAr: 'ربط أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch, permission: 'manage_users' },
   { title: 'specializations', titleAr: 'التخصصات', url: '/admin/specializations', icon: Award, permission: 'manage_users' },
   { title: 'lookupTables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database, permission: 'manage_users' },
