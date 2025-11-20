@@ -8,26 +8,30 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Mutqan Brand Identity Colors */
     --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    --foreground: 205 21% 23%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 205 21% 23%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 205 21% 23%;
 
-    /* Professional navy blue */
-    --primary: 215 60% 25%;
+    /* Primary Color: #2E3A45 */
+    --primary: 205 21% 23%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 215 20% 96%;
-    --secondary-foreground: 215 30% 20%;
+    /* Secondary Color: #3AAFA9 */
+    --secondary: 177 50% 46%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 20% 96%;
-    --muted-foreground: 215 15% 45%;
+    /* Light Gray: #E9EEF1 */
+    --muted: 204 26% 93%;
+    --muted-foreground: 205 12% 49%;
 
-    --accent: 215 60% 35%;
+    /* Accent using secondary color */
+    --accent: 177 50% 46%;
     --accent-foreground: 0 0% 100%;
 
     /* Status colors */
@@ -40,45 +44,50 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
     
-    --info: 199 89% 48%;
+    --info: 177 50% 46%;
     --info-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 217 91% 50%;
+    /* Borders using light gray */
+    --border: 204 26% 88%;
+    --input: 204 26% 88%;
+    --ring: 177 50% 46%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 215 25% 98%;
-    --sidebar-foreground: 215 25% 20%;
-    --sidebar-primary: 215 60% 25%;
+    /* Sidebar with brand colors */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 205 21% 23%;
+    --sidebar-primary: 205 21% 23%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 20% 96%;
-    --sidebar-accent-foreground: 215 30% 20%;
-    --sidebar-border: 215 20% 90%;
-    --sidebar-ring: 215 60% 25%;
+    --sidebar-accent: 204 26% 93%;
+    --sidebar-accent-foreground: 205 21% 23%;
+    --sidebar-border: 204 26% 88%;
+    --sidebar-ring: 177 50% 46%;
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 215 20% 95%;
+    /* Dark mode with Mutqan brand colors */
+    --background: 205 21% 12%;
+    --foreground: 204 26% 93%;
 
-    --card: 215 25% 12%;
-    --card-foreground: 215 20% 95%;
+    --card: 205 21% 16%;
+    --card-foreground: 204 26% 93%;
 
-    --popover: 215 25% 12%;
-    --popover-foreground: 215 20% 95%;
+    --popover: 205 21% 16%;
+    --popover-foreground: 204 26% 93%;
 
-    --primary: 215 60% 45%;
+    /* Primary lighter in dark mode */
+    --primary: 205 21% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 15%;
-    --secondary-foreground: 215 20% 95%;
+    /* Secondary remains vibrant */
+    --secondary: 177 50% 46%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 25% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 205 21% 20%;
+    --muted-foreground: 205 12% 65%;
 
-    --accent: 215 60% 50%;
+    --accent: 177 50% 46%;
     --accent-foreground: 0 0% 100%;
 
     --success: 142 76% 36%;
@@ -90,21 +99,21 @@ All colors MUST be HSL.
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     
-    --info: 199 89% 48%;
+    --info: 177 50% 46%;
     --info-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217 91% 60%;
+    --border: 205 21% 24%;
+    --input: 205 21% 24%;
+    --ring: 177 50% 46%;
     
-    --sidebar-background: 215 30% 10%;
-    --sidebar-foreground: 215 20% 95%;
-    --sidebar-primary: 215 60% 45%;
+    --sidebar-background: 205 21% 14%;
+    --sidebar-foreground: 204 26% 93%;
+    --sidebar-primary: 177 50% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 15%;
-    --sidebar-accent-foreground: 215 20% 95%;
-    --sidebar-border: 215 25% 15%;
-    --sidebar-ring: 215 60% 45%;
+    --sidebar-accent: 205 21% 20%;
+    --sidebar-accent-foreground: 204 26% 93%;
+    --sidebar-border: 205 21% 24%;
+    --sidebar-ring: 177 50% 46%;
   }
 }
 
@@ -115,5 +124,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', 'Cairo', sans-serif;
+  }
+
+  /* Apply Cairo for RTL content */
+  [dir="rtl"],
+  [dir="rtl"] * {
+    font-family: 'Cairo', 'Inter', sans-serif;
+  }
+
+  /* Apply Inter for LTR content */
+  [dir="ltr"],
+  [dir="ltr"] * {
+    font-family: 'Inter', 'Cairo', sans-serif;
   }
 }
