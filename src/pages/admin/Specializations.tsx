@@ -184,9 +184,9 @@ export default function Specializations() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{language === 'ar' ? 'التخصصات' : 'Specializations'}</h1>
+          <h1 className="text-3xl font-bold">{language === 'ar' ? 'التخصصات الفنية' : 'Technical Specializations'}</h1>
           <p className="text-muted-foreground mt-2">
-            {language === 'ar' ? 'إدارة التخصصات الموحدة للفنيين والمهندسين' : 'Manage unified specializations for technicians and engineers'}
+            {language === 'ar' ? 'إدارة المهارات والتخصصات الفنية للفنيين والمهندسين' : 'Manage technical skills and specializations for technicians and engineers'}
           </p>
         </div>
         <Button onClick={openAddDialog}>

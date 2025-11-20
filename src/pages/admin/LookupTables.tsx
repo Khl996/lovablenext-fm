@@ -23,7 +23,6 @@ const tableMap = {
   work_order_statuses: 'lookup_work_order_statuses',
   asset_statuses: 'lookup_asset_statuses',
   asset_categories: 'lookup_asset_categories',
-  work_types: 'lookup_work_types',
   team_roles: 'lookup_team_roles',
 } as const;
 
@@ -75,7 +74,6 @@ export default function LookupTables() {
     { value: 'work_order_statuses' as const, labelAr: 'حالات أوامر العمل', labelEn: 'Work Order Statuses' },
     { value: 'asset_statuses' as const, labelAr: 'حالات الأصول', labelEn: 'Asset Statuses' },
     { value: 'asset_categories' as const, labelAr: 'فئات الأصول', labelEn: 'Asset Categories' },
-    { value: 'work_types' as const, labelAr: 'أنواع الأعمال', labelEn: 'Work Types' },
     { value: 'team_roles' as const, labelAr: 'أدوار الفريق', labelEn: 'Team Roles' },
   ];
 
@@ -281,7 +279,7 @@ export default function LookupTables() {
       </div>
 
       <Tabs value={selectedTable} onValueChange={(v) => setSelectedTable(v as LookupTableName)}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {language === 'ar' ? tab.labelAr : tab.labelEn}
