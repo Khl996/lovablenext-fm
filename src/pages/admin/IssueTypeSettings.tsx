@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function IssueTypeSettings() {
   const { language } = useLanguage();
-  const { hospitalId, permissions, loading } = useCurrentUser();
+  const { hospitalId, permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -25,7 +25,7 @@ export default function IssueTypeSettings() {
     // Don't check permissions while still loading
     if (loading || permissions.loading) return;
     
-    if (!permissions.hasPermission('manage_users')) {
+    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar'
@@ -35,7 +35,7 @@ export default function IssueTypeSettings() {
       });
       navigate('/dashboard');
     }
-  }, [permissions, loading, navigate, language, toast]);
+  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, loading, navigate, language, toast]);
 
   const [mappings, setMappings] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -184,9 +184,9 @@ export default function IssueTypeSettings() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{language === 'ar' ? 'ربط أنواع البلاغات بالفرق' : 'Issue Type - Team Mapping'}</h1>
+          <h1 className="text-3xl font-bold">{language === 'ar' ? 'أنواع البلاغات' : 'Issue Types'}</h1>
           <p className="text-muted-foreground mt-2">
-            {language === 'ar' ? 'إدارة الربط التلقائي بين أنواع البلاغات والفرق المختصة' : 'Manage automatic assignment between issue types and specialized teams'}
+            {language === 'ar' ? 'إدارة أنواع البلاغات والفرق المختصة بكل نوع' : 'Manage issue types and their assigned specialized teams'}
           </p>
         </div>
         <Button onClick={openAddDialog}>
