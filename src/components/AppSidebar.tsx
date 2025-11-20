@@ -39,6 +39,7 @@ const mainItems = [
   { title: 'dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
   { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
   { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permission: 'view_assets' },
+  { title: 'inventory', titleAr: 'المخزون', url: '/admin/inventory', icon: Database, permission: 'inventory.view' },
   { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: Wrench },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History, permission: 'view_operations_log' },
