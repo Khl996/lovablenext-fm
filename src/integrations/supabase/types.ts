@@ -392,6 +392,222 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_categories: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_ar: string
+          parent_category_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_ar: string
+          parent_category_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string
+          parent_category_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_categories_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          barcode: string | null
+          category_id: string | null
+          code: string
+          created_at: string
+          current_quantity: number
+          description: string | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          last_restocked_at: string | null
+          location: string | null
+          location_ar: string | null
+          max_quantity: number | null
+          min_quantity: number | null
+          name: string
+          name_ar: string
+          notes: string | null
+          supplier: string | null
+          supplier_contact: string | null
+          unit_cost: number | null
+          unit_of_measure: string
+          unit_of_measure_ar: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category_id?: string | null
+          code: string
+          created_at?: string
+          current_quantity?: number
+          description?: string | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          last_restocked_at?: string | null
+          location?: string | null
+          location_ar?: string | null
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name: string
+          name_ar: string
+          notes?: string | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          unit_cost?: number | null
+          unit_of_measure: string
+          unit_of_measure_ar: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category_id?: string | null
+          code?: string
+          created_at?: string
+          current_quantity?: number
+          description?: string | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_restocked_at?: string | null
+          location?: string | null
+          location_ar?: string | null
+          max_quantity?: number | null
+          min_quantity?: number | null
+          name?: string
+          name_ar?: string
+          notes?: string | null
+          supplier?: string | null
+          supplier_contact?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string
+          unit_of_measure_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          from_location: string | null
+          hospital_id: string
+          id: string
+          item_id: string
+          notes: string | null
+          performed_by: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          to_location: string | null
+          total_cost: number | null
+          transaction_type: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          from_location?: string | null
+          hospital_id: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          performed_by: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          to_location?: string | null
+          total_cost?: number | null
+          transaction_type: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          from_location?: string | null
+          hospital_id?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          performed_by?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          to_location?: string | null
+          total_cost?: number | null
+          transaction_type?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issue_type_team_mapping: {
         Row: {
           created_at: string

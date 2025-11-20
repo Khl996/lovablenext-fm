@@ -31,6 +31,7 @@ import AssetDetails from "./pages/admin/AssetDetails";
 import MaintenanceTaskDetails from "./pages/admin/MaintenanceTaskDetails";
 import WorkOrders from './pages/admin/WorkOrders';
 import Teams from './pages/admin/Teams';
+import Inventory from './pages/admin/Inventory';
 import OperationsLog from './pages/OperationsLog';
 import IssueTypeSettings from './pages/admin/IssueTypeSettings';
 import Specializations from './pages/admin/Specializations';
@@ -257,6 +258,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <WorkOrders />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/inventory" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Inventory />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
