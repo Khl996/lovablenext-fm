@@ -14,6 +14,7 @@ interface CreateUserRequest {
   phone?: string;
   hospitalId?: string;
   roles?: Array<{ role: string; hospitalId?: string }>;
+  customRoles?: Array<{ roleCode: string; hospitalId?: string }>; // Support for custom role codes
 }
 
 serve(async (req) => {
@@ -60,7 +61,7 @@ serve(async (req) => {
       );
     }
 
-    const { email, password, fullName, fullNameAr, phone, hospitalId, roles } = await req.json() as CreateUserRequest;
+    const { email, password, fullName, fullNameAr, phone, hospitalId, roles, customRoles } = await req.json() as CreateUserRequest;
 
     // Create user using admin client
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
@@ -95,7 +96,7 @@ serve(async (req) => {
       console.error('Profile creation error:', profileError);
     }
 
-    // Assign roles if provided
+    // Assign roles if provided (old system - app_role)
     if (roles && roles.length > 0) {
       const roleInserts = roles.map(r => ({
         user_id: newUser.user.id,
@@ -109,6 +110,23 @@ serve(async (req) => {
 
       if (rolesInsertError) {
         console.error('Roles assignment error:', rolesInsertError);
+      }
+    }
+
+    // Assign custom roles if provided (new system - role_code)
+    if (customRoles && customRoles.length > 0) {
+      const customRoleInserts = customRoles.map(r => ({
+        user_id: newUser.user.id,
+        role_code: r.roleCode,
+        hospital_id: r.hospitalId,
+      }));
+
+      const { error: customRolesError } = await adminClient
+        .from('user_custom_roles')
+        .insert(customRoleInserts);
+
+      if (customRolesError) {
+        console.error('Custom roles assignment error:', customRolesError);
       }
     }
 
