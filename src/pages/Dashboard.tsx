@@ -19,7 +19,6 @@ import {
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface DashboardStats {
-  totalAssets: number;
   activeWorkOrders: number;
   completedWorkOrders: number;
   overdueTasks: number;
@@ -32,7 +31,6 @@ export default function Dashboard() {
   const { language, setLanguage, t, direction } = useLanguage();
   const { isInstalled, isInstallable, installPWA } = usePWAInstall();
   const [stats, setStats] = useState<DashboardStats>({
-    totalAssets: 0,
     activeWorkOrders: 0,
     completedWorkOrders: 0,
     overdueTasks: 0,
@@ -85,7 +83,6 @@ export default function Dashboard() {
         .neq('status', 'completed');
 
       setStats({
-        totalAssets: 0,
         activeWorkOrders: workOrdersCount || 0,
         completedWorkOrders: completedCount || 0,
         overdueTasks: overdueCount || 0,
