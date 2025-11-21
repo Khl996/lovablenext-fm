@@ -58,6 +58,69 @@ export default function SLA() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    name: '',
+    name_ar: '',
+    priority: 'medium',
+    response_time_hours: 4,
+    resolution_time_hours: 24,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveSLA = async () => {
+    if (!profile?.hospital_id || !formData.code || !formData.name) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('sla_definitions')
+        .insert({
+          hospital_id: profile.hospital_id,
+          code: formData.code,
+          name: formData.name,
+          name_ar: formData.name_ar || formData.name,
+          priority: formData.priority,
+          response_time_hours: formData.response_time_hours,
+          resolution_time_hours: formData.resolution_time_hours,
+          applies_to: 'general',
+          is_active: true,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
+        description: language === 'ar' ? 'تم إضافة اتفاقية SLA بنجاح' : 'SLA added successfully',
+      });
+
+      setDialogOpen(false);
+      setFormData({
+        code: '',
+        name: '',
+        name_ar: '',
+        priority: 'medium',
+        response_time_hours: 4,
+        resolution_time_hours: 24,
+      });
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -207,12 +270,32 @@ export default function SLA() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الاسم' : 'Name'}</Label>
-                <Input placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'} />
+                <Label>{language === 'ar' ? 'الرمز*' : 'Code*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} 
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الاسم*' : 'Name*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'} 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الاسم بالعربية' : 'Arabic Name'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الاسم بالعربية' : 'Enter Arabic name'} 
+                  value={formData.name_ar}
+                  onChange={(e) => setFormData({...formData, name_ar: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
-                <Select>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
                   </SelectTrigger>
@@ -226,16 +309,24 @@ export default function SLA() {
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'وقت الاستجابة (ساعات)' : 'Response Time (hours)'}</Label>
-                <Input type="number" placeholder="4" />
+                <Input 
+                  type="number" 
+                  placeholder="4" 
+                  value={formData.response_time_hours}
+                  onChange={(e) => setFormData({...formData, response_time_hours: parseInt(e.target.value) || 4})}
+                />
               </div>
-              <Button className="w-full" onClick={() => {
-                toast({
-                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
-                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
-                });
-                setDialogOpen(false);
-              }}>
-                {language === 'ar' ? 'حفظ' : 'Save'}
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'وقت الحل (ساعات)' : 'Resolution Time (hours)'}</Label>
+                <Input 
+                  type="number" 
+                  placeholder="24" 
+                  value={formData.resolution_time_hours}
+                  onChange={(e) => setFormData({...formData, resolution_time_hours: parseInt(e.target.value) || 24})}
+                />
+              </div>
+              <Button className="w-full" onClick={handleSaveSLA} disabled={saving}>
+                {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
               </Button>
             </div>
           </DialogContent>

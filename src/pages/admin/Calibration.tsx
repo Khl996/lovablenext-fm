@@ -61,6 +61,65 @@ export default function Calibration() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    asset_id: '',
+    frequency_months: 12,
+    priority: 'medium',
+    next_calibration_date: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveSchedule = async () => {
+    if (!profile?.hospital_id || !formData.code || !formData.next_calibration_date) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('calibration_schedules')
+        .insert({
+          hospital_id: profile.hospital_id,
+          code: formData.code,
+          asset_id: formData.asset_id || schedules[0]?.asset_id,
+          frequency_months: formData.frequency_months,
+          priority: formData.priority,
+          next_calibration_date: formData.next_calibration_date,
+          status: 'scheduled',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
+        description: language === 'ar' ? 'تم إضافة جدول المعايرة بنجاح' : 'Calibration schedule added successfully',
+      });
+
+      setDialogOpen(false);
+      setFormData({
+        code: '',
+        asset_id: '',
+        frequency_months: 12,
+        priority: 'medium',
+        next_calibration_date: '',
+      });
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('calibration.view')) {
@@ -236,12 +295,16 @@ export default function Calibration() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الرمز' : 'Code'}</Label>
-                <Input placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} />
+                <Label>{language === 'ar' ? 'الرمز*' : 'Code*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} 
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
-                <Select>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
                   </SelectTrigger>
@@ -254,16 +317,23 @@ export default function Calibration() {
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'التكرار (بالأشهر)' : 'Frequency (months)'}</Label>
-                <Input type="number" placeholder="12" />
+                <Input 
+                  type="number" 
+                  placeholder="12" 
+                  value={formData.frequency_months}
+                  onChange={(e) => setFormData({...formData, frequency_months: parseInt(e.target.value) || 12})}
+                />
               </div>
-              <Button className="w-full" onClick={() => {
-                toast({
-                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
-                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
-                });
-                setDialogOpen(false);
-              }}>
-                {language === 'ar' ? 'حفظ' : 'Save'}
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'تاريخ المعايرة القادمة*' : 'Next Calibration Date*'}</Label>
+                <Input 
+                  type="date"
+                  value={formData.next_calibration_date}
+                  onChange={(e) => setFormData({...formData, next_calibration_date: e.target.value})}
+                />
+              </div>
+              <Button className="w-full" onClick={handleSaveSchedule} disabled={saving}>
+                {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
               </Button>
             </div>
           </DialogContent>
