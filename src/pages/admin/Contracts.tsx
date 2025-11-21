@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,8 +36,9 @@ interface ContractStats {
 
 export default function Contracts() {
   const { language } = useLanguage();
-  const { profile } = useCurrentUser();
+  const { profile, permissions, loading: userLoading, isFacilityManager, isHospitalAdmin } = useCurrentUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [stats, setStats] = useState<ContractStats>({
@@ -46,6 +48,17 @@ export default function Contracts() {
     expiredContracts: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('contracts.view')) {
+      toast({
+        title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+        description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+    }
+  }, [userLoading, profile?.hospital_id, isFacilityManager, isHospitalAdmin, permissions, navigate]);
 
   useEffect(() => {
     loadData();

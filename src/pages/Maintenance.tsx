@@ -50,7 +50,7 @@ type MaintenancePlan = {
 
 export default function Maintenance() {
   const { t, language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { hospitalId, permissions, loading: userLoading, isFacilityManager, isHospitalAdmin } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -65,6 +65,17 @@ export default function Maintenance() {
   const [selectedPlan, setSelectedPlan] = useState<MaintenancePlan | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'timeline'>('table');
   const [planSearchQuery, setPlanSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (!userLoading && hospitalId && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('maintenance_plans.view')) {
+      toast({
+        title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+        description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+    }
+  }, [userLoading, hospitalId, isFacilityManager, isHospitalAdmin, permissions, navigate]);
 
   useEffect(() => {
     if (hospitalId) {
