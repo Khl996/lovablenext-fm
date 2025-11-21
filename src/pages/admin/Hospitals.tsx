@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +32,8 @@ interface HospitalData {
 
 export default function Hospitals() {
   const { language, t } = useLanguage();
-  const { user, permissions } = useCurrentUser();
+  const { user, permissions, isGlobalAdmin, loading: userLoading } = useCurrentUser();
+  const navigate = useNavigate();
   const [hospitals, setHospitals] = useState<HospitalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -58,8 +60,17 @@ export default function Hospitals() {
   const canDelete = permissions.hasPermission('hospitals.delete');
 
   useEffect(() => {
-    loadHospitals();
-  }, []);
+    if (!userLoading && !isGlobalAdmin) {
+      toast.error(language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page');
+      navigate('/dashboard');
+    }
+  }, [userLoading, isGlobalAdmin, navigate]);
+
+  useEffect(() => {
+    if (isGlobalAdmin) {
+      loadHospitals();
+    }
+  }, [isGlobalAdmin]);
 
   const loadHospitals = async () => {
     try {
@@ -286,12 +297,16 @@ export default function Hospitals() {
     }
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  if (!isGlobalAdmin) {
+    return null;
   }
 
   return (
