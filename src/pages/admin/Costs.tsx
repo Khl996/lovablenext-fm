@@ -10,6 +10,9 @@ import { Plus, DollarSign, TrendingUp, TrendingDown, Calendar } from 'lucide-rea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Cost {
   id: string;
@@ -48,6 +51,7 @@ export default function Costs() {
     monthlyChange: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -161,10 +165,54 @@ export default function Costs() {
               : 'Track and manage maintenance and labor costs'}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          {language === 'ar' ? 'إضافة تكلفة' : 'Add Cost'}
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة تكلفة' : 'Add Cost'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'إضافة تكلفة جديدة' : 'Add New Cost'}</DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'أدخل تفاصيل التكلفة' : 'Enter cost details'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الوصف' : 'Description'}</Label>
+                <Input placeholder={language === 'ar' ? 'أدخل الوصف' : 'Enter description'} />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'نوع التكلفة' : 'Cost Type'}</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="labor">{language === 'ar' ? 'عمالة' : 'Labor'}</SelectItem>
+                    <SelectItem value="parts">{language === 'ar' ? 'قطع غيار' : 'Parts'}</SelectItem>
+                    <SelectItem value="service">{language === 'ar' ? 'خدمة' : 'Service'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'التكلفة' : 'Cost'}</Label>
+                <Input type="number" placeholder="1000" />
+              </div>
+              <Button className="w-full" onClick={() => {
+                toast({
+                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
+                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
+                });
+                setDialogOpen(false);
+              }}>
+                {language === 'ar' ? 'حفظ' : 'Save'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}

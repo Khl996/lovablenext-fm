@@ -12,6 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CalibrationSchedule {
   id: string;
@@ -57,6 +60,7 @@ export default function Calibration() {
     completedThisMonth: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('calibration.view')) {
@@ -216,10 +220,54 @@ export default function Calibration() {
               : 'Schedule and track equipment calibration'}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          {language === 'ar' ? 'إضافة جدول معايرة' : 'Add Schedule'}
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة جدول معايرة' : 'Add Schedule'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'إضافة جدول معايرة جديد' : 'Add New Calibration Schedule'}</DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'أدخل تفاصيل جدول المعايرة' : 'Enter calibration schedule details'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الرمز' : 'Code'}</Label>
+                <Input placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">{language === 'ar' ? 'عالي' : 'High'}</SelectItem>
+                    <SelectItem value="medium">{language === 'ar' ? 'متوسط' : 'Medium'}</SelectItem>
+                    <SelectItem value="low">{language === 'ar' ? 'منخفض' : 'Low'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'التكرار (بالأشهر)' : 'Frequency (months)'}</Label>
+                <Input type="number" placeholder="12" />
+              </div>
+              <Button className="w-full" onClick={() => {
+                toast({
+                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
+                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
+                });
+                setDialogOpen(false);
+              }}>
+                {language === 'ar' ? 'حفظ' : 'Save'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
