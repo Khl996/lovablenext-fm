@@ -11,6 +11,9 @@ import { Plus, FileText, AlertTriangle, CheckCircle2, XCircle } from 'lucide-rea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Contract {
   id: string;
@@ -48,6 +51,7 @@ export default function Contracts() {
     expiredContracts: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('contracts.view')) {
@@ -175,10 +179,54 @@ export default function Contracts() {
               : 'Manage maintenance and service contracts'}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          {language === 'ar' ? 'إضافة عقد' : 'Add Contract'}
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة عقد' : 'Add Contract'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'إضافة عقد جديد' : 'Add New Contract'}</DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'أدخل تفاصيل العقد' : 'Enter contract details'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'العنوان' : 'Title'}</Label>
+                <Input placeholder={language === 'ar' ? 'أدخل عنوان العقد' : 'Enter contract title'} />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم المورد' : 'Vendor Name'}</Label>
+                <Input placeholder={language === 'ar' ? 'أدخل اسم المورد' : 'Enter vendor name'} />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'نوع العقد' : 'Contract Type'}</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="maintenance">{language === 'ar' ? 'صيانة' : 'Maintenance'}</SelectItem>
+                    <SelectItem value="service">{language === 'ar' ? 'خدمة' : 'Service'}</SelectItem>
+                    <SelectItem value="supply">{language === 'ar' ? 'توريد' : 'Supply'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full" onClick={() => {
+                toast({
+                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
+                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
+                });
+                setDialogOpen(false);
+              }}>
+                {language === 'ar' ? 'حفظ' : 'Save'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}

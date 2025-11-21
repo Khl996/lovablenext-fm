@@ -10,6 +10,9 @@ import { Plus, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SLADefinition {
   id: string;
@@ -54,6 +57,7 @@ export default function SLA() {
     complianceRate: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -187,10 +191,55 @@ export default function SLA() {
               : 'Manage and monitor service level agreements'}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          {language === 'ar' ? 'إضافة SLA' : 'Add SLA'}
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'ar' ? 'إضافة SLA' : 'Add SLA'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'إضافة اتفاقية SLA جديدة' : 'Add New SLA'}</DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'أدخل تفاصيل اتفاقية مستوى الخدمة' : 'Enter service level agreement details'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الاسم' : 'Name'}</Label>
+                <Input placeholder={language === 'ar' ? 'أدخل الاسم' : 'Enter name'} />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical">{language === 'ar' ? 'حرج' : 'Critical'}</SelectItem>
+                    <SelectItem value="high">{language === 'ar' ? 'عالي' : 'High'}</SelectItem>
+                    <SelectItem value="medium">{language === 'ar' ? 'متوسط' : 'Medium'}</SelectItem>
+                    <SelectItem value="low">{language === 'ar' ? 'منخفض' : 'Low'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'وقت الاستجابة (ساعات)' : 'Response Time (hours)'}</Label>
+                <Input type="number" placeholder="4" />
+              </div>
+              <Button className="w-full" onClick={() => {
+                toast({
+                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
+                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
+                });
+                setDialogOpen(false);
+              }}>
+                {language === 'ar' ? 'حفظ' : 'Save'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
