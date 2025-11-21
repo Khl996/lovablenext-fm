@@ -52,6 +52,73 @@ export default function Costs() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    description: '',
+    description_ar: '',
+    cost_type: 'labor',
+    quantity: 1,
+    unit_cost: 0,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveCost = async () => {
+    if (!profile?.hospital_id || !formData.code || !formData.description || !formData.unit_cost) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const total_cost = formData.quantity * formData.unit_cost;
+      
+      const { error } = await supabase
+        .from('costs')
+        .insert({
+          hospital_id: profile.hospital_id,
+          code: formData.code,
+          description: formData.description,
+          description_ar: formData.description_ar || formData.description,
+          cost_type: formData.cost_type,
+          quantity: formData.quantity,
+          unit_cost: formData.unit_cost,
+          total_cost: total_cost,
+          currency: 'SAR',
+          cost_date: new Date().toISOString().split('T')[0],
+          created_by: profile.id,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
+        description: language === 'ar' ? 'تم إضافة التكلفة بنجاح' : 'Cost added successfully',
+      });
+
+      setDialogOpen(false);
+      setFormData({
+        code: '',
+        description: '',
+        description_ar: '',
+        cost_type: 'labor',
+        quantity: 1,
+        unit_cost: 0,
+      });
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -181,12 +248,32 @@ export default function Costs() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الوصف' : 'Description'}</Label>
-                <Input placeholder={language === 'ar' ? 'أدخل الوصف' : 'Enter description'} />
+                <Label>{language === 'ar' ? 'الرمز*' : 'Code*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} 
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الوصف*' : 'Description*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الوصف' : 'Enter description'} 
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الوصف بالعربية' : 'Arabic Description'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الوصف بالعربية' : 'Enter Arabic description'} 
+                  value={formData.description_ar}
+                  onChange={(e) => setFormData({...formData, description_ar: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'نوع التكلفة' : 'Cost Type'}</Label>
-                <Select>
+                <Select value={formData.cost_type} onValueChange={(value) => setFormData({...formData, cost_type: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
                   </SelectTrigger>
@@ -194,21 +281,37 @@ export default function Costs() {
                     <SelectItem value="labor">{language === 'ar' ? 'عمالة' : 'Labor'}</SelectItem>
                     <SelectItem value="parts">{language === 'ar' ? 'قطع غيار' : 'Parts'}</SelectItem>
                     <SelectItem value="service">{language === 'ar' ? 'خدمة' : 'Service'}</SelectItem>
+                    <SelectItem value="travel">{language === 'ar' ? 'تنقل' : 'Travel'}</SelectItem>
+                    <SelectItem value="other">{language === 'ar' ? 'أخرى' : 'Other'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>{language === 'ar' ? 'التكلفة' : 'Cost'}</Label>
-                <Input type="number" placeholder="1000" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'الكمية' : 'Quantity'}</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="1" 
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: parseFloat(e.target.value) || 1})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'سعر الوحدة*' : 'Unit Cost*'}</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="1000" 
+                    value={formData.unit_cost}
+                    onChange={(e) => setFormData({...formData, unit_cost: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
               </div>
-              <Button className="w-full" onClick={() => {
-                toast({
-                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
-                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
-                });
-                setDialogOpen(false);
-              }}>
-                {language === 'ar' ? 'حفظ' : 'Save'}
+              <div className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'الإجمالي: ' : 'Total: '}
+                <span className="font-medium">{(formData.quantity * formData.unit_cost).toLocaleString()} {language === 'ar' ? 'ر.س' : 'SAR'}</span>
+              </div>
+              <Button className="w-full" onClick={handleSaveCost} disabled={saving}>
+                {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
               </Button>
             </div>
           </DialogContent>

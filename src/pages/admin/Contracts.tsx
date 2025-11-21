@@ -52,6 +52,76 @@ export default function Contracts() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    code: '',
+    title: '',
+    title_ar: '',
+    vendor_name: '',
+    contract_type: 'maintenance',
+    start_date: '',
+    end_date: '',
+    value: 0,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveContract = async () => {
+    if (!profile?.hospital_id || !formData.code || !formData.title || !formData.vendor_name || !formData.start_date || !formData.end_date) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' ? 'الرجاء ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('contracts')
+        .insert({
+          hospital_id: profile.hospital_id,
+          code: formData.code,
+          title: formData.title,
+          title_ar: formData.title_ar || formData.title,
+          vendor_name: formData.vendor_name,
+          contract_type: formData.contract_type,
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          value: formData.value,
+          currency: 'SAR',
+          status: 'active',
+          created_by: profile.id,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم الحفظ' : 'Saved',
+        description: language === 'ar' ? 'تم إضافة العقد بنجاح' : 'Contract added successfully',
+      });
+
+      setDialogOpen(false);
+      setFormData({
+        code: '',
+        title: '',
+        title_ar: '',
+        vendor_name: '',
+        contract_type: 'maintenance',
+        start_date: '',
+        end_date: '',
+        value: 0,
+      });
+      loadData();
+    } catch (error: any) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('contracts.view')) {
@@ -195,16 +265,40 @@ export default function Contracts() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'العنوان' : 'Title'}</Label>
-                <Input placeholder={language === 'ar' ? 'أدخل عنوان العقد' : 'Enter contract title'} />
+                <Label>{language === 'ar' ? 'الرمز*' : 'Code*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل الرمز' : 'Enter code'} 
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'اسم المورد' : 'Vendor Name'}</Label>
-                <Input placeholder={language === 'ar' ? 'أدخل اسم المورد' : 'Enter vendor name'} />
+                <Label>{language === 'ar' ? 'العنوان*' : 'Title*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل عنوان العقد' : 'Enter contract title'} 
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'العنوان بالعربية' : 'Arabic Title'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل العنوان بالعربية' : 'Enter Arabic title'} 
+                  value={formData.title_ar}
+                  onChange={(e) => setFormData({...formData, title_ar: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم المورد*' : 'Vendor Name*'}</Label>
+                <Input 
+                  placeholder={language === 'ar' ? 'أدخل اسم المورد' : 'Enter vendor name'} 
+                  value={formData.vendor_name}
+                  onChange={(e) => setFormData({...formData, vendor_name: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>{language === 'ar' ? 'نوع العقد' : 'Contract Type'}</Label>
-                <Select>
+                <Select value={formData.contract_type} onValueChange={(value) => setFormData({...formData, contract_type: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
                   </SelectTrigger>
@@ -215,14 +309,35 @@ export default function Contracts() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={() => {
-                toast({
-                  title: language === 'ar' ? 'قيد التطوير' : 'Under Development',
-                  description: language === 'ar' ? 'هذه الميزة قيد التطوير' : 'This feature is under development',
-                });
-                setDialogOpen(false);
-              }}>
-                {language === 'ar' ? 'حفظ' : 'Save'}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'تاريخ البداية*' : 'Start Date*'}</Label>
+                  <Input 
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'تاريخ الانتهاء*' : 'End Date*'}</Label>
+                  <Input 
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'القيمة (ر.س)' : 'Value (SAR)'}</Label>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  value={formData.value}
+                  onChange={(e) => setFormData({...formData, value: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              <Button className="w-full" onClick={handleSaveContract} disabled={saving}>
+                {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'حفظ' : 'Save')}
               </Button>
             </div>
           </DialogContent>
