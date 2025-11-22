@@ -78,10 +78,12 @@ export default function Maintenance() {
     if (!userLoading && hospitalId) {
       const operationalRoleCodes = ['maintenance_manager', 'supervisor', 'technician', 'engineer', 'eng'];
 
+      console.log('[Maintenance] roles:', roles);
+      console.log('[Maintenance] customRoles:', customRoles);
+
       const isOperationalRole =
         roles.some((r) => operationalRoleCodes.includes(r.role)) ||
         customRoles.some((r) => operationalRoleCodes.includes(r.role_code));
-
 
       const hasAccess =
         isFacilityManager ||
@@ -90,6 +92,11 @@ export default function Maintenance() {
         permissions.hasPermission('maintenance_plans.view') ||
         permissions.hasPermission('maintenance_tasks.view') ||
         permissions.hasPermission('work_orders.view');
+
+      console.log('[Maintenance] isFacilityManager:', isFacilityManager);
+      console.log('[Maintenance] isHospitalAdmin:', isHospitalAdmin);
+      console.log('[Maintenance] isOperationalRole:', isOperationalRole);
+      console.log('[Maintenance] hasAccess:', hasAccess);
 
       if (!hasAccess) {
         toast({
