@@ -6,9 +6,10 @@ import type { WorkOrder } from '@/types/workOrder';
 
 interface WorkOrderInfoProps {
   workOrder: WorkOrder;
+  reporterName?: string;
 }
 
-export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
+export function WorkOrderInfo({ workOrder, reporterName }: WorkOrderInfoProps) {
   const { language } = useLanguage();
 
   return (
@@ -29,6 +30,13 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <p className="text-foreground whitespace-pre-wrap leading-relaxed">
               {workOrder.description}
             </p>
+            {reporterName && (
+              <p className="text-sm text-muted-foreground mt-3">
+                {language === 'ar'
+                  ? `المبلغ: ${reporterName}`
+                  : `Reporter: ${reporterName}`}
+              </p>
+            )}
           </div>
         </div>
 

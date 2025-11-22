@@ -88,20 +88,43 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     checkTeamMembership();
   }, [user?.id, workOrder.assigned_team]);
 
-  // Determine what actions are available using state machine
-  const canStartWork = state?.can.start && isTeamMember;
-  const canCompleteWork = state?.can.complete && isTeamMember;
-  const canApproveAsSupervisor = state?.can.approve && permissions.hasPermission('work_orders.approve');
-  const canReviewAsEngineer = state?.can.review && permissions.hasPermission('work_orders.review_as_engineer');
-  const canCloseAsReporter = state?.can.close && isReporter;
-  const canFinalApprove = permissions.hasPermission('work_orders.final_approve') && 
-    (workOrder.customer_reviewed_at || workOrder.status === 'auto_closed') && 
+  // Determine what actions are available
+  const status = workOrder.status;
+
+  const canStartWork =
+    status === 'assigned' && isTeamMember;
+
+  const canCompleteWork =
+    status === 'in_progress' && isTeamMember;
+
+  const canApproveAsSupervisor =
+    status === 'pending_supervisor_approval' &&
+    permissions.hasPermission('work_orders.approve');
+
+  const canReviewAsEngineer =
+    status === 'pending_engineer_review' &&
+    permissions.hasPermission('work_orders.review_as_engineer');
+
+  const canCloseAsReporter =
+    status === 'pending_reporter_closure' && isReporter;
+
+  const canFinalApprove =
+    permissions.hasPermission('work_orders.final_approve') &&
+    (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
-  const canReject = state?.can.reject && isTeamMember;
-  const canReassign = permissions.hasPermission('work_orders.approve') || 
+
+  const canReject =
+    (status === 'in_progress' && isTeamMember) ||
+    (status === 'pending_supervisor_approval' && permissions.hasPermission('work_orders.approve')) ||
+    (status === 'pending_engineer_review' && permissions.hasPermission('work_orders.review_as_engineer'));
+
+  const canReassign =
+    permissions.hasPermission('work_orders.approve') ||
     permissions.hasPermission('work_orders.manage');
-  const canAddUpdate = workOrder.assigned_team && 
-    (workOrder.status === 'assigned' || workOrder.status === 'in_progress');
+
+  const canAddUpdate =
+    workOrder.assigned_team &&
+    (status === 'assigned' || status === 'in_progress');
 
   // Action handlers using the new hooks
   const handleStartWork = () => {
