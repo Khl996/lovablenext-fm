@@ -38,7 +38,7 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <Label className="text-sm font-semibold text-foreground">
               {language === 'ar' ? 'ملاحظات الفني' : 'Technician Notes'}
             </Label>
-            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
+            <div className="p-4 rounded-lg bg-info/10 border border-info/20">
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {workOrder.technician_notes}
               </p>
@@ -66,7 +66,7 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <Label className="text-sm font-semibold text-foreground">
               {language === 'ar' ? 'ملاحظات المشرف' : 'Supervisor Notes'}
             </Label>
-            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+            <div className="p-4 rounded-lg bg-success/10 border border-success/20">
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {workOrder.supervisor_notes}
               </p>
@@ -80,7 +80,7 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <Label className="text-sm font-semibold text-foreground">
               {language === 'ar' ? 'ملاحظات المهندس' : 'Engineer Notes'}
             </Label>
-            <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900">
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {workOrder.engineer_notes}
               </p>
@@ -94,7 +94,7 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <Label className="text-sm font-semibold text-foreground">
               {language === 'ar' ? 'ملاحظات مدير الصيانة' : 'Maintenance Manager Notes'}
             </Label>
-            <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900">
+            <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {workOrder.maintenance_manager_notes}
               </p>
@@ -108,7 +108,7 @@ export function WorkOrderInfo({ workOrder }: WorkOrderInfoProps) {
             <Label className="text-sm font-semibold text-foreground">
               {language === 'ar' ? 'ملاحظات العميل' : 'Customer Feedback'}
             </Label>
-            <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900">
+            <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {workOrder.customer_feedback}
               </p>

@@ -112,7 +112,7 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
     to: 'completed',
     action: 'reporter_close',
     requiredRole: ['reporter'],
-    requiredFields: ['reporter_notes'],
+    // Reporter notes are optional - closure can happen without notes
     validation: (wo) => {
       if (!wo.engineer_approved_at) {
         return { valid: false, error: 'Must be reviewed by engineer first' };
@@ -290,25 +290,25 @@ export function getStatusDisplayName(status: WorkOrderStatus, language: 'en' | '
 }
 
 /**
- * Get status color for badges
+ * Get status color for badges using semantic tokens
  */
 export function getStatusColor(status: WorkOrderStatus): string {
   const colors: Record<WorkOrderStatus, string> = {
-    pending: 'bg-yellow-500',
-    assigned: 'bg-blue-500',
-    in_progress: 'bg-purple-500',
-    needs_redirection: 'bg-orange-400',
-    awaiting_approval: 'bg-blue-400',
-    customer_approved: 'bg-teal-500',
-    customer_rejected: 'bg-rose-500',
-    pending_supervisor_approval: 'bg-orange-500',
-    pending_engineer_review: 'bg-cyan-500',
-    pending_reporter_closure: 'bg-amber-500',
-    rejected_by_technician: 'bg-red-400',
-    completed: 'bg-green-500',
-    auto_closed: 'bg-gray-500',
-    cancelled: 'bg-red-500',
+    pending: 'bg-warning',
+    assigned: 'bg-info',
+    in_progress: 'bg-primary',
+    needs_redirection: 'bg-warning',
+    awaiting_approval: 'bg-info',
+    customer_approved: 'bg-success',
+    customer_rejected: 'bg-destructive',
+    pending_supervisor_approval: 'bg-warning',
+    pending_engineer_review: 'bg-info',
+    pending_reporter_closure: 'bg-warning',
+    rejected_by_technician: 'bg-destructive',
+    completed: 'bg-success',
+    auto_closed: 'bg-muted',
+    cancelled: 'bg-destructive',
   };
 
-  return colors[status] || 'bg-gray-500';
+  return colors[status] || 'bg-muted';
 }

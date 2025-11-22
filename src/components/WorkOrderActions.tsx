@@ -39,8 +39,12 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [isTeamMember, setIsTeamMember] = useState(false);
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
 
-  // Get user roles for state machine
-  const userRoles: string[] = [];
+  // Get user roles for state machine - extract actual user roles
+  const { roles, customRoles } = useCurrentUser();
+  const userRoles: string[] = [
+    ...roles.map(r => r.role),
+    ...customRoles.map(r => r.role_code),
+  ];
   const isReporter = user?.id === workOrder?.reported_by;
   
   const { state } = useWorkOrderState({

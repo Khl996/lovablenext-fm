@@ -37,10 +37,13 @@ export function WorkOrderWorkflow({
   assignedTeamName,
 }: WorkOrderWorkflowProps) {
   const { language } = useLanguage();
-  const { user } = useCurrentUser();
+  const { user, permissions, roles, customRoles } = useCurrentUser();
   
-  // Get user roles for state machine
-  const userRoles: string[] = [];
+  // Get user roles for state machine - extract actual user roles
+  const userRoles: string[] = [
+    ...roles.map(r => r.role),
+    ...customRoles.map(r => r.role_code),
+  ];
   const isReporter = user?.id === workOrder?.reported_by;
   
   const { state, autoCloseInfo } = useWorkOrderState({
