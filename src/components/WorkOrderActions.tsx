@@ -57,7 +57,14 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Check if current user is a member of the assigned team
   useEffect(() => {
     const checkTeamMembership = async () => {
+      console.log('🔍 Checking team membership:', {
+        userId: user?.id,
+        assignedTeam: workOrder.assigned_team,
+        workOrderStatus: workOrder.status
+      });
+
       if (!user?.id || !workOrder.assigned_team) {
+        console.log('❌ Missing user or team:', { userId: user?.id, teamId: workOrder.assigned_team });
         setIsTeamMember(false);
         setCheckingTeamMembership(false);
         return;
@@ -70,6 +77,8 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
           .eq('team_id', workOrder.assigned_team)
           .eq('user_id', user.id)
           .maybeSingle();
+
+        console.log('✅ Team membership check result:', { data, error, isMember: !!data });
 
         if (error) {
           console.error('Error checking team membership:', error);
@@ -125,6 +134,23 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const canAddUpdate =
     workOrder.assigned_team &&
     (status === 'assigned' || status === 'in_progress');
+
+  // Debug logging
+  console.log('🎯 Action permissions:', {
+    status,
+    isTeamMember,
+    isReporter,
+    userRoles,
+    canStartWork,
+    canCompleteWork,
+    canApproveAsSupervisor,
+    canReviewAsEngineer,
+    canCloseAsReporter,
+    canFinalApprove,
+    canReject,
+    canReassign,
+    canAddUpdate
+  });
 
   // Action handlers using the new hooks
   const handleStartWork = () => {
