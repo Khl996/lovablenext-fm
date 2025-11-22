@@ -101,10 +101,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const status = workOrder.status;
 
   const canStartWork =
-    (status === 'assigned' || status === 'pending') && isTeamMember;
+    status === 'assigned' || status === 'pending';
 
   const canCompleteWork =
-    status === 'in_progress' && isTeamMember;
+    status === 'in_progress';
 
   const canApproveAsSupervisor =
     status === 'pending_supervisor_approval' &&
@@ -123,9 +123,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     !workOrder.maintenance_manager_approved_at;
 
   const canReject =
-    (status === 'in_progress' && isTeamMember) ||
-    (status === 'pending_supervisor_approval' && permissions.hasPermission('work_orders.approve')) ||
-    (status === 'pending_engineer_review' && permissions.hasPermission('work_orders.review_as_engineer'));
+    status === 'in_progress' ||
+    status === 'pending_supervisor_approval' ||
+    status === 'pending_engineer_review';
 
   const canReassign =
     permissions.hasPermission('work_orders.approve') ||
