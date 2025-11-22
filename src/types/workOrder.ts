@@ -37,6 +37,7 @@ export type WorkOrder = {
   supervisor_notes: string | null;
   customer_feedback: string | null;
   customer_rating: number | null;
+  start_time: string | null;
   technician_completed_at: string | null;
   technician_notes: string | null;
   supervisor_approved_by: string | null;
@@ -46,9 +47,16 @@ export type WorkOrder = {
   engineer_notes: string | null;
   customer_reviewed_by: string | null;
   customer_reviewed_at: string | null;
+  reporter_notes: string | null;
+  auto_closed_at: string | null;
   maintenance_manager_approved_by: string | null;
   maintenance_manager_approved_at: string | null;
   maintenance_manager_notes: string | null;
+  rejected_at: string | null;
+  rejected_by: string | null;
+  rejection_stage: string | null;
+  rejection_reason: string | null;
+  pending_closure_since: string | null;
 };
 
 export type OperationLog = {
