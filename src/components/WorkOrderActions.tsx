@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useWorkOrderActions } from '@/hooks/useWorkOrderActions';
+import { useWorkOrderState } from '@/hooks/useWorkOrderState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, XCircle, AlertCircle, MessageSquare, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, MessageSquare, RefreshCw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,16 +30,26 @@ type WorkOrderActionsProps = {
 export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActionsProps) {
   const { language } = useLanguage();
   const { user, permissions } = useCurrentUser();
-  const { toast } = useToast();
   
   const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showReassignDialog, setShowReassignDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [rejectStage, setRejectStage] = useState('');
   const [isTeamMember, setIsTeamMember] = useState(false);
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
+
+  // Get user roles for state machine
+  const userRoles: string[] = [];
+  const isReporter = user?.id === workOrder?.reported_by;
+  
+  const { state } = useWorkOrderState({
+    workOrder,
+    userRoles,
+    isReporter,
+  });
+
+  const actions = useWorkOrderActions(onActionComplete);
 
   // Check if current user is a member of the assigned team
   useEffect(() => {
@@ -74,341 +85,54 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     checkTeamMembership();
   }, [user?.id, workOrder.assigned_team]);
 
-  // Determine what action the current user can take
-  // Technician actions - require team membership
-  const canStartWork = isTeamMember && 
-    workOrder.assigned_team && 
-    (workOrder.status === 'pending' || workOrder.status === 'assigned') &&
-    !workOrder.start_time;
-  
-  const canCompletework = isTeamMember && 
-    workOrder.assigned_team && 
-    workOrder.status === 'in_progress' &&
-    !workOrder.technician_completed_at;
-  
-  const canReject = isTeamMember && 
-    workOrder.assigned_team && 
-    workOrder.status === 'in_progress' &&
-    !workOrder.technician_completed_at;
-  
-  const canApproveAsSupervisor = workOrder.technician_completed_at && 
-    !workOrder.supervisor_approved_at &&
-    workOrder.status !== 'rejected_by_technician' &&
-    permissions.hasPermission('work_orders.approve');
-  
-  const canReviewAsEngineer = workOrder.supervisor_approved_at && 
-    !workOrder.engineer_approved_at &&
-    permissions.hasPermission('work_orders.review_as_engineer');
-  
-  const canCloseAsReporter = workOrder.reported_by === user?.id && 
-    workOrder.engineer_approved_at && 
-    !workOrder.customer_reviewed_at &&
-    workOrder.status !== 'auto_closed';
-  
-  const canFinalApprove = (workOrder.customer_reviewed_at || workOrder.status === 'auto_closed') && 
-    !workOrder.maintenance_manager_approved_at &&
-    permissions.hasPermission('work_orders.final_approve');
-
+  // Determine what actions are available using state machine
+  const canStartWork = state?.can.start && isTeamMember;
+  const canCompleteWork = state?.can.complete && isTeamMember;
+  const canApproveAsSupervisor = state?.can.approve && permissions.hasPermission('work_orders.approve');
+  const canReviewAsEngineer = state?.can.review && permissions.hasPermission('work_orders.review_as_engineer');
+  const canCloseAsReporter = state?.can.close && isReporter;
+  const canFinalApprove = permissions.hasPermission('work_orders.final_approve') && 
+    (workOrder.customer_reviewed_at || workOrder.status === 'auto_closed') && 
+    !workOrder.maintenance_manager_approved_at;
+  const canReject = state?.can.reject && isTeamMember;
   const canReassign = permissions.hasPermission('work_orders.approve') || 
     permissions.hasPermission('work_orders.manage');
-
   const canAddUpdate = workOrder.assigned_team && 
     (workOrder.status === 'assigned' || workOrder.status === 'in_progress');
 
-  const handleStartWork = async () => {
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_start_work', {
-        _work_order_id: workOrder.id
-      });
-
-      if (error) {
-        console.error('Error starting work:', error);
-        throw error;
-      }
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "work_started" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم بدء العمل' : 'Work started',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      console.error('Failed to start work:', error);
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  // Action handlers using the new hooks
+  const handleStartWork = () => {
+    actions.startWork({ workOrderId: workOrder.id });
   };
 
-  const handleCompleteWork = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_complete_work', {
-        _work_order_id: workOrder.id,
-        _technician_notes: notes
-      });
-
-      if (error) throw error;
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "work_completed" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم إكمال العمل بنجاح' : 'Work completed successfully',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleCompleteWork = () => {
+    actions.completeWork({ workOrderId: workOrder.id, notes });
   };
 
-  const handleReject = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'يرجى إضافة سبب الرفض' : 'Please add rejection reason',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_reject', {
-        _work_order_id: workOrder.id,
-        _rejection_reason: notes,
-        _rejection_stage: rejectStage
-      });
-
-      if (error) throw error;
-
-      // Add update log
-      await supabase.from('work_order_updates').insert({
-        work_order_id: workOrder.id,
-        user_id: user?.id,
-        update_type: 'issue',
-        message: language === 'ar' 
-          ? `تم الرفض من ${rejectStage === 'technician' ? 'الفني' : rejectStage === 'supervisor' ? 'المشرف' : 'المهندس'}: ${notes}`
-          : `Rejected by ${rejectStage}: ${notes}`,
-      });
-
-      // Send email notification
-      await supabase.functions.invoke('send-work-order-email', {
-        body: { 
-          workOrderId: workOrder.id, 
-          eventType: 'rejected',
-          rejectionStage: rejectStage
-        },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم رفض أمر العمل وإرجاعه' : 'Work order rejected and returned',
-      });
-
-      setShowRejectDialog(false);
-      setNotes('');
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleSupervisorApproval = () => {
+    actions.approveAsSupervisor({ workOrderId: workOrder.id, notes });
   };
 
-  const handleSupervisorApproval = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_supervisor_approve', {
-        _work_order_id: workOrder.id,
-        _supervisor_notes: notes
-      });
-
-      if (error) throw error;
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "supervisor_approved" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم اعتماد البلاغ' : 'Work order approved',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleEngineerReview = () => {
+    actions.reviewAsEngineer({ workOrderId: workOrder.id, notes });
   };
 
-  const handleEngineerReview = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_engineer_review', {
-        _work_order_id: workOrder.id,
-        _engineer_notes: notes
-      });
-
-      if (error) throw error;
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "engineer_approved" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تمت المراجعة بنجاح' : 'Review completed successfully',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleReporterClosure = () => {
+    actions.closeAsReporter({ workOrderId: workOrder.id, notes });
   };
 
-  const handleReporterClosure = async () => {
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_reporter_closure', {
-        _work_order_id: workOrder.id,
-        _reporter_notes: notes || ''
-      });
-
-      if (error) throw error;
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "customer_reviewed" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم إغلاق البلاغ' : 'Work order closed',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleFinalApproval = () => {
+    actions.finalApprove({ workOrderId: workOrder.id, notes });
   };
 
-  const handleFinalApproval = async () => {
-    if (!notes.trim()) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase.rpc('work_order_final_approve', {
-        _work_order_id: workOrder.id,
-        _manager_notes: notes
-      });
-
-      if (error) throw error;
-
-      // Send email notification
-      supabase.functions.invoke("send-work-order-email", {
-        body: { workOrderId: workOrder.id, eventType: "final_approved" },
-      });
-
-      toast({
-        title: language === 'ar' ? 'تم بنجاح' : 'Success',
-        description: language === 'ar' ? 'تم الاعتماد النهائي' : 'Final approval completed',
-      });
-
-      onActionComplete();
-    } catch (error: any) {
-      toast({
-        title: language === 'ar' ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleReject = () => {
+    actions.reject({ 
+      workOrderId: workOrder.id, 
+      notes, 
+      rejectStage 
+    });
+    setShowRejectDialog(false);
+    setNotes('');
   };
 
   // Show loading while checking team membership
@@ -423,7 +147,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   }
 
   // If no action is available, don't render
-  if (!canStartWork && !canCompletework && !canApproveAsSupervisor && !canReviewAsEngineer && 
+  if (!canStartWork && !canCompleteWork && !canApproveAsSupervisor && !canReviewAsEngineer && 
       !canCloseAsReporter && !canFinalApprove) {
     return null;
   }
@@ -434,7 +158,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
         <CardHeader>
           <CardTitle>
             {canStartWork && (language === 'ar' ? 'بدء العمل' : 'Start Work')}
-            {canCompletework && (language === 'ar' ? 'إكمال العمل' : 'Complete Work')}
+            {canCompleteWork && (language === 'ar' ? 'إكمال العمل' : 'Complete Work')}
             {canApproveAsSupervisor && (language === 'ar' ? 'اعتماد المشرف' : 'Supervisor Approval')}
             {canReviewAsEngineer && (language === 'ar' ? 'مراجعة المهندس' : 'Engineer Review')}
             {canCloseAsReporter && (language === 'ar' ? 'إغلاق البلاغ' : 'Close Work Order')}
@@ -459,7 +183,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             {canStartWork && (
               <Button
                 onClick={handleStartWork}
-                disabled={loading}
+                disabled={actions.loading}
                 className="w-full"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -467,11 +191,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
               </Button>
             )}
 
-            {canCompletework && (
+            {canCompleteWork && (
               <>
                 <Button
                   onClick={handleCompleteWork}
-                  disabled={loading}
+                  disabled={actions.loading}
                   className="flex-1"
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -482,7 +206,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
                     setRejectStage('technician');
                     setShowRejectDialog(true);
                   }}
-                  disabled={loading}
+                  disabled={actions.loading}
                   variant="destructive"
                   className="flex-1"
                 >
@@ -496,7 +220,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
               <>
                 <Button
                   onClick={handleSupervisorApproval}
-                  disabled={loading}
+                  disabled={actions.loading}
                   className="flex-1"
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -507,7 +231,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
                     setRejectStage('supervisor');
                     setShowRejectDialog(true);
                   }}
-                  disabled={loading}
+                  disabled={actions.loading}
                   variant="destructive"
                   className="flex-1"
                 >
@@ -521,7 +245,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
               <>
                 <Button
                   onClick={handleEngineerReview}
-                  disabled={loading}
+                  disabled={actions.loading}
                   className="flex-1"
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -532,7 +256,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
                     setRejectStage('engineer');
                     setShowRejectDialog(true);
                   }}
-                  disabled={loading}
+                  disabled={actions.loading}
                   variant="destructive"
                   className="flex-1"
                 >
@@ -545,7 +269,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             {canCloseAsReporter && (
               <Button
                 onClick={handleReporterClosure}
-                disabled={loading}
+                disabled={actions.loading}
                 className="flex-1"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -556,7 +280,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             {canFinalApprove && (
               <Button
                 onClick={handleFinalApproval}
-                disabled={loading}
+                disabled={actions.loading}
                 className="flex-1"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -569,7 +293,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             <Button
               variant="outline"
               onClick={() => setShowReassignDialog(true)}
-              disabled={loading}
+              disabled={actions.loading}
               className="w-full mt-2"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -581,7 +305,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             <Button
               variant="outline"
               onClick={() => setShowUpdateDialog(true)}
-              disabled={loading}
+              disabled={actions.loading}
               className="w-full mt-2"
             >
               <MessageSquare className="h-4 w-4 mr-2" />

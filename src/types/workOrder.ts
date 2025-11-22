@@ -1,9 +1,27 @@
+export type WorkOrderStatus = 
+  | 'pending'
+  | 'assigned'
+  | 'in_progress'
+  | 'pending_supervisor_approval'
+  | 'pending_engineer_review'
+  | 'pending_reporter_closure'
+  | 'completed'
+  | 'cancelled'
+  | 'auto_closed'
+  | 'rejected_by_technician'
+  | 'rejected_by_supervisor'
+  | 'rejected_by_engineer'
+  | 'needs_redirection'
+  | 'awaiting_approval'
+  | 'customer_approved'
+  | 'customer_rejected';
+
 export type WorkOrder = {
   id: string;
   code: string;
   issue_type: string;
   description: string;
-  status: string;
+  status: WorkOrderStatus;
   priority: string;
   urgency: string | null;
   reported_at: string;

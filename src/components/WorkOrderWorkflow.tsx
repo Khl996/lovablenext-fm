@@ -1,4 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useWorkOrderState } from '@/hooks/useWorkOrderState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
@@ -35,6 +37,17 @@ export function WorkOrderWorkflow({
   assignedTeamName,
 }: WorkOrderWorkflowProps) {
   const { language } = useLanguage();
+  const { user } = useCurrentUser();
+  
+  // Get user roles for state machine
+  const userRoles: string[] = [];
+  const isReporter = user?.id === workOrder?.reported_by;
+  
+  const { state, autoCloseInfo } = useWorkOrderState({
+    workOrder,
+    userRoles,
+    isReporter,
+  });
 
   const steps: WorkflowStep[] = [
     {
@@ -114,28 +127,20 @@ export function WorkOrderWorkflow({
     return <Badge variant="secondary">{language === 'ar' ? 'لم يبدأ' : 'Not Started'}</Badge>;
   };
 
-  // Calculate time remaining for auto-close
-  const getAutoCloseWarning = () => {
-    if (workOrder.status === 'pending_reporter_closure' && workOrder.pending_closure_since) {
-      const pendingSince = new Date(workOrder.pending_closure_since);
-      const autoCloseTime = new Date(pendingSince.getTime() + 24 * 60 * 60 * 1000);
-      const now = new Date();
-      const hoursRemaining = Math.max(0, Math.floor((autoCloseTime.getTime() - now.getTime()) / (1000 * 60 * 60)));
-      
-      if (hoursRemaining < 24) {
-        return (
-          <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning rounded-lg">
-            <AlertCircle className="h-5 w-5 text-warning" />
-            <p className="text-sm">
-              {language === 'ar' 
-                ? `سيتم إغلاق البلاغ تلقائياً بعد ${hoursRemaining} ساعة` 
-                : `Work order will auto-close in ${hoursRemaining} hours`}
-            </p>
-          </div>
-        );
-      }
-    }
-    return null;
+  // Auto-close warning using state machine
+  const renderAutoCloseWarning = () => {
+    if (!autoCloseInfo?.willAutoClose) return null;
+
+    return (
+      <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning rounded-lg">
+        <AlertCircle className="h-5 w-5 text-warning" />
+        <p className="text-sm">
+          {language === 'ar' 
+            ? `سيتم إغلاق البلاغ تلقائياً بعد ${autoCloseInfo.hoursRemaining} ساعة` 
+            : `Work order will auto-close in ${autoCloseInfo.hoursRemaining} hours`}
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -144,7 +149,7 @@ export function WorkOrderWorkflow({
         <CardTitle>{language === 'ar' ? 'مسار الموافقات' : 'Approval Workflow'}</CardTitle>
       </CardHeader>
       <CardContent>
-        {getAutoCloseWarning()}
+        {renderAutoCloseWarning()}
         
         <div className="space-y-4 mt-4">
           {steps.map((step, index) => (
