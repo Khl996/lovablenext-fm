@@ -50,7 +50,15 @@ type MaintenancePlan = {
 
 export default function Maintenance() {
   const { t, language } = useLanguage();
-  const { hospitalId, permissions, loading: userLoading, isFacilityManager, isHospitalAdmin } = useCurrentUser();
+  const {
+    hospitalId,
+    permissions,
+    loading: userLoading,
+    isFacilityManager,
+    isHospitalAdmin,
+    roles,
+    customRoles,
+  } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -68,23 +76,46 @@ export default function Maintenance() {
 
   useEffect(() => {
     if (!userLoading && hospitalId) {
-      const hasAccess = 
-        isFacilityManager || 
-        isHospitalAdmin || 
+      const isOperationalRole =
+        roles.some((r) =>
+          ['maintenance_manager', 'supervisor', 'technician', 'engineer'].includes(r.role)
+        ) ||
+        customRoles.some((r) =>
+          ['maintenance_manager', 'supervisor', 'technician', 'engineer'].includes(r.role_code)
+        );
+
+      const hasAccess =
+        isFacilityManager ||
+        isHospitalAdmin ||
+        isOperationalRole ||
         permissions.hasPermission('maintenance_plans.view') ||
         permissions.hasPermission('maintenance_tasks.view') ||
         permissions.hasPermission('work_orders.view');
-      
+
       if (!hasAccess) {
         toast({
           title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-          description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
+          description:
+            language === 'ar'
+              ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
+              : 'You do not have permission to access this page',
           variant: 'destructive',
         });
         navigate('/dashboard');
       }
     }
-  }, [userLoading, hospitalId, isFacilityManager, isHospitalAdmin, permissions, navigate]);
+  }, [
+    userLoading,
+    hospitalId,
+    isFacilityManager,
+    isHospitalAdmin,
+    permissions,
+    navigate,
+    toast,
+    language,
+    roles,
+    customRoles,
+  ]);
 
   useEffect(() => {
     if (hospitalId) {
