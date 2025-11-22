@@ -113,10 +113,10 @@ export default function AssetDetails() {
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      active: 'bg-green-500',
-      inactive: 'bg-gray-500',
-      maintenance: 'bg-yellow-500',
-      retired: 'bg-red-500',
+      active: 'bg-success',
+      inactive: 'bg-muted',
+      maintenance: 'bg-warning',
+      retired: 'bg-destructive',
     };
     
     const statusLabels: Record<string, { en: string; ar: string }> = {
@@ -127,7 +127,7 @@ export default function AssetDetails() {
     };
 
     return (
-      <Badge className={statusColors[status] || 'bg-gray-500'}>
+      <Badge className={statusColors[status] || 'bg-muted'}>
         {language === 'ar' ? statusLabels[status]?.ar : statusLabels[status]?.en}
       </Badge>
     );
@@ -135,9 +135,9 @@ export default function AssetDetails() {
 
   const getCriticalityBadge = (criticality: string) => {
     const criticalityColors: Record<string, string> = {
-      critical: 'bg-red-500',
-      essential: 'bg-orange-500',
-      non_essential: 'bg-blue-500',
+      critical: 'bg-destructive',
+      essential: 'bg-warning',
+      non_essential: 'bg-info',
     };
     
     const criticalityLabels: Record<string, { en: string; ar: string }> = {
@@ -147,7 +147,7 @@ export default function AssetDetails() {
     };
 
     return (
-      <Badge className={criticalityColors[criticality] || 'bg-gray-500'}>
+      <Badge className={criticalityColors[criticality] || 'bg-muted'}>
         {language === 'ar' ? criticalityLabels[criticality]?.ar : criticalityLabels[criticality]?.en}
       </Badge>
     );
