@@ -221,7 +221,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         code,
         hospital_id: hospitalId!,
         issue_type: formData.issue_type,
-        description: `${formData.description}\n\n${language === 'ar' ? 'المبلغ' : 'Reporter'}: ${profile.full_name}${profile.phone ? `\n${language === 'ar' ? 'رقم التواصل' : 'Contact'}: ${profile.phone}` : ''}`,
+        description: formData.description,
         priority: formData.priority as any,
         urgency: formData.urgency || null,
         status: 'pending' as any,

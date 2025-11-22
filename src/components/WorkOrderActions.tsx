@@ -29,7 +29,7 @@ type WorkOrderActionsProps = {
 
 export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActionsProps) {
   const { language } = useLanguage();
-  const { user, permissions } = useCurrentUser();
+  const { user, permissions, roles, customRoles } = useCurrentUser();
   
   const [notes, setNotes] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -40,7 +40,6 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
 
   // Get user roles for state machine - extract actual user roles
-  const { roles, customRoles } = useCurrentUser();
   const userRoles: string[] = [
     ...roles.map(r => r.role),
     ...customRoles.map(r => r.role_code),
