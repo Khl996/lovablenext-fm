@@ -97,43 +97,47 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     checkTeamMembership();
   }, [user?.id, workOrder.assigned_team]);
 
-  // Determine what actions are available
+  // Determine what actions are available based on state machine
   const status = workOrder.status;
 
-  const canStartWork =
-    status === 'assigned' || status === 'pending';
+  const canStartWork = state?.can.start ?? (status === 'assigned' || status === 'pending');
 
-  const canCompleteWork =
-    status === 'in_progress';
+  const canCompleteWork = state?.can.complete ?? (status === 'in_progress');
 
-  const canApproveAsSupervisor =
+  const canApproveAsSupervisor = state?.can.approve ?? (
     status === 'pending_supervisor_approval' &&
-    permissions.hasPermission('work_orders.approve');
+    permissions.hasPermission('work_orders.approve')
+  );
 
-  const canReviewAsEngineer =
+  const canReviewAsEngineer = state?.can.review ?? (
     status === 'pending_engineer_review' &&
-    permissions.hasPermission('work_orders.review_as_engineer');
+    permissions.hasPermission('work_orders.review_as_engineer')
+  );
 
-  const canCloseAsReporter =
-    status === 'pending_reporter_closure' && isReporter;
+  const canCloseAsReporter = state?.can.close ?? (
+    status === 'pending_reporter_closure' && isReporter
+  );
 
   const canFinalApprove =
     permissions.hasPermission('work_orders.final_approve') &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject =
+  const canReject = state?.can.reject ?? (
     status === 'in_progress' ||
     status === 'pending_supervisor_approval' ||
-    status === 'pending_engineer_review';
+    status === 'pending_engineer_review'
+  );
 
   const canReassign =
     permissions.hasPermission('work_orders.approve') ||
     permissions.hasPermission('work_orders.manage');
 
   const canAddUpdate =
-    workOrder.assigned_team &&
-    (status === 'assigned' || status === 'pending' || status === 'in_progress');
+    (state?.can.update ?? false) || (
+      workOrder.assigned_team &&
+      (status === 'assigned' || status === 'pending' || status === 'in_progress')
+    );
 
   // Debug logging
   console.log('🎯 Action permissions:', {
