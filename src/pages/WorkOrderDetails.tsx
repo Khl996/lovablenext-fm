@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { WorkOrderDetailsSkeleton } from '@/components/LoadingSkeleton';
 import { WorkOrderWorkflow } from '@/components/WorkOrderWorkflow';
 import { WorkOrderActions } from '@/components/WorkOrderActions';
 import { WorkOrderHeader } from '@/components/work-orders/WorkOrderHeader';
@@ -86,7 +88,7 @@ export default function WorkOrderDetails() {
     };
   }, [id, language, lookups]);
 
-  const loadWorkOrder = async () => {
+  const loadWorkOrder = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -96,6 +98,11 @@ export default function WorkOrderDetails() {
         .single();
 
       if (error) throw error;
+      
+      if (!data) {
+        throw new Error('Work order not found');
+      }
+      
       setWorkOrder(data);
 
       // Load all related data
@@ -224,9 +231,9 @@ export default function WorkOrderDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, language, navigate, toast]);
 
-  const loadOperations = async () => {
+  const loadOperations = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('operations_log')
@@ -239,7 +246,7 @@ export default function WorkOrderDetails() {
     } catch (error: any) {
       console.error('Error loading operations:', error);
     }
-  };
+  }, [id]);
 
   const handleExportPDF = () => {
     if (!workOrder) return;
@@ -270,11 +277,7 @@ export default function WorkOrderDetails() {
   };
 
   if (loading || lookupsLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <WorkOrderDetailsSkeleton />;
   }
 
   if (!workOrder) {
@@ -285,7 +288,8 @@ export default function WorkOrderDetails() {
   const priorityLookup = lookups.priorities?.find(p => p.code === workOrder.priority);
 
   return (
-    <div className="space-y-6 p-6">
+    <ErrorBoundary>
+      <div className="space-y-6 p-6">
       <WorkOrderHeader 
         workOrder={workOrder}
         statusLookup={statusLookup || null}
@@ -333,5 +337,6 @@ export default function WorkOrderDetails() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
