@@ -75,11 +75,13 @@ export default function Maintenance() {
   const [planSearchQuery, setPlanSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!userLoading && hospitalId) {
-      const operationalRoleCodes = ['maintenance_manager', 'supervisor', 'technician', 'engineer', 'eng'];
-
+    if (!userLoading) {
+      console.log('[Maintenance] userLoading:', userLoading);
+      console.log('[Maintenance] hospitalId:', hospitalId);
       console.log('[Maintenance] roles:', roles);
       console.log('[Maintenance] customRoles:', customRoles);
+
+      const operationalRoleCodes = ['maintenance_manager', 'supervisor', 'technician', 'engineer', 'eng'];
 
       const isOperationalRole =
         roles.some((r) => operationalRoleCodes.includes(r.role)) ||
@@ -124,10 +126,10 @@ export default function Maintenance() {
   ]);
 
   useEffect(() => {
-    if (hospitalId) {
+    if (hospitalId && !userLoading) {
       loadPlans();
       loadTasks();
-    } else {
+    } else if (!userLoading) {
       setLoading(false);
     }
   }, [hospitalId, statusFilter, typeFilter]);
