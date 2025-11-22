@@ -2874,7 +2874,12 @@ export type Database = {
       asset_status: "active" | "inactive" | "maintenance" | "retired"
       criticality_level: "critical" | "essential" | "non_essential"
       maintenance_type: "preventive" | "corrective" | "predictive" | "routine"
-      operation_type: "shutdown" | "startup" | "adjustment" | "transfer"
+      operation_type:
+        | "shutdown"
+        | "startup"
+        | "adjustment"
+        | "transfer"
+        | "maintenance"
       work_order_priority: "low" | "medium" | "high" | "urgent"
       work_order_status:
         | "pending"
@@ -3039,7 +3044,13 @@ export const Constants = {
       asset_status: ["active", "inactive", "maintenance", "retired"],
       criticality_level: ["critical", "essential", "non_essential"],
       maintenance_type: ["preventive", "corrective", "predictive", "routine"],
-      operation_type: ["shutdown", "startup", "adjustment", "transfer"],
+      operation_type: [
+        "shutdown",
+        "startup",
+        "adjustment",
+        "transfer",
+        "maintenance",
+      ],
       work_order_priority: ["low", "medium", "high", "urgent"],
       work_order_status: [
         "pending",
