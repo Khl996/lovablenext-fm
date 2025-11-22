@@ -76,13 +76,12 @@ export default function Maintenance() {
 
   useEffect(() => {
     if (!userLoading && hospitalId) {
+      const operationalRoleCodes = ['maintenance_manager', 'supervisor', 'technician', 'engineer', 'eng'];
+
       const isOperationalRole =
-        roles.some((r) =>
-          ['maintenance_manager', 'supervisor', 'technician', 'engineer'].includes(r.role)
-        ) ||
-        customRoles.some((r) =>
-          ['maintenance_manager', 'supervisor', 'technician', 'engineer'].includes(r.role_code)
-        );
+        roles.some((r) => operationalRoleCodes.includes(r.role)) ||
+        customRoles.some((r) => operationalRoleCodes.includes(r.role_code));
+
 
       const hasAccess =
         isFacilityManager ||
