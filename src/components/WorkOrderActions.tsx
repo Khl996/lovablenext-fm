@@ -101,7 +101,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const status = workOrder.status;
 
   const canStartWork =
-    status === 'assigned' && isTeamMember;
+    (status === 'assigned' || status === 'pending') && isTeamMember;
 
   const canCompleteWork =
     status === 'in_progress' && isTeamMember;
@@ -133,7 +133,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
   const canAddUpdate =
     workOrder.assigned_team &&
-    (status === 'assigned' || status === 'in_progress');
+    (status === 'assigned' || status === 'pending' || status === 'in_progress');
 
   // Debug logging
   console.log('🎯 Action permissions:', {
