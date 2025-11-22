@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { handleApiError, handleSuccess } from '@/lib/errorHandler';
 
 interface WorkOrderActionParams {
   workOrderId: string;
@@ -9,25 +10,29 @@ interface WorkOrderActionParams {
   rejectStage?: string;
 }
 
+const RATE_LIMIT_WINDOW = 2000; // 2 seconds between actions
+
 export function useWorkOrderActions(onSuccess?: () => void) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { language } = useLanguage();
+  const lastActionTime = useRef<number>(0);
 
-  const showError = useCallback((error: any) => {
-    toast({
-      title: language === 'ar' ? 'خطأ' : 'Error',
-      description: error.message || (language === 'ar' ? 'حدث خطأ' : 'An error occurred'),
-      variant: 'destructive',
-    });
-  }, [toast, language]);
-
-  const showSuccess = useCallback((message: string) => {
-    toast({
-      title: language === 'ar' ? 'تم بنجاح' : 'Success',
-      description: message,
-    });
-  }, [toast, language]);
+  const checkRateLimit = useCallback(() => {
+    const now = Date.now();
+    if (now - lastActionTime.current < RATE_LIMIT_WINDOW) {
+      toast({
+        title: language === 'ar' ? 'تنبيه' : 'Warning',
+        description: language === 'ar' 
+          ? 'يرجى الانتظار قبل تنفيذ إجراء آخر'
+          : 'Please wait before performing another action',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    lastActionTime.current = now;
+    return true;
+  }, [language, toast]);
 
   const sendNotification = useCallback(async (workOrderId: string, eventType: string, extra?: any) => {
     try {
@@ -40,6 +45,8 @@ export function useWorkOrderActions(onSuccess?: () => void) {
   }, []);
 
   const startWork = useCallback(async ({ workOrderId }: WorkOrderActionParams) => {
+    if (!checkRateLimit()) return;
+    
     try {
       setLoading(true);
       const { error } = await supabase.rpc('work_order_start_work', {
@@ -49,20 +56,26 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'work_started');
-      showSuccess(language === 'ar' ? 'تم بدء العمل' : 'Work started');
+      handleSuccess(language === 'ar' ? 'تم بدء العمل' : 'Work started', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const completeWork = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
     if (!notes?.trim()) {
-      showError({ message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' });
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' },
+        toast,
+        language
+      );
       return;
     }
+
+    if (!checkRateLimit()) return;
 
     try {
       setLoading(true);
@@ -74,20 +87,26 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'work_completed');
-      showSuccess(language === 'ar' ? 'تم إكمال العمل بنجاح' : 'Work completed successfully');
+      handleSuccess(language === 'ar' ? 'تم إكمال العمل بنجاح' : 'Work completed successfully', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const approveAsSupervisor = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
     if (!notes?.trim()) {
-      showError({ message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' });
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' },
+        toast,
+        language
+      );
       return;
     }
+
+    if (!checkRateLimit()) return;
 
     try {
       setLoading(true);
@@ -99,20 +118,26 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'supervisor_approved');
-      showSuccess(language === 'ar' ? 'تم اعتماد البلاغ' : 'Work order approved');
+      handleSuccess(language === 'ar' ? 'تم اعتماد البلاغ' : 'Work order approved', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const reviewAsEngineer = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
     if (!notes?.trim()) {
-      showError({ message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' });
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' },
+        toast,
+        language
+      );
       return;
     }
+
+    if (!checkRateLimit()) return;
 
     try {
       setLoading(true);
@@ -124,16 +149,18 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'engineer_approved');
-      showSuccess(language === 'ar' ? 'تمت المراجعة بنجاح' : 'Review completed successfully');
+      handleSuccess(language === 'ar' ? 'تمت المراجعة بنجاح' : 'Review completed successfully', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const closeAsReporter = useCallback(async ({ workOrderId, notes = '' }: WorkOrderActionParams) => {
+    if (!checkRateLimit()) return;
+    
     try {
       setLoading(true);
       const { error } = await supabase.rpc('work_order_reporter_closure', {
@@ -144,20 +171,26 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'customer_reviewed');
-      showSuccess(language === 'ar' ? 'تم إغلاق البلاغ' : 'Work order closed');
+      handleSuccess(language === 'ar' ? 'تم إغلاق البلاغ' : 'Work order closed', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const finalApprove = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
     if (!notes?.trim()) {
-      showError({ message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' });
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة ملاحظات' : 'Please add notes' },
+        toast,
+        language
+      );
       return;
     }
+
+    if (!checkRateLimit()) return;
 
     try {
       setLoading(true);
@@ -169,25 +202,35 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'final_approved');
-      showSuccess(language === 'ar' ? 'تم الاعتماد النهائي' : 'Final approval completed');
+      handleSuccess(language === 'ar' ? 'تم الاعتماد النهائي' : 'Final approval completed', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   const reject = useCallback(async ({ workOrderId, notes, rejectStage }: WorkOrderActionParams) => {
     if (!notes?.trim()) {
-      showError({ message: language === 'ar' ? 'يرجى إضافة سبب الرفض' : 'Please add rejection reason' });
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة سبب الرفض' : 'Please add rejection reason' },
+        toast,
+        language
+      );
       return;
     }
 
     if (!rejectStage) {
-      showError({ message: language === 'ar' ? 'مرحلة الرفض غير محددة' : 'Rejection stage not specified' });
+      handleApiError(
+        { message: language === 'ar' ? 'مرحلة الرفض غير محددة' : 'Rejection stage not specified' },
+        toast,
+        language
+      );
       return;
     }
+
+    if (!checkRateLimit()) return;
 
     try {
       setLoading(true);
@@ -200,14 +243,14 @@ export function useWorkOrderActions(onSuccess?: () => void) {
       if (error) throw error;
 
       await sendNotification(workOrderId, 'rejected', { rejectionStage: rejectStage });
-      showSuccess(language === 'ar' ? 'تم رفض أمر العمل وإرجاعه' : 'Work order rejected and returned');
+      handleSuccess(language === 'ar' ? 'تم رفض أمر العمل وإرجاعه' : 'Work order rejected and returned', toast, language);
       onSuccess?.();
     } catch (error: any) {
-      showError(error);
+      handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, sendNotification, showSuccess, showError, onSuccess]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   return {
     loading,
