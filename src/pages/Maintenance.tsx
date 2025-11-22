@@ -67,13 +67,22 @@ export default function Maintenance() {
   const [planSearchQuery, setPlanSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!userLoading && hospitalId && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('maintenance_plans.view')) {
-      toast({
-        title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-        description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
-        variant: 'destructive',
-      });
-      navigate('/dashboard');
+    if (!userLoading && hospitalId) {
+      const hasAccess = 
+        isFacilityManager || 
+        isHospitalAdmin || 
+        permissions.hasPermission('maintenance_plans.view') ||
+        permissions.hasPermission('maintenance_tasks.view') ||
+        permissions.hasPermission('work_orders.view');
+      
+      if (!hasAccess) {
+        toast({
+          title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
+          description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',
+          variant: 'destructive',
+        });
+        navigate('/dashboard');
+      }
     }
   }, [userLoading, hospitalId, isFacilityManager, isHospitalAdmin, permissions, navigate]);
 

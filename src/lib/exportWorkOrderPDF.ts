@@ -190,16 +190,65 @@ export function exportWorkOrderPDF(params: ExportPDFParams) {
       <div class="section">
         <h3 class="section-title">${language === 'ar' ? 'سير العمل' : 'Workflow'}</h3>
         <div class="workflow-timeline">
+          ${workOrder.start_time ? `
+            <div class="workflow-item">
+              <div class="step-title">${language === 'ar' ? 'بدء العمل' : 'Work Started'}</div>
+              <div class="value">${format(new Date(workOrder.start_time), 'dd/MM/yyyy HH:mm')}</div>
+              ${assignedTechnicianName ? `<div class="label">${language === 'ar' ? 'بواسطة:' : 'By:'} ${assignedTechnicianName}</div>` : ''}
+            </div>
+          ` : ''}
           ${workOrder.technician_completed_at ? `
             <div class="workflow-item">
               <div class="step-title">${language === 'ar' ? 'إنهاء الفني' : 'Technician Completed'}</div>
               <div class="value">${format(new Date(workOrder.technician_completed_at), 'dd/MM/yyyy HH:mm')}</div>
+              ${workOrder.technician_notes ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'ملاحظات:' : 'Notes:'} ${workOrder.technician_notes}</div>` : ''}
             </div>
           ` : ''}
           ${workOrder.supervisor_approved_at ? `
             <div class="workflow-item">
               <div class="step-title">${language === 'ar' ? 'موافقة المشرف' : 'Supervisor Approved'}</div>
               <div class="value">${format(new Date(workOrder.supervisor_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+              ${supervisorName ? `<div class="label">${language === 'ar' ? 'بواسطة:' : 'By:'} ${supervisorName}</div>` : ''}
+              ${workOrder.supervisor_notes ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'ملاحظات:' : 'Notes:'} ${workOrder.supervisor_notes}</div>` : ''}
+            </div>
+          ` : ''}
+          ${workOrder.engineer_approved_at ? `
+            <div class="workflow-item">
+              <div class="step-title">${language === 'ar' ? 'مراجعة المهندس' : 'Engineer Reviewed'}</div>
+              <div class="value">${format(new Date(workOrder.engineer_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+              ${engineerName ? `<div class="label">${language === 'ar' ? 'بواسطة:' : 'By:'} ${engineerName}</div>` : ''}
+              ${workOrder.engineer_notes ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'ملاحظات:' : 'Notes:'} ${workOrder.engineer_notes}</div>` : ''}
+            </div>
+          ` : ''}
+          ${workOrder.customer_reviewed_at ? `
+            <div class="workflow-item">
+              <div class="step-title">${language === 'ar' ? 'إغلاق المبلغ' : 'Reporter Closed'}</div>
+              <div class="value">${format(new Date(workOrder.customer_reviewed_at), 'dd/MM/yyyy HH:mm')}</div>
+              ${reporterName ? `<div class="label">${language === 'ar' ? 'بواسطة:' : 'By:'} ${reporterName}</div>` : ''}
+              ${workOrder.reporter_notes ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'ملاحظات:' : 'Notes:'} ${workOrder.reporter_notes}</div>` : ''}
+            </div>
+          ` : ''}
+          ${workOrder.auto_closed_at ? `
+            <div class="workflow-item">
+              <div class="step-title">${language === 'ar' ? 'إغلاق تلقائي' : 'Auto Closed'}</div>
+              <div class="value">${format(new Date(workOrder.auto_closed_at), 'dd/MM/yyyy HH:mm')}</div>
+              <div class="label">${language === 'ar' ? 'بواسطة النظام' : 'By System'}</div>
+            </div>
+          ` : ''}
+          ${workOrder.maintenance_manager_approved_at ? `
+            <div class="workflow-item">
+              <div class="step-title">${language === 'ar' ? 'موافقة مدير الصيانة' : 'Manager Approved'}</div>
+              <div class="value">${format(new Date(workOrder.maintenance_manager_approved_at), 'dd/MM/yyyy HH:mm')}</div>
+              ${managerName ? `<div class="label">${language === 'ar' ? 'بواسطة:' : 'By:'} ${managerName}</div>` : ''}
+              ${workOrder.maintenance_manager_notes ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'ملاحظات:' : 'Notes:'} ${workOrder.maintenance_manager_notes}</div>` : ''}
+            </div>
+          ` : ''}
+          ${workOrder.rejected_at ? `
+            <div class="workflow-item" style="border-color: #ef4444;">
+              <div class="step-title" style="color: #ef4444;">${language === 'ar' ? 'مرفوض' : 'Rejected'}</div>
+              <div class="value">${format(new Date(workOrder.rejected_at), 'dd/MM/yyyy HH:mm')}</div>
+              <div class="label">${language === 'ar' ? 'مرحلة الرفض:' : 'Stage:'} ${workOrder.rejection_stage}</div>
+              ${workOrder.rejection_reason ? `<div class="label" style="margin-top: 2px;">${language === 'ar' ? 'السبب:' : 'Reason:'} ${workOrder.rejection_reason}</div>` : ''}
             </div>
           ` : ''}
         </div>
