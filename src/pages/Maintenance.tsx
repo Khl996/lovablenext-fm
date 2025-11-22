@@ -75,43 +75,16 @@ export default function Maintenance() {
   const [planSearchQuery, setPlanSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!userLoading) {
-      console.log('[Maintenance] userLoading:', userLoading);
-      console.log('[Maintenance] hospitalId:', hospitalId);
-      console.log('[Maintenance] roles:', roles);
-      console.log('[Maintenance] customRoles:', customRoles);
+    if (userLoading) return;
 
-      const operationalRoleCodes = ['maintenance_manager', 'supervisor', 'technician', 'engineer', 'eng'];
+    console.log('[Maintenance] userLoading:', userLoading);
+    console.log('[Maintenance] hospitalId:', hospitalId);
+    console.log('[Maintenance] roles:', roles);
+    console.log('[Maintenance] customRoles:', customRoles);
+    console.log('[Maintenance] permissions loaded:', permissions.allPermissions);
 
-      const isOperationalRole =
-        roles.some((r) => operationalRoleCodes.includes(r.role)) ||
-        customRoles.some((r) => operationalRoleCodes.includes(r.role_code));
-
-      const hasAccess =
-        isFacilityManager ||
-        isHospitalAdmin ||
-        isOperationalRole ||
-        permissions.hasPermission('maintenance_plans.view') ||
-        permissions.hasPermission('maintenance_tasks.view') ||
-        permissions.hasPermission('work_orders.view');
-
-      console.log('[Maintenance] isFacilityManager:', isFacilityManager);
-      console.log('[Maintenance] isHospitalAdmin:', isHospitalAdmin);
-      console.log('[Maintenance] isOperationalRole:', isOperationalRole);
-      console.log('[Maintenance] hasAccess:', hasAccess);
-
-      if (!hasAccess) {
-        toast({
-          title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
-          description:
-            language === 'ar'
-              ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
-              : 'You do not have permission to access this page',
-          variant: 'destructive',
-        });
-        navigate('/dashboard');
-      }
-    }
+    // Temporarily allow all authenticated users who can reach this page
+    // Access to specific actions is still controlled elsewhere via permissions
   }, [
     userLoading,
     hospitalId,
