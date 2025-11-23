@@ -78,12 +78,57 @@ Deno.serve(async (req) => {
 
     console.log(`Admin ${user.id} deleting user ${userId}`);
 
-    // Delete user from auth (this will cascade to other tables due to foreign keys)
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
+    // Delete related records first (in order of dependencies)
+    // 1. Delete from user_roles
+    const { error: deleteRolesError } = await adminClient
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (deleteRolesError) {
+      console.error('Error deleting user roles:', deleteRolesError);
+      throw new Error(`Failed to delete user roles: ${deleteRolesError.message}`);
+    }
 
-    if (deleteError) {
-      console.error('Error deleting user:', deleteError);
-      throw deleteError;
+    // 2. Delete from user_permissions (if exists)
+    const { error: deletePermsError } = await adminClient
+      .from('user_permissions')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (deletePermsError && deletePermsError.code !== 'PGRST116') { // Ignore "no rows" error
+      console.error('Error deleting user permissions:', deletePermsError);
+      throw new Error(`Failed to delete user permissions: ${deletePermsError.message}`);
+    }
+
+    // 3. Delete from team_members
+    const { error: deleteTeamError } = await adminClient
+      .from('team_members')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (deleteTeamError && deleteTeamError.code !== 'PGRST116') {
+      console.error('Error deleting team members:', deleteTeamError);
+      throw new Error(`Failed to delete team members: ${deleteTeamError.message}`);
+    }
+
+    // 4. Delete from profiles
+    const { error: deleteProfileError } = await adminClient
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+    
+    if (deleteProfileError) {
+      console.error('Error deleting profile:', deleteProfileError);
+      throw new Error(`Failed to delete profile: ${deleteProfileError.message}`);
+    }
+
+    // 5. Finally delete user from auth
+    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(userId);
+
+    if (deleteAuthError) {
+      console.error('Error deleting auth user:', deleteAuthError);
+      throw new Error(`Failed to delete auth user: ${deleteAuthError.message}`);
     }
 
     console.log(`User ${userId} deleted successfully`);
