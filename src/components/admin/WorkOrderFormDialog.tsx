@@ -386,6 +386,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
             <LocationPicker
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
+              hospitalId={hospitalId}
               showHospital={false}
               required={true}
             />
