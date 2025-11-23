@@ -1685,7 +1685,7 @@ export type Database = {
           new_status: string | null
           notes: string | null
           notified_parties: string[] | null
-          performed_by: string
+          performed_by: string | null
           photos: string[] | null
           previous_status: string | null
           reason: string
@@ -1720,7 +1720,7 @@ export type Database = {
           new_status?: string | null
           notes?: string | null
           notified_parties?: string[] | null
-          performed_by: string
+          performed_by?: string | null
           photos?: string[] | null
           previous_status?: string | null
           reason: string
@@ -1755,7 +1755,7 @@ export type Database = {
           new_status?: string | null
           notes?: string | null
           notified_parties?: string[] | null
-          performed_by?: string
+          performed_by?: string | null
           photos?: string[] | null
           previous_status?: string | null
           reason?: string
