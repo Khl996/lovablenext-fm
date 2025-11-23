@@ -382,13 +382,13 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
           </div>
 
           <div className="space-y-2">
-            <Label>{language === 'ar' ? 'الموقع' : 'Location'} *</Label>
+            <Label>{language === 'ar' ? 'الموقع' : 'Location'}</Label>
             <LocationPicker
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
               hospitalId={hospitalId}
               showHospital={false}
-              required={true}
+              required={false}
             />
           </div>
 
