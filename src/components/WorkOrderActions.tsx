@@ -40,15 +40,21 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
 
   // Get user roles for state machine - extract actual user roles
-  const userRoles: string[] = [
-    ...roles.map(r => r.role),
-    ...customRoles.map(r => r.role_code),
+  const baseUserRoles: string[] = [
+    ...roles.map((r) => r.role),
+    ...customRoles.map((r) => r.role_code),
   ];
   const isReporter = user?.id === workOrder?.reported_by;
-  
+
+  // Treat any member of the assigned team as a technician if they have no explicit role
+  const workflowRoles: string[] = [...baseUserRoles];
+  if (isTeamMember && workflowRoles.length === 0) {
+    workflowRoles.push('technician');
+  }
+
   const { state } = useWorkOrderState({
     workOrder,
-    userRoles,
+    userRoles: workflowRoles,
     isReporter,
   });
 
@@ -100,58 +106,42 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Determine what actions are available based on state machine
   const status = workOrder.status;
 
-  // Technicians can start work if they're team members and status is pending/assigned
-  const canStartWork = (
-    isTeamMember && 
-    (status === 'assigned' || status === 'pending') &&
-    (userRoles.includes('technician') || userRoles.includes('eng'))
-  );
+  // Use centralized state machine capabilities, with extra check that
+  // technician actions are only visible to team members
+  const canStartWork = isTeamMember && (state?.can.start ?? false);
 
-  // Technicians can complete work if they're team members and status is in_progress
-  const canCompleteWork = (
-    isTeamMember && 
-    status === 'in_progress' &&
-    (userRoles.includes('technician') || userRoles.includes('eng'))
-  );
+  const canCompleteWork = isTeamMember && (state?.can.complete ?? false);
 
-  const canApproveAsSupervisor = (
-    status === 'pending_supervisor_approval' &&
-    permissions.hasPermission('work_orders.approve')
-  );
+  const canApproveAsSupervisor = state?.can.approve ?? false;
 
-  const canReviewAsEngineer = (
-    status === 'pending_engineer_review' &&
-    permissions.hasPermission('work_orders.review_as_engineer')
-  );
+  const canReviewAsEngineer = state?.can.review ?? false;
 
-  const canCloseAsReporter = (
-    status === 'pending_reporter_closure' && isReporter
-  );
+  const canCloseAsReporter = state?.can.close ?? false;
 
   const canFinalApprove =
     permissions.hasPermission('work_orders.final_approve') &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject = (
-    isTeamMember &&
-    (userRoles.includes('technician') || userRoles.includes('eng')) &&
-    (status === 'in_progress' || status === 'pending_supervisor_approval' || status === 'pending_engineer_review')
+  const canReject = isTeamMember && (state?.can.reject ?? false);
+
+  const canReassign = state?.can.reassign ?? (
+    permissions.hasPermission('work_orders.approve') ||
+    permissions.hasPermission('work_orders.manage')
   );
 
-  const canReassign =
-    permissions.hasPermission('work_orders.approve') ||
-    permissions.hasPermission('work_orders.manage');
-
-  const canAddUpdate =
-    (isTeamMember && workOrder.assigned_team && (status === 'assigned' || status === 'pending' || status === 'in_progress'));
+  const canAddUpdate = state?.can.update ?? (
+    isTeamMember &&
+    workOrder.assigned_team &&
+    (status === 'assigned' || status === 'pending' || status === 'in_progress')
+  );
 
   // Debug logging
   console.log('🎯 Action permissions:', {
     status,
     isTeamMember,
     isReporter,
-    userRoles,
+    workflowRoles,
     canStartWork,
     canCompleteWork,
     canApproveAsSupervisor,
@@ -160,7 +150,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     canFinalApprove,
     canReject,
     canReassign,
-    canAddUpdate
+    canAddUpdate,
   });
 
   // Action handlers using the new hooks
