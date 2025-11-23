@@ -110,15 +110,18 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         .eq('hospital_id', hospitalId)
         .eq('status', 'active');
 
-      // Filter by location if selected
+      // Filter by location if selected - apply ALL selected levels
+      if (formData.location.buildingId) {
+        query = query.eq('building_id', formData.location.buildingId);
+      }
+      if (formData.location.floorId) {
+        query = query.eq('floor_id', formData.location.floorId);
+      }
+      if (formData.location.departmentId) {
+        query = query.eq('department_id', formData.location.departmentId);
+      }
       if (formData.location.roomId) {
         query = query.eq('room_id', formData.location.roomId);
-      } else if (formData.location.departmentId) {
-        query = query.eq('department_id', formData.location.departmentId);
-      } else if (formData.location.floorId) {
-        query = query.eq('floor_id', formData.location.floorId);
-      } else if (formData.location.buildingId) {
-        query = query.eq('building_id', formData.location.buildingId);
       }
 
       const { data, error } = await query.order('name');
