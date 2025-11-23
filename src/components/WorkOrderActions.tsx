@@ -100,21 +100,31 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Determine what actions are available based on state machine
   const status = workOrder.status;
 
-  const canStartWork = state?.can.start ?? (status === 'assigned' || status === 'pending');
+  // Technicians can start work if they're team members and status is pending/assigned
+  const canStartWork = (
+    isTeamMember && 
+    (status === 'assigned' || status === 'pending') &&
+    (userRoles.includes('technician') || userRoles.includes('eng'))
+  );
 
-  const canCompleteWork = state?.can.complete ?? (status === 'in_progress');
+  // Technicians can complete work if they're team members and status is in_progress
+  const canCompleteWork = (
+    isTeamMember && 
+    status === 'in_progress' &&
+    (userRoles.includes('technician') || userRoles.includes('eng'))
+  );
 
-  const canApproveAsSupervisor = state?.can.approve ?? (
+  const canApproveAsSupervisor = (
     status === 'pending_supervisor_approval' &&
     permissions.hasPermission('work_orders.approve')
   );
 
-  const canReviewAsEngineer = state?.can.review ?? (
+  const canReviewAsEngineer = (
     status === 'pending_engineer_review' &&
     permissions.hasPermission('work_orders.review_as_engineer')
   );
 
-  const canCloseAsReporter = state?.can.close ?? (
+  const canCloseAsReporter = (
     status === 'pending_reporter_closure' && isReporter
   );
 
@@ -123,10 +133,10 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject = state?.can.reject ?? (
-    status === 'in_progress' ||
-    status === 'pending_supervisor_approval' ||
-    status === 'pending_engineer_review'
+  const canReject = (
+    isTeamMember &&
+    (userRoles.includes('technician') || userRoles.includes('eng')) &&
+    (status === 'in_progress' || status === 'pending_supervisor_approval' || status === 'pending_engineer_review')
   );
 
   const canReassign =
@@ -134,10 +144,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     permissions.hasPermission('work_orders.manage');
 
   const canAddUpdate =
-    (state?.can.update ?? false) || (
-      workOrder.assigned_team &&
-      (status === 'assigned' || status === 'pending' || status === 'in_progress')
-    );
+    (isTeamMember && workOrder.assigned_team && (status === 'assigned' || status === 'pending' || status === 'in_progress'));
 
   // Debug logging
   console.log('🎯 Action permissions:', {
