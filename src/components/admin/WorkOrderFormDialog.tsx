@@ -43,7 +43,6 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
       departmentId: null,
       roomId: null,
     } as LocationValue,
-    customLocation: '', // For "Other" location option
   });
 
   const [teams, setTeams] = useState<any[]>([]);
@@ -62,10 +61,16 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     if (open && hospitalId) {
       loadTeams();
       loadIssueTypeMappings();
-      loadAssets();
       loadCompanies();
     }
   }, [open, hospitalId]);
+
+  // Load assets when location changes
+  useEffect(() => {
+    if (open && hospitalId) {
+      loadAssets();
+    }
+  }, [open, hospitalId, formData.location.buildingId, formData.location.floorId, formData.location.departmentId, formData.location.roomId]);
 
   const loadTeams = async () => {
     if (!hospitalId) return;
@@ -99,14 +104,31 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const loadAssets = async () => {
     if (!hospitalId) return;
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('assets')
-        .select('id, code, name, name_ar')
+        .select('id, code, name, name_ar, building_id, floor_id, department_id, room_id')
         .eq('hospital_id', hospitalId)
-        .eq('status', 'active')
-        .order('name');
+        .eq('status', 'active');
+
+      // Filter by location if selected
+      if (formData.location.roomId) {
+        query = query.eq('room_id', formData.location.roomId);
+      } else if (formData.location.departmentId) {
+        query = query.eq('department_id', formData.location.departmentId);
+      } else if (formData.location.floorId) {
+        query = query.eq('floor_id', formData.location.floorId);
+      } else if (formData.location.buildingId) {
+        query = query.eq('building_id', formData.location.buildingId);
+      }
+
+      const { data, error } = await query.order('name');
       if (error) throw error;
       setAssets(data || []);
+      
+      // Clear asset selection if current asset is not in the filtered list
+      if (formData.asset_id && data && !data.find(a => a.id === formData.asset_id)) {
+        setFormData(prev => ({ ...prev, asset_id: '' }));
+      }
     } catch (error) {
       console.error('Error loading assets:', error);
     }
@@ -269,7 +291,6 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         asset_id: '',
         company_id: '',
         location: { hospitalId: null, buildingId: null, floorId: null, departmentId: null, roomId: null },
-        customLocation: '',
       });
       setSelectedTeam('');
       setAttachments([]);
@@ -361,22 +382,13 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
           </div>
 
           <div className="space-y-2">
-            <Label>{language === 'ar' ? 'الموقع' : 'Location'}</Label>
+            <Label>{language === 'ar' ? 'الموقع' : 'Location'} *</Label>
             <LocationPicker
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
               showHospital={false}
-              required={false}
+              required={true}
             />
-            <div className="mt-2">
-              <Label>{language === 'ar' ? 'أو أدخل موقع آخر' : 'Or enter custom location'}</Label>
-              <Input
-                value={formData.customLocation}
-                onChange={(e) => setFormData({ ...formData, customLocation: e.target.value })}
-                placeholder={language === 'ar' ? 'مثل: عيادة خارجية - الدور الأرضي' : 'e.g., External Clinic - Ground Floor'}
-                className="mt-1"
-              />
-            </div>
           </div>
 
           {/* Reporter Information - Auto-filled */}
@@ -400,7 +412,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
             </div>
           </div>
 
-          {/* Asset Selection */}
+          {/* Asset Selection - Filtered by Location */}
           <div className="space-y-2">
             <Label>{language === 'ar' ? 'الأصل' : 'Asset'}</Label>
             <Select
@@ -419,6 +431,11 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
                 ))}
               </SelectContent>
             </Select>
+            {assets.length === 0 && formData.location.buildingId && (
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' ? 'لا توجد أصول في الموقع المحدد' : 'No assets in the selected location'}
+              </p>
+            )}
           </div>
 
           {/* Company Selection */}
