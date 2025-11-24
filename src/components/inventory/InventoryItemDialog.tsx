@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { Upload, X } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];
@@ -33,6 +34,9 @@ export function InventoryItemDialog({
   const { language, t } = useLanguage();
   const { hospitalId } = useCurrentUser();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -72,6 +76,8 @@ export function InventoryItemDialog({
         barcode: item.barcode || '',
         notes: item.notes || '',
       });
+      setImagePreview(item.image_url || null);
+      setImageFile(null);
     } else {
       setFormData({
         code: '',
@@ -91,8 +97,59 @@ export function InventoryItemDialog({
         barcode: '',
         notes: '',
       });
+      setImagePreview(null);
+      setImageFile(null);
     }
   }, [item, open]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(language === 'ar' ? 'يرجى اختيار صورة' : 'Please select an image');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(language === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت' : 'Image size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    try {
+      setUploading(true);
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${hospitalId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('inventory-images')
+        .upload(filePath, imageFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('inventory-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(language === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +161,14 @@ export function InventoryItemDialog({
 
     try {
       setSaving(true);
+
+      let imageUrl = item?.image_url || null;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
 
       const dataToSave = {
         hospital_id: hospitalId!,
@@ -123,6 +188,7 @@ export function InventoryItemDialog({
         supplier_contact: formData.supplier_contact || null,
         barcode: formData.barcode || null,
         notes: formData.notes || null,
+        image_url: imageUrl,
       };
 
       if (item) {
@@ -370,6 +436,52 @@ export function InventoryItemDialog({
             />
           </div>
 
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label>{language === 'ar' ? 'صورة الصنف' : 'Item Image'}</Label>
+            <div className="flex items-center gap-4">
+              {imagePreview && (
+                <div className="relative w-24 h-24 rounded-md overflow-hidden border">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setImageFile(null);
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              <div>
+                <Input
+                  type="file"
+                  id="image"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('image')?.click()}
+                  disabled={uploading}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {language === 'ar' ? 'اختر صورة' : 'Choose Image'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {language === 'ar' ? 'PNG, JPG أقل من 5 ميجابايت' : 'PNG, JPG up to 5MB'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
@@ -379,8 +491,8 @@ export function InventoryItemDialog({
             >
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={saving}>
-              {saving
+            <Button type="submit" disabled={saving || uploading}>
+              {saving || uploading
                 ? language === 'ar' ? 'جاري الحفظ...' : 'Saving...'
                 : t('save')}
             </Button>
