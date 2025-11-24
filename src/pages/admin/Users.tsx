@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, User, Search, Filter, Trash2, Clock, Eye } from 'lucide-react';
+import { Plus, User, Search, Filter, Trash2, Clock, Eye, UserX, UserCheck, Download, Copy, Check } from 'lucide-react';
 import { UserDetailsSheet } from '@/components/admin/UserDetailsSheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,11 +25,19 @@ interface UserData {
   hospital_id: string | null;
   hospital_name?: string;
   last_activity_at?: string | null;
+  is_active: boolean;
   roles: Array<{
     id: string;
     role: string;
     hospital_id: string | null;
     hospital_name?: string;
+  }>;
+  teams?: Array<{
+    id: string;
+    name: string;
+    name_ar: string;
+    role: string;
+    specialization: string[];
   }>;
 }
 
@@ -53,6 +61,9 @@ export default function Users() {
   const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState({ email: '', password: '' });
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -80,13 +91,14 @@ export default function Users() {
           phone,
           hospital_id,
           last_activity_at,
+          is_active,
           hospitals(name, name_ar)
         `);
 
       if (profilesError) throw profilesError;
 
-      // Get both old and new roles
-      const [rolesResult, customRolesResult] = await Promise.all([
+      // Get both old and new roles, and team memberships
+      const [rolesResult, customRolesResult, teamMembersResult] = await Promise.all([
         supabase.from('user_roles').select(`
           id,
           user_id,
@@ -100,11 +112,19 @@ export default function Users() {
           role_code,
           hospital_id,
           hospitals(name, name_ar)
+        `),
+        supabase.from('team_members').select(`
+          user_id,
+          team_id,
+          role,
+          specialization,
+          teams(id, name, name_ar)
         `)
       ]);
 
       if (rolesResult.error) throw rolesResult.error;
       if (customRolesResult.error) throw customRolesResult.error;
+      if (teamMembersResult.error) throw teamMembersResult.error;
 
       const usersWithRoles = (profilesData || []).map((profile: any) => {
         const systemRoles = (rolesResult.data || [])
@@ -127,6 +147,16 @@ export default function Users() {
             isSystemRole: false,
           }));
 
+        const userTeams = (teamMembersResult.data || [])
+          .filter((tm: any) => tm.user_id === profile.id)
+          .map((tm: any) => ({
+            id: tm.teams.id,
+            name: tm.teams.name,
+            name_ar: tm.teams.name_ar,
+            role: tm.role,
+            specialization: tm.specialization || [],
+          }));
+
         return {
           id: profile.id,
           full_name: profile.full_name,
@@ -136,7 +166,9 @@ export default function Users() {
           hospital_id: profile.hospital_id,
           hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
           last_activity_at: profile.last_activity_at,
+          is_active: profile.is_active,
           roles: [...systemRoles, ...customRolesList],
+          teams: userTeams,
         };
       });
 
@@ -223,7 +255,10 @@ export default function Users() {
         throw new Error(result.error || 'Failed to create user');
       }
 
-      toast.success(t('userAdded'));
+      // Show credentials dialog
+      setCreatedCredentials({ email: formData.email, password: formData.password });
+      setCredentialsDialogOpen(true);
+      
       setIsDialogOpen(false);
       setFormData({
         email: '',
@@ -258,6 +293,66 @@ export default function Users() {
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast.error(error.message || (language === 'ar' ? 'حدث خطأ أثناء حذف المستخدم' : 'Error deleting user'));
+    }
+  };
+
+  const handleToggleUserStatus = async (user: UserData) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !user.is_active })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success(
+        !user.is_active
+          ? (language === 'ar' ? 'تم تفعيل المستخدم بنجاح' : 'User activated successfully')
+          : (language === 'ar' ? 'تم إلغاء تفعيل المستخدم بنجاح' : 'User deactivated successfully')
+      );
+      loadUsers();
+    } catch (error: any) {
+      console.error('Error toggling user status:', error);
+      toast.error(error.message || (language === 'ar' ? 'حدث خطأ' : 'Error occurred'));
+    }
+  };
+
+  const handleExportUsers = () => {
+    // Prepare CSV data
+    const headers = ['Name', 'Email', 'Phone', 'Hospital', 'Status', 'Roles', 'Teams', 'Last Activity'];
+    const rows = filteredUsers.map(user => [
+      user.full_name,
+      user.email,
+      user.phone || '-',
+      user.hospital_name || '-',
+      user.is_active ? 'Active' : 'Inactive',
+      user.roles.map(r => getRoleLabel(r.role)).join('; '),
+      user.teams?.map(t => language === 'ar' ? t.name_ar : t.name).join('; ') || '-',
+      formatLastActivity(user.last_activity_at),
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    // Create and download file
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast.success(language === 'ar' ? 'تم تصدير البيانات بنجاح' : 'Data exported successfully');
+  };
+
+  const handleCopyToClipboard = async (text: string, field: 'email' | 'password') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+      toast.success(language === 'ar' ? 'تم النسخ' : 'Copied');
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل النسخ' : 'Failed to copy');
     }
   };
 
@@ -346,7 +441,12 @@ export default function Users() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportUsers} className="gap-2">
+            <Download className="h-4 w-4" />
+            {language === 'ar' ? 'تصدير' : 'Export'}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -455,6 +555,7 @@ export default function Users() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
@@ -535,7 +636,7 @@ export default function Users() {
         {filteredUsers.map((user) => (
           <Card 
             key={user.id} 
-            className="hover:border-primary/50 transition-colors relative"
+            className={`hover:border-primary/50 transition-all relative ${!user.is_active ? 'opacity-60 grayscale' : ''}`}
           >
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -543,9 +644,17 @@ export default function Users() {
                   <User className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">
-                    {user.full_name}
-                  </CardTitle>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-lg truncate">
+                      {user.full_name}
+                    </CardTitle>
+                    <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
+                      {user.is_active 
+                        ? (language === 'ar' ? 'نشط' : 'Active')
+                        : (language === 'ar' ? 'معطل' : 'Inactive')
+                      }
+                    </Badge>
+                  </div>
                   <p className="text-sm text-muted-foreground truncate" dir="ltr">{user.email}</p>
                 </div>
                 <div className="flex gap-2">
@@ -560,14 +669,11 @@ export default function Users() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setUserToDelete(user);
-                      setDeleteDialogOpen(true);
-                    }}
+                    className={`h-8 w-8 ${user.is_active ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}`}
+                    onClick={() => handleToggleUserStatus(user)}
+                    title={user.is_active ? (language === 'ar' ? 'إلغاء التفعيل' : 'Deactivate') : (language === 'ar' ? 'تفعيل' : 'Activate')}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
@@ -583,6 +689,8 @@ export default function Users() {
                 <Clock className="h-4 w-4" />
                 <span>{formatLastActivity(user.last_activity_at)}</span>
               </div>
+              
+              {/* Roles */}
               <div className="flex flex-wrap gap-2">
                 {user.roles.map((role) => (
                   <Badge key={role.id} variant="secondary">
@@ -590,6 +698,24 @@ export default function Users() {
                   </Badge>
                 ))}
               </div>
+
+              {/* Teams & Specializations */}
+              {user.teams && user.teams.length > 0 && (
+                <div className="pt-2 border-t space-y-2">
+                  {user.teams.map((team) => (
+                    <div key={team.id} className="text-sm">
+                      <p className="font-medium text-foreground">
+                        {language === 'ar' ? team.name_ar : team.name}
+                      </p>
+                      {team.specialization && team.specialization.length > 0 && (
+                        <p className="text-muted-foreground text-xs">
+                          {team.specialization.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -616,6 +742,65 @@ export default function Users() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <Check className="h-5 w-5" />
+              {language === 'ar' ? 'تم إنشاء المستخدم بنجاح' : 'User Created Successfully'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ar' 
+                ? 'تم إنشاء حساب المستخدم. يرجى نسخ بيانات الاعتماد التالية ومشاركتها مع المستخدم:'
+                : 'The user account has been created. Please copy and share these credentials with the user:'}
+            </p>
+            
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>{t('email')}</Label>
+                <div className="flex gap-2">
+                  <Input value={createdCredentials.email} readOnly dir="ltr" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyToClipboard(createdCredentials.email, 'email')}
+                  >
+                    {copiedField === 'email' ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t('password')}</Label>
+                <div className="flex gap-2">
+                  <Input value={createdCredentials.password} readOnly dir="ltr" type="text" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyToClipboard(createdCredentials.password, 'password')}
+                  >
+                    {copiedField === 'password' ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+              {language === 'ar'
+                ? '⚠️ تأكد من نسخ كلمة المرور الآن. لن تتمكن من رؤيتها مرة أخرى.'
+                : '⚠️ Make sure to copy the password now. You won\'t be able to see it again.'}
+            </div>
+
+            <Button onClick={() => setCredentialsDialogOpen(false)} className="w-full">
+              {language === 'ar' ? 'تم' : 'Done'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <UserDetailsSheet
         user={selectedUser}
