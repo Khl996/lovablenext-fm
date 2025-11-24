@@ -14,8 +14,8 @@ import {
   TrendingUp,
   TrendingDown,
   Clock,
-  Users,
-  PackageOpen
+  PackageOpen,
+  CheckCircle2
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { WorkOrdersChart } from '@/components/dashboard/WorkOrdersChart';
@@ -375,12 +375,12 @@ export default function Dashboard() {
 
             <Card 
               className="hover:border-primary transition-colors cursor-pointer"
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/maintenance')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-5 w-5 text-primary" />
-                  {t('users')}
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  {t('maintenance')}
                 </CardTitle>
               </CardHeader>
             </Card>
