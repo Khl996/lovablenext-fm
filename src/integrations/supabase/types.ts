@@ -2306,6 +2306,8 @@ export type Database = {
           id: string
           name: string
           name_ar: string
+          shift_end: string | null
+          shift_start: string | null
           status: string
           type: string
           updated_at: string
@@ -2318,6 +2320,8 @@ export type Database = {
           id?: string
           name: string
           name_ar: string
+          shift_end?: string | null
+          shift_start?: string | null
           status?: string
           type?: string
           updated_at?: string
@@ -2330,6 +2334,8 @@ export type Database = {
           id?: string
           name?: string
           name_ar?: string
+          shift_end?: string | null
+          shift_start?: string | null
           status?: string
           type?: string
           updated_at?: string
