@@ -61,6 +61,8 @@ export default function Users() {
   const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
+  const [toggleStatusDialogOpen, setToggleStatusDialogOpen] = useState(false);
+  const [userToToggle, setUserToToggle] = useState<UserData | null>(null);
   const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState({ email: '', password: '' });
   const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
@@ -296,21 +298,26 @@ export default function Users() {
     }
   };
 
-  const handleToggleUserStatus = async (user: UserData) => {
+  const handleToggleUserStatus = async () => {
+    if (!userToToggle) return;
+
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: !user.is_active })
-        .eq('id', user.id);
+        .update({ is_active: !userToToggle.is_active })
+        .eq('id', userToToggle.id);
 
       if (error) throw error;
 
       toast.success(
-        !user.is_active
+        !userToToggle.is_active
           ? (language === 'ar' ? 'تم تفعيل المستخدم بنجاح' : 'User activated successfully')
           : (language === 'ar' ? 'تم إلغاء تفعيل المستخدم بنجاح' : 'User deactivated successfully')
       );
-      loadUsers();
+      
+      setToggleStatusDialogOpen(false);
+      setUserToToggle(null);
+      await loadUsers();
     } catch (error: any) {
       console.error('Error toggling user status:', error);
       toast.error(error.message || (language === 'ar' ? 'حدث خطأ' : 'Error occurred'));
@@ -670,7 +677,10 @@ export default function Users() {
                     variant="ghost"
                     size="icon"
                     className={`h-8 w-8 ${user.is_active ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}`}
-                    onClick={() => handleToggleUserStatus(user)}
+                    onClick={() => {
+                      setUserToToggle(user);
+                      setToggleStatusDialogOpen(true);
+                    }}
                     title={user.is_active ? (language === 'ar' ? 'إلغاء التفعيل' : 'Deactivate') : (language === 'ar' ? 'تفعيل' : 'Activate')}
                   >
                     {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
@@ -720,6 +730,44 @@ export default function Users() {
           </Card>
         ))}
       </div>
+
+      {/* Toggle Status Confirmation Dialog */}
+      <AlertDialog open={toggleStatusDialogOpen} onOpenChange={setToggleStatusDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {userToToggle?.is_active 
+                ? (language === 'ar' ? 'تأكيد إلغاء تفعيل المستخدم' : 'Confirm User Deactivation')
+                : (language === 'ar' ? 'تأكيد تفعيل المستخدم' : 'Confirm User Activation')
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToToggle?.is_active
+                ? (language === 'ar' 
+                  ? `هل أنت متأكد من إلغاء تفعيل المستخدم "${userToToggle?.full_name}"؟ لن يتمكن المستخدم من تسجيل الدخول حتى يتم تفعيله مجدداً.`
+                  : `Are you sure you want to deactivate user "${userToToggle?.full_name}"? The user will not be able to log in until reactivated.`
+                )
+                : (language === 'ar' 
+                  ? `هل أنت متأكد من تفعيل المستخدم "${userToToggle?.full_name}"؟ سيتمكن المستخدم من تسجيل الدخول مباشرة.`
+                  : `Are you sure you want to activate user "${userToToggle?.full_name}"? The user will be able to log in immediately.`
+                )
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{language === 'ar' ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleToggleUserStatus}
+              className={userToToggle?.is_active ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'}
+            >
+              {userToToggle?.is_active 
+                ? (language === 'ar' ? 'إلغاء التفعيل' : 'Deactivate')
+                : (language === 'ar' ? 'تفعيل' : 'Activate')
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
