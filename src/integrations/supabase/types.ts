@@ -929,6 +929,7 @@ export type Database = {
           description: string | null
           hospital_id: string
           id: string
+          image_url: string | null
           is_active: boolean | null
           last_restocked_at: string | null
           location: string | null
@@ -954,6 +955,7 @@ export type Database = {
           description?: string | null
           hospital_id: string
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           last_restocked_at?: string | null
           location?: string | null
@@ -979,6 +981,7 @@ export type Database = {
           description?: string | null
           hospital_id?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           last_restocked_at?: string | null
           location?: string | null

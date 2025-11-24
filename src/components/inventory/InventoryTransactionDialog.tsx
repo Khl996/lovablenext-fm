@@ -49,6 +49,19 @@ export function InventoryTransactionDialog({
       return;
     }
 
+    // Validate stock out quantity
+    if (formData.transaction_type === 'out') {
+      const requestedQty = parseFloat(formData.quantity);
+      if (requestedQty > item.current_quantity) {
+        toast.error(
+          language === 'ar' 
+            ? `مخزون غير كافي. الكمية المتاحة: ${item.current_quantity}` 
+            : `Insufficient stock. Available: ${item.current_quantity}`
+        );
+        return;
+      }
+    }
+
     try {
       setSaving(true);
 

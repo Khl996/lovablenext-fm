@@ -22,10 +22,13 @@ import {
   AlertTriangle, 
   TrendingDown,
   Edit,
-  History
+  History,
+  FileSpreadsheet,
+  Clock
 } from 'lucide-react';
 import { InventoryItemDialog } from '@/components/inventory/InventoryItemDialog';
 import { InventoryTransactionDialog } from '@/components/inventory/InventoryTransactionDialog';
+import { InventoryTransactionHistoryDialog } from '@/components/inventory/InventoryTransactionHistoryDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];
@@ -39,6 +42,7 @@ export default function Inventory() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
   const canView = permissions.hasPermission('inventory.view', hospitalId);
   const canManage = permissions.hasPermission('inventory.manage', hospitalId);
@@ -83,6 +87,49 @@ export default function Inventory() {
   const handleTransaction = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsTransactionDialogOpen(true);
+  };
+
+  const handleShowHistory = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setIsHistoryDialogOpen(true);
+  };
+
+  const handleExport = () => {
+    try {
+      const csvContent = [
+        [
+          language === 'ar' ? 'الكود' : 'Code',
+          language === 'ar' ? 'الاسم' : 'Name',
+          language === 'ar' ? 'الكمية الحالية' : 'Current Qty',
+          language === 'ar' ? 'الوحدة' : 'Unit',
+          language === 'ar' ? 'سعر الوحدة' : 'Unit Cost',
+          language === 'ar' ? 'القيمة الإجمالية' : 'Total Value',
+          language === 'ar' ? 'الموقع' : 'Location',
+        ].join(','),
+        ...filteredItems.map((item) =>
+          [
+            item.code,
+            language === 'ar' ? item.name_ar : item.name,
+            item.current_quantity,
+            language === 'ar' ? item.unit_of_measure_ar : item.unit_of_measure,
+            item.unit_cost || 0,
+            (item.current_quantity * (item.unit_cost || 0)).toFixed(2),
+            language === 'ar' ? item.location_ar || '' : item.location || '',
+          ].join(',')
+        ),
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `inventory_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+
+      toast.success(language === 'ar' ? 'تم التصدير بنجاح' : 'Exported successfully');
+    } catch (error) {
+      console.error('Error exporting:', error);
+      toast.error(language === 'ar' ? 'فشل التصدير' : 'Export failed');
+    }
   };
 
   const filteredItems = items.filter((item) => {
@@ -138,12 +185,18 @@ export default function Inventory() {
           </p>
         </div>
 
-        {canManage && (
-          <Button onClick={handleAddItem} className="gap-2">
-            <Plus className="h-4 w-4" />
-            {language === 'ar' ? 'إضافة صنف' : 'Add Item'}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            {language === 'ar' ? 'تصدير' : 'Export'}
           </Button>
-        )}
+          {canManage && (
+            <Button onClick={handleAddItem} className="gap-2">
+              <Plus className="h-4 w-4" />
+              {language === 'ar' ? 'إضافة صنف' : 'Add Item'}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -250,6 +303,7 @@ export default function Inventory() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16"></TableHead>
                     <TableHead>{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
                     <TableHead>{language === 'ar' ? 'الاسم' : 'Name'}</TableHead>
                     <TableHead className="text-center">
@@ -276,6 +330,15 @@ export default function Inventory() {
                     const isLowStock = item.current_quantity <= (item.min_quantity || 0);
                     return (
                       <TableRow key={item.id} className={isLowStock ? 'bg-destructive/5' : ''}>
+                        <TableCell>
+                          {item.image_url && (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                          )}
+                        </TableCell>
                         <TableCell className="font-mono">{item.code}</TableCell>
                         <TableCell>
                           <div>
@@ -321,12 +384,20 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleShowHistory(item)}
+                              title={language === 'ar' ? 'سجل الحركات' : 'Transaction History'}
+                            >
+                              <Clock className="h-4 w-4" />
+                            </Button>
                             {canTransact && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleTransaction(item)}
-                                title={language === 'ar' ? 'إدارة الحركات' : 'Manage Transactions'}
+                                title={language === 'ar' ? 'إضافة حركة' : 'Add Transaction'}
                               >
                                 <History className="h-4 w-4" />
                               </Button>
@@ -369,6 +440,14 @@ export default function Inventory() {
           onOpenChange={setIsTransactionDialogOpen}
           item={selectedItem}
           onSuccess={loadItems}
+        />
+      )}
+
+      {selectedItem && (
+        <InventoryTransactionHistoryDialog
+          open={isHistoryDialogOpen}
+          onOpenChange={setIsHistoryDialogOpen}
+          item={selectedItem}
         />
       )}
     </div>
