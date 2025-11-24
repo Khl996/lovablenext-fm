@@ -7,14 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Building2, 
   Package, 
   ClipboardList, 
-  CheckCircle2,
   Download,
   X,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Clock,
+  Users,
+  PackageOpen
 } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { WorkOrdersChart } from '@/components/dashboard/WorkOrdersChart';
@@ -49,7 +50,9 @@ export default function Dashboard() {
     avgResponseTime: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [showInstallBanner, setShowInstallBanner] = useState(() => {
+    return localStorage.getItem('hideInstallBanner') !== 'true';
+  });
 
   useEffect(() => {
     if (!user && !loading) {
@@ -199,7 +202,10 @@ export default function Dashboard() {
                   </Button>
                 )}
                 <Button 
-                  onClick={() => setShowInstallBanner(false)} 
+                  onClick={() => {
+                    setShowInstallBanner(false);
+                    localStorage.setItem('hideInstallBanner', 'true');
+                  }} 
                   size="sm" 
                   variant="ghost"
                   className="h-8 w-8 p-0"
@@ -219,18 +225,18 @@ export default function Dashboard() {
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {language === 'ar' ? 'البلاغات اليومية' : 'Daily Reports'}
+                {language === 'ar' ? 'متوسط زمن الاستجابة' : 'Avg Response Time'}
               </CardTitle>
-              <ClipboardList className="h-5 w-5 text-info" />
+              <Clock className="h-5 w-5 text-info" />
             </CardHeader>
             <CardContent>
               {loadingStats ? (
                 <div className="h-8 bg-muted animate-pulse rounded"></div>
               ) : (
                 <>
-                  <div className="text-3xl font-bold">{stats.dailyReports}</div>
+                  <div className="text-3xl font-bold">{stats.avgResponseTime}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {language === 'ar' ? 'اليوم' : 'Today'}
+                    {language === 'ar' ? 'ساعة' : 'Hours'}
                   </p>
                 </>
               )}
@@ -333,12 +339,12 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card 
               className="hover:border-primary transition-colors cursor-pointer"
-              onClick={() => navigate('/facilities')}
+              onClick={() => navigate('/admin/work-orders')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  {language === 'ar' ? 'المرافق' : 'Facilities'}
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                  {t('workOrders')}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -357,24 +363,24 @@ export default function Dashboard() {
 
             <Card 
               className="hover:border-primary transition-colors cursor-pointer"
-              onClick={() => navigate('/admin/work-orders')}
+              onClick={() => navigate('/admin/inventory')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <ClipboardList className="h-5 w-5 text-primary" />
-                  {t('workOrders')}
+                  <PackageOpen className="h-5 w-5 text-primary" />
+                  {language === 'ar' ? 'المخزون' : 'Inventory'}
                 </CardTitle>
               </CardHeader>
             </Card>
 
             <Card 
               className="hover:border-primary transition-colors cursor-pointer"
-              onClick={() => navigate('/maintenance')}
+              onClick={() => navigate('/admin/users')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                  {t('maintenance')}
+                  <Users className="h-5 w-5 text-primary" />
+                  {t('users')}
                 </CardTitle>
               </CardHeader>
             </Card>

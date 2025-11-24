@@ -30,6 +30,25 @@ export function RecentAlertsCard() {
       setLoading(true);
       const alertsList: Alert[] = [];
 
+      // Check urgent/high priority work orders
+      const { data: urgentWorkOrders } = await supabase
+        .from('work_orders')
+        .select('id, code, title, title_ar, created_at, lookup_priorities(name, name_ar)')
+        .in('priority', ['urgent', 'high'])
+        .not('status', 'in', '(completed,cancelled,auto_closed)')
+        .limit(3);
+
+      urgentWorkOrders?.forEach((wo: any) => {
+        alertsList.push({
+          id: wo.id,
+          type: 'critical',
+          title: `Urgent work order: ${wo.code} - ${wo.title}`,
+          title_ar: `أمر عمل عاجل: ${wo.code} - ${wo.title_ar}`,
+          timestamp: wo.created_at,
+          severity: 'high',
+        });
+      });
+
       // Check overdue maintenance tasks
       const { data: overdueTasks } = await supabase
         .from('maintenance_tasks')
