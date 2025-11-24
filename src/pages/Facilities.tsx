@@ -189,14 +189,14 @@ export default function Facilities() {
                   <span className="font-semibold">{facility.assets_count}</span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                    <span className="text-sm text-red-500">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-sm text-destructive">
                       {language === 'ar' ? 'أصول حرجة' : 'Critical Assets'}
                     </span>
                   </div>
-                  <span className="font-semibold text-red-500">{facility.critical_assets}</span>
+                  <span className="font-semibold text-destructive">{facility.critical_assets}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg">

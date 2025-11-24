@@ -206,8 +206,8 @@ export default function Install() {
                   </div>
                 </div>
 
-                <Alert className="bg-green-500/10 border-green-500/20 mt-4">
-                  <Check className="h-4 w-4 text-green-600" />
+                <Alert className="bg-success/10 border-success/20 mt-4">
+                  <Check className="h-4 w-4 text-success" />
                   <AlertDescription className="text-sm">
                     {language === 'ar' 
                       ? '💡 بعد التثبيت، ستتمكن من استقبال الإشعارات والوصول للتطبيق بسرعة من الشاشة الرئيسية!' 

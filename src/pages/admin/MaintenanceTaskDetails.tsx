@@ -150,12 +150,12 @@ export default function MaintenanceTaskDetails() {
 
   const getTypeBadge = (type: string) => {
     const types: Record<string, { icon: any; label: string; color: string }> = {
-      preventive: { icon: Calendar, label: language === 'ar' ? 'وقائية' : 'Preventive', color: 'text-blue-500' },
-      corrective: { icon: Wrench, label: language === 'ar' ? 'تصحيحية' : 'Corrective', color: 'text-orange-500' },
-      predictive: { icon: AlertTriangle, label: language === 'ar' ? 'تنبؤية' : 'Predictive', color: 'text-purple-500' },
-      routine: { icon: Clock, label: language === 'ar' ? 'روتينية' : 'Routine', color: 'text-green-500' },
+      preventive: { icon: Calendar, label: language === 'ar' ? 'وقائية' : 'Preventive', color: 'text-info' },
+      corrective: { icon: Wrench, label: language === 'ar' ? 'تصحيحية' : 'Corrective', color: 'text-warning' },
+      predictive: { icon: AlertTriangle, label: language === 'ar' ? 'تنبؤية' : 'Predictive', color: 'text-secondary' },
+      routine: { icon: Clock, label: language === 'ar' ? 'روتينية' : 'Routine', color: 'text-success' },
     };
-    const typeInfo = types[type] || { icon: Wrench, label: type, color: 'text-gray-500' };
+    const typeInfo = types[type] || { icon: Wrench, label: type, color: 'text-muted-foreground' };
     const Icon = typeInfo.icon;
     return (
       <div className="flex items-center gap-2">
