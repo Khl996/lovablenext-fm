@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { QrCode } from 'lucide-react';
-import QRCode from 'react-qr-code';
+import { QRCodeSVG } from 'qrcode.react';
 
 type AssetQRCodeProps = {
   asset: {
@@ -115,7 +115,7 @@ export function AssetQRCode({ asset }: AssetQRCodeProps) {
               <p className="text-sm text-muted-foreground">{asset.code}</p>
             </div>
             <div id="dialog-qr-code" className="flex justify-center p-4 bg-muted rounded-lg">
-              <QRCode value={assetUrl} size={256} />
+              <QRCodeSVG value={assetUrl} size={256} />
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
