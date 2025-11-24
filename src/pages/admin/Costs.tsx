@@ -333,11 +333,11 @@ export default function Costs() {
             </div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               {stats.monthlyChange >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
+                <TrendingUp className="h-3 w-3 mr-1 text-success" />
               ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-600" />
+                <TrendingDown className="h-3 w-3 mr-1 text-destructive" />
               )}
-              <span className={stats.monthlyChange >= 0 ? 'text-green-600' : 'text-red-600'}>
+              <span className={stats.monthlyChange >= 0 ? 'text-success' : 'text-destructive'}>
                 {Math.abs(stats.monthlyChange).toFixed(1)}%
               </span>
               <span className="mx-1">{language === 'ar' ? 'عن الشهر الماضي' : 'vs last month'}</span>

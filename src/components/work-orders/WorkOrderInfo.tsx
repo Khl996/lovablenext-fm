@@ -125,7 +125,7 @@ export function WorkOrderInfo({ workOrder, reporterName }: WorkOrderInfoProps) {
                   <span className="text-sm font-medium">
                     {language === 'ar' ? 'التقييم:' : 'Rating:'}
                   </span>
-                  <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                  <span className="text-lg font-bold text-warning">
                     {workOrder.customer_rating}/5 ⭐
                   </span>
                 </div>

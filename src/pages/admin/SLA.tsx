@@ -368,9 +368,9 @@ export default function SLA() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {language === 'ar' ? 'الانتهاكات المحلولة' : 'Resolved Breaches'}
+            {language === 'ar' ? 'الانتهاكات المحلولة' : 'Resolved Breaches'}
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CheckCircle className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.resolvedBreaches}</div>

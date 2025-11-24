@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Mutqan Brand Identity Colors */
+    /* Mutqan Brand Identity Colors - Extracted from official brand guide */
     --background: 0 0% 100%;
     --foreground: 205 21% 23%;
 
@@ -18,11 +18,11 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 205 21% 23%;
 
-    /* Primary Color: #2E3A45 */
+    /* Primary Color: #2E3A45 - Dark Blue Gray */
     --primary: 205 21% 23%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary Color: #3AAFA9 */
+    /* Secondary Color: #3AAFA9 - Teal/Turquoise */
     --secondary: 177 50% 46%;
     --secondary-foreground: 0 0% 100%;
 
@@ -30,7 +30,7 @@ All colors MUST be HSL.
     --muted: 204 26% 93%;
     --muted-foreground: 205 12% 49%;
 
-    /* Accent using secondary color */
+    /* Accent using secondary teal color */
     --accent: 177 50% 46%;
     --accent-foreground: 0 0% 100%;
 
@@ -52,9 +52,10 @@ All colors MUST be HSL.
     --input: 204 26% 88%;
     --ring: 177 50% 46%;
 
+    /* Border radius - medium rounded for modern look */
     --radius: 0.75rem;
 
-    /* Sidebar with brand colors */
+    /* Sidebar - Light theme with brand colors */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 205 21% 23%;
     --sidebar-primary: 205 21% 23%;
@@ -76,11 +77,11 @@ All colors MUST be HSL.
     --popover: 205 21% 16%;
     --popover-foreground: 204 26% 93%;
 
-    /* Primary lighter in dark mode */
+    /* Primary - slightly lighter in dark mode for contrast */
     --primary: 205 21% 35%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary remains vibrant */
+    /* Secondary - vibrant teal remains consistent */
     --secondary: 177 50% 46%;
     --secondary-foreground: 0 0% 100%;
 
@@ -106,6 +107,7 @@ All colors MUST be HSL.
     --input: 205 21% 24%;
     --ring: 177 50% 46%;
     
+    /* Sidebar - Dark with primary background and teal accents */
     --sidebar-background: 205 21% 14%;
     --sidebar-foreground: 204 26% 93%;
     --sidebar-primary: 177 50% 46%;
