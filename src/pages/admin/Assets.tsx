@@ -25,7 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Pencil, Package, Trash2, List, Network, MoreVertical, Activity } from 'lucide-react';
+import { Plus, Search, Pencil, Package, Trash2, List, Network, MoreVertical, Activity, Download } from 'lucide-react';
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
 import { AssetFormDialog } from '@/components/admin/AssetFormDialog';
 import { AssetTreeView } from '@/components/admin/AssetTreeView';
@@ -260,6 +260,30 @@ export default function Assets() {
     loadAssets();
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Code', 'Name', 'Category', 'Status', 'Location', 'Manufacturer', 'Model'];
+    const csvData = filteredAssets.map(asset => [
+      asset.code,
+      language === 'ar' ? asset.name_ar : asset.name,
+      asset.category,
+      asset.status,
+      '', // Location will be fetched from buildings
+      asset.manufacturer || '',
+      asset.model || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `assets_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   const filteredAssets = assets.filter(asset => {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = (
@@ -357,12 +381,18 @@ export default function Assets() {
               : 'Manage hospital assets and medical equipment'}
           </p>
         </div>
-        {canManage && (
-          <Button onClick={handleAddAsset}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('addAsset')}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'تصدير إلى Excel' : 'Export to Excel'}
           </Button>
-        )}
+          {canManage && (
+            <Button onClick={handleAddAsset}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('addAsset')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Basic Filters */}
@@ -504,6 +534,7 @@ export default function Assets() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>{language === 'ar' ? 'الصورة' : 'Image'}</TableHead>
                 <TableHead>{t('code')}</TableHead>
                 <TableHead>{t('assetName')}</TableHead>
                 <TableHead>{t('category')}</TableHead>
@@ -517,6 +548,19 @@ export default function Assets() {
             <TableBody>
               {filteredAssets.map((asset) => (
                 <TableRow key={asset.id}>
+                  <TableCell>
+                    {(asset as any).image_url ? (
+                      <img 
+                        src={(asset as any).image_url} 
+                        alt={asset.name}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{asset.code}</TableCell>
                   <TableCell>{language === 'ar' ? asset.name_ar : asset.name}</TableCell>
                   <TableCell>{asset.category}</TableCell>

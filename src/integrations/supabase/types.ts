@@ -29,6 +29,7 @@ export type Database = {
           floor_id: string | null
           hospital_id: string
           id: string
+          image_url: string | null
           installation_date: string | null
           manufacture_year: number | null
           manufacturer: string | null
@@ -64,6 +65,7 @@ export type Database = {
           floor_id?: string | null
           hospital_id: string
           id?: string
+          image_url?: string | null
           installation_date?: string | null
           manufacture_year?: number | null
           manufacturer?: string | null
@@ -99,6 +101,7 @@ export type Database = {
           floor_id?: string | null
           hospital_id?: string
           id?: string
+          image_url?: string | null
           installation_date?: string | null
           manufacture_year?: number | null
           manufacturer?: string | null
