@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Package, MapPin, Calendar, DollarSign, FileText, Settings } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowLeft, Package, MapPin, Calendar, DollarSign, FileText, Settings, History, Activity } from 'lucide-react';
 import { AssetQRCode } from '@/components/admin/AssetQRCode';
+import { format } from 'date-fns';
 
 interface AssetDetails {
   id: string;
@@ -52,12 +55,22 @@ export default function AssetDetails() {
   const { toast } = useToast();
   const [asset, setAsset] = useState<AssetDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [activityLog, setActivityLog] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (code) {
       loadAsset();
     }
   }, [code]);
+
+  useEffect(() => {
+    if (asset?.id) {
+      loadWorkOrders();
+      loadActivityLog();
+    }
+  }, [asset?.id]);
 
   const loadAsset = async () => {
     try {
@@ -108,6 +121,48 @@ export default function AssetDetails() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadWorkOrders = async () => {
+    if (!asset?.id) return;
+    
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('work_orders')
+        .select('id, code, issue_type, status, reported_at, description')
+        .eq('asset_id', asset.id)
+        .order('reported_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setWorkOrders(data || []);
+    } catch (error) {
+      console.error('Error loading work orders:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const loadActivityLog = async () => {
+    if (!asset?.id) return;
+    
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('operations_log')
+        .select('*')
+        .eq('asset_id', asset.id)
+        .order('timestamp', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setActivityLog(data || []);
+    } catch (error) {
+      console.error('Error loading activity log:', error);
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -181,6 +236,19 @@ export default function AssetDetails() {
         </div>
         <AssetQRCode asset={asset} />
       </div>
+
+      {/* Image Preview */}
+      {(asset as any).image_url && (
+        <Card>
+          <CardContent className="p-6">
+            <img 
+              src={(asset as any).image_url} 
+              alt={asset.name}
+              className="w-full max-w-2xl mx-auto rounded-lg"
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Basic Information */}
@@ -372,6 +440,101 @@ export default function AssetDetails() {
           </Card>
         )}
       </div>
+
+      {/* History Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{language === 'ar' ? 'السجل والتاريخ' : 'History & Activity'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="work-orders">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="work-orders">
+                <History className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'سجل أوامر العمل' : 'Work Order History'}
+              </TabsTrigger>
+              <TabsTrigger value="activity">
+                <Activity className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'سجل النشاطات' : 'Activity Log'}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="work-orders" className="space-y-4">
+              {loadingHistory ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : workOrders.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {language === 'ar' ? 'لا توجد أوامر عمل' : 'No work orders found'}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'نوع المشكلة' : 'Issue'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workOrders.map((wo) => (
+                      <TableRow key={wo.id}>
+                        <TableCell>{format(new Date(wo.reported_at), 'PPP')}</TableCell>
+                        <TableCell className="font-mono">{wo.code}</TableCell>
+                        <TableCell>{wo.issue_type}</TableCell>
+                        <TableCell>
+                          <Badge>{wo.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="activity" className="space-y-4">
+              {loadingHistory ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : activityLog.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {language === 'ar' ? 'لا توجد أنشطة' : 'No activity found'}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'الوصف' : 'Description'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'المسؤول' : 'Technician'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activityLog.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>{format(new Date(log.timestamp), 'PPP p')}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.type}</Badge>
+                        </TableCell>
+                        <TableCell>{log.description || log.reason}</TableCell>
+                        <TableCell>{log.technician_name}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

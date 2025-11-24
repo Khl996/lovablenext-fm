@@ -22,7 +22,7 @@ import {
 import { LocationPicker, LocationValue } from '@/components/LocationPicker';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Upload, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -59,8 +59,11 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [availableParentAssets, setAvailableParentAssets] = useState<any[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     name_ar: '',
@@ -76,6 +79,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     installation_date: null as Date | null,
     warranty_expiry: null as Date | null,
     purchase_cost: '',
+    image_url: '',
   });
 
   const [location, setLocation] = useState<LocationValue>({
@@ -166,8 +170,10 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
           installation_date: asset.installation_date ? new Date(asset.installation_date) : null,
           warranty_expiry: (asset as any).warranty_expiry ? new Date((asset as any).warranty_expiry) : null,
           purchase_cost: (asset as any).purchase_cost?.toString() || '',
+          image_url: (asset as any).image_url || '',
         });
         setGeneratedCode(asset.code);
+        setImagePreview((asset as any).image_url || null);
         setLocation({
           hospitalId: asset.hospital_id,
           buildingId: asset.building_id || null,
@@ -192,7 +198,10 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
           installation_date: null,
           warranty_expiry: null,
           purchase_cost: '',
+          image_url: '',
         });
+        setImageFile(null);
+        setImagePreview(null);
         setLocation({
           hospitalId,
           buildingId: null,
@@ -211,6 +220,51 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     }
   }, [formData.category]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: '' });
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile || !hospitalId) return formData.image_url || null;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${hospitalId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('asset-images')
+        .upload(fileName, imageFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('asset-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -218,6 +272,13 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
 
     setLoading(true);
     try {
+      // Upload image first if there's a new one
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) imageUrl = uploadedUrl;
+      }
+
       const payload: any = {
         name: formData.name,
         name_ar: formData.name_ar,
@@ -238,6 +299,7 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
         installation_date: formData.installation_date ? format(formData.installation_date, 'yyyy-MM-dd') : null,
         warranty_expiry: formData.warranty_expiry ? format(formData.warranty_expiry, 'yyyy-MM-dd') : null,
         purchase_cost: formData.purchase_cost ? parseFloat(formData.purchase_cost) : null,
+        image_url: imageUrl || null,
       };
 
       if (asset) {
@@ -292,6 +354,54 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Image Upload */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">{language === 'ar' ? 'صورة الأصل' : 'Asset Image'}</h3>
+            <div className="flex items-center gap-4">
+              {imagePreview ? (
+                <div className="relative">
+                  <img 
+                    src={imagePreview} 
+                    alt="Asset preview" 
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2"
+                    onClick={handleImageRemove}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1">
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="border-2 border-dashed rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <p className="text-sm text-center">
+                      {language === 'ar' ? 'اضغط لاختيار صورة' : 'Click to select image'}
+                    </p>
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      {language === 'ar' ? 'PNG, JPG حتى 5MB' : 'PNG, JPG up to 5MB'}
+                    </p>
+                  </div>
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                </Label>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="font-semibold">{t('basicInformation')}</h3>
@@ -557,11 +667,20 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading || uploadingImage}>
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? t('loading') : t('save')}
+            <Button type="submit" disabled={loading || uploadingImage}>
+              {uploadingImage ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {language === 'ar' ? 'جاري رفع الصورة...' : 'Uploading image...'}
+                </>
+              ) : loading ? (
+                t('loading')
+              ) : (
+                t('save')
+              )}
             </Button>
           </div>
         </form>
