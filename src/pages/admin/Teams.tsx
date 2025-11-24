@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Search, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { Plus, Users, Search, Pencil, Trash2, UserPlus, Clock, AlertCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLookupTables, getLookupName } from '@/hooks/useLookupTables';
@@ -25,6 +25,8 @@ type Team = {
   status: string;
   hospital_id: string;
   created_at: string;
+  shift_start: string | null;
+  shift_end: string | null;
 };
 
 type TeamMember = {
@@ -67,7 +69,13 @@ export default function Teams() {
     department: '',
     type: 'internal',
     status: 'active',
+    shift_start: '',
+    shift_end: '',
   });
+
+  // Workload and leader tracking
+  const [teamWorkloads, setTeamWorkloads] = useState<Record<string, number>>({});
+  const [teamLeaders, setTeamLeaders] = useState<Record<string, { name: string; avatar?: string }>>({});
 
   // Team members state
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -93,6 +101,13 @@ export default function Teams() {
       setLoading(false);
     }
   }, [hospitalId]);
+
+  useEffect(() => {
+    if (teams.length > 0) {
+      loadTeamWorkloads();
+      loadTeamLeaders();
+    }
+  }, [teams]);
 
   useEffect(() => {
     if (selectedTeam) {
@@ -137,6 +152,62 @@ export default function Teams() {
       setSpecializations(data || []);
     } catch (error: any) {
       console.error('Error loading specializations:', error);
+    }
+  };
+
+  const loadTeamWorkloads = async () => {
+    try {
+      const workloads: Record<string, number> = {};
+      
+      for (const team of teams) {
+        const { count, error } = await supabase
+          .from('work_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('assigned_team', team.id)
+          .not('status', 'in', '(completed,cancelled,auto_closed)');
+
+        if (!error && count !== null) {
+          workloads[team.id] = count;
+        }
+      }
+      
+      setTeamWorkloads(workloads);
+    } catch (error: any) {
+      console.error('Error loading team workloads:', error);
+    }
+  };
+
+  const loadTeamLeaders = async () => {
+    try {
+      const leaders: Record<string, { name: string; avatar?: string }> = {};
+      
+      for (const team of teams) {
+        const { data: members, error } = await supabase
+          .from('team_members')
+          .select('user_id, role')
+          .eq('team_id', team.id)
+          .in('role', ['supervisor', 'leader']);
+
+        if (!error && members && members.length > 0) {
+          const leaderId = members[0].user_id;
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', leaderId)
+            .single();
+
+          if (profile) {
+            leaders[team.id] = {
+              name: profile.full_name,
+              avatar: profile.avatar_url || undefined
+            };
+          }
+        }
+      }
+      
+      setTeamLeaders(leaders);
+    } catch (error: any) {
+      console.error('Error loading team leaders:', error);
     }
   };
 
@@ -229,7 +300,7 @@ export default function Teams() {
       }
       setDialogOpen(false);
       setEditingTeam(null);
-      setFormData({ code: '', name: '', name_ar: '', department: '', type: 'internal', status: 'active' });
+      setFormData({ code: '', name: '', name_ar: '', department: '', type: 'internal', status: 'active', shift_start: '', shift_end: '' });
       loadTeams();
     } catch (error: any) {
       toast({
@@ -249,8 +320,25 @@ export default function Teams() {
       department: team.department || '',
       type: team.type,
       status: team.status,
+      shift_start: team.shift_start || '',
+      shift_end: team.shift_end || '',
     });
     setDialogOpen(true);
+  };
+
+  const getWorkloadBadgeVariant = (count: number): 'default' | 'secondary' | 'destructive' => {
+    if (count >= 10) return 'destructive';
+    if (count >= 5) return 'secondary';
+    return 'default';
+  };
+
+  const formatTime = (time: string | null) => {
+    if (!time) return null;
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   const handleDeleteClick = (team: Team) => {
@@ -491,15 +579,29 @@ export default function Teams() {
                     <p className="text-sm text-muted-foreground">{team.code}</p>
                   </div>
                 </div>
-                <Badge variant={team.status === 'active' ? 'default' : 'secondary'}>
-                  {team.status === 'active' 
-                    ? (language === 'ar' ? 'نشط' : 'Active') 
-                    : (language === 'ar' ? 'غير نشط' : 'Inactive')}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {teamWorkloads[team.id] !== undefined && (
+                    <Badge variant={getWorkloadBadgeVariant(teamWorkloads[team.id])} className="gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {teamWorkloads[team.id]}
+                    </Badge>
+                  )}
+                  <Badge variant={team.status === 'active' ? 'default' : 'secondary'}>
+                    {team.status === 'active' 
+                      ? (language === 'ar' ? 'نشط' : 'Active') 
+                      : (language === 'ar' ? 'غير نشط' : 'Inactive')}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
+                {teamLeaders[team.id] && (
+                  <div className="flex justify-between text-sm pb-2 border-b">
+                    <span className="text-muted-foreground">{language === 'ar' ? 'قائد الفريق' : 'Team Leader'}:</span>
+                    <span className="font-medium">{teamLeaders[team.id].name}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{language === 'ar' ? 'النوع' : 'Type'}:</span>
                   <span>{team.type === 'internal' ? (language === 'ar' ? 'داخلي' : 'Internal') : (language === 'ar' ? 'خارجي' : 'External')}</span>
@@ -508,6 +610,17 @@ export default function Teams() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{language === 'ar' ? 'القسم' : 'Department'}:</span>
                     <span>{team.department}</span>
+                  </div>
+                )}
+                {(team.shift_start || team.shift_end) && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {language === 'ar' ? 'الوردية' : 'Shift'}:
+                    </span>
+                    <span className="font-medium">
+                      {formatTime(team.shift_start)} - {formatTime(team.shift_end)}
+                    </span>
                   </div>
                 )}
                 {canManage && (
@@ -590,6 +703,24 @@ export default function Teams() {
                   <SelectItem value="inactive">{language === 'ar' ? 'غير نشط' : 'Inactive'}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'بداية الوردية' : 'Shift Start'}</Label>
+                <Input 
+                  type="time" 
+                  value={formData.shift_start} 
+                  onChange={(e) => setFormData({ ...formData, shift_start: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'نهاية الوردية' : 'Shift End'}</Label>
+                <Input 
+                  type="time" 
+                  value={formData.shift_end} 
+                  onChange={(e) => setFormData({ ...formData, shift_end: e.target.value })} 
+                />
+              </div>
             </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
