@@ -24,10 +24,11 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
   const { user, hospitalId, profile } = useCurrentUser();
   const { toast } = useToast();
 
-  const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_types']);
+  const { lookups, loading: lookupsLoading } = useLookupTables(['priorities']);
   const [issueTypeMappings, setIssueTypeMappings] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     issue_type: '',
@@ -234,10 +235,32 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
     }
 
     try {
+      setUploading(true);
       const code = await generateCode();
       
-      // TODO: Upload photos to storage first, then save URLs
-      // For now, we'll skip photos to avoid errors
+      // Upload photos to storage
+      const photoUrls: string[] = [];
+      if (attachments.length > 0) {
+        for (const file of attachments) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { error: uploadError, data } = await supabase.storage
+            .from('work-order-attachments')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            continue;
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('work-order-attachments')
+            .getPublicUrl(fileName);
+          
+          photoUrls.push(publicUrl);
+        }
+      }
       
       const { data: newWorkOrder, error } = await supabase.from('work_orders').insert([{
         code,
@@ -255,7 +278,7 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         room_id: formData.location.roomId || null,
         assigned_team: selectedTeam || null,
         company_id: formData.company_id || null,
-        photos: null,
+        photos: photoUrls.length > 0 ? photoUrls : null,
       }]).select().single();
 
       if (error) throw error;
@@ -300,6 +323,8 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
         description: error.message,
         variant: 'destructive',
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -347,38 +372,20 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {lookups.priorities?.map((priority) => (
-                    <SelectItem key={priority.code} value={priority.code}>
-                      {getLookupName(priority, language)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{language === 'ar' ? 'نوع العمل' : 'Work Type'}</Label>
-              <Select value={formData.urgency} onValueChange={(value) => setFormData({ ...formData, urgency: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={language === 'ar' ? 'اختر النوع' : 'Select type'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {lookups.work_types?.map((workType) => (
-                    <SelectItem key={workType.code} value={workType.code}>
-                      {getLookupName(workType, language)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>{language === 'ar' ? 'الأولوية' : 'Priority'}</Label>
+            <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder={language === 'ar' ? 'اختر الأولوية' : 'Select priority'} />
+              </SelectTrigger>
+              <SelectContent>
+                {lookups.priorities?.map((priority) => (
+                  <SelectItem key={priority.code} value={priority.code}>
+                    {getLookupName(priority, language)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -526,10 +533,19 @@ export function WorkOrderFormDialog({ open, onOpenChange, onSuccess }: WorkOrder
           </div>
 
           <div className="flex gap-2 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={uploading}>
               {language === 'ar' ? 'إلغاء' : 'Cancel'}
             </Button>
-            <Button type="submit">{language === 'ar' ? 'إرسال البلاغ' : 'Submit Report'}</Button>
+            <Button type="submit" disabled={uploading}>
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  {language === 'ar' ? 'جاري الرفع...' : 'Uploading...'}
+                </>
+              ) : (
+                language === 'ar' ? 'إرسال البلاغ' : 'Submit Report'
+              )}
+            </Button>
           </div>
         </form>
       </DialogContent>
