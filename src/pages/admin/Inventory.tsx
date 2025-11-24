@@ -24,11 +24,22 @@ import {
   Edit,
   History,
   FileSpreadsheet,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { InventoryItemDialog } from '@/components/inventory/InventoryItemDialog';
 import { InventoryTransactionDialog } from '@/components/inventory/InventoryTransactionDialog';
 import { InventoryTransactionHistoryDialog } from '@/components/inventory/InventoryTransactionHistoryDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];
@@ -43,6 +54,8 @@ export default function Inventory() {
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const canView = permissions.hasPermission('inventory.view', hospitalId);
   const canManage = permissions.hasPermission('inventory.manage', hospitalId);
@@ -92,6 +105,34 @@ export default function Inventory() {
   const handleShowHistory = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsHistoryDialogOpen(true);
+  };
+
+  const handleDeleteClick = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedItem) return;
+
+    try {
+      setDeleting(true);
+      const { error } = await supabase
+        .from('inventory_items')
+        .update({ is_active: false })
+        .eq('id', selectedItem.id);
+
+      if (error) throw error;
+
+      toast.success(language === 'ar' ? 'تم حذف الصنف بنجاح' : 'Item deleted successfully');
+      setIsDeleteDialogOpen(false);
+      loadItems();
+    } catch (error: any) {
+      console.error('Error deleting item:', error);
+      toast.error(language === 'ar' ? 'فشل حذف الصنف' : 'Failed to delete item');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleExport = () => {
@@ -403,14 +444,34 @@ export default function Inventory() {
                               </Button>
                             )}
                             {canManage && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditItem(item)}
-                                title={language === 'ar' ? 'تعديل' : 'Edit'}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditItem(item)}
+                                  title={language === 'ar' ? 'تعديل' : 'Edit'}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(item)}
+                                  disabled={item.current_quantity !== 0}
+                                  title={
+                                    item.current_quantity !== 0
+                                      ? language === 'ar'
+                                        ? 'لا يمكن الحذف - المخزون ليس صفراً'
+                                        : 'Cannot delete - Stock is not zero'
+                                      : language === 'ar'
+                                      ? 'حذف'
+                                      : 'Delete'
+                                  }
+                                  className="text-destructive hover:text-destructive disabled:opacity-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -450,6 +511,36 @@ export default function Inventory() {
           item={selectedItem}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Deletion'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === 'ar'
+                ? `هل أنت متأكد من حذف الصنف "${selectedItem?.name_ar}"؟ لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to delete item "${selectedItem?.name}"? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting
+                ? language === 'ar' ? 'جاري الحذف...' : 'Deleting...'
+                : language === 'ar' ? 'حذف' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
