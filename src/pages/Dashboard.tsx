@@ -22,6 +22,9 @@ import { WorkOrdersChart } from '@/components/dashboard/WorkOrdersChart';
 import { InventoryStatusChart } from '@/components/dashboard/InventoryStatusChart';
 import { TeamPerformanceCard } from '@/components/dashboard/TeamPerformanceCard';
 import { RecentAlertsCard } from '@/components/dashboard/RecentAlertsCard';
+import { FacilityHealthOverview } from '@/components/dashboard/FacilityHealthOverview';
+import { AssetAvailabilityChart } from '@/components/dashboard/AssetAvailabilityChart';
+import { FinancialSnapshot } from '@/components/dashboard/FinancialSnapshot';
 
 interface DashboardStats {
   activeWorkOrders: number;
@@ -319,16 +322,32 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Executive Dashboard - Big Picture Widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Facility Health Overview */}
+          <div className="lg:col-span-2">
+            <FacilityHealthOverview />
+          </div>
+          
+          {/* Financial Snapshot */}
+          <FinancialSnapshot />
+        </div>
+
+        {/* Asset Availability & Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AssetAvailabilityChart />
+          <RecentAlertsCard />
+        </div>
+
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <WorkOrdersChart />
           <InventoryStatusChart />
         </div>
 
-        {/* Performance & Alerts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Performance Section */}
+        <div className="grid grid-cols-1 gap-6">
           <TeamPerformanceCard />
-          <RecentAlertsCard />
         </div>
 
         {/* Quick Access Modules */}
