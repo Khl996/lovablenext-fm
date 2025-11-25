@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { usePermissions, type UserPermissionsInfo } from './usePermissions';
+import { getUserRoleConfig, type RoleConfig } from '@/lib/rolePermissions';
 
 type Profile = {
   id: string;
@@ -46,6 +47,7 @@ export type CurrentUserInfo = {
   canManageUsers: boolean;
   canManageHospitals: boolean;
   permissions: UserPermissionsInfo;
+  roleConfig: RoleConfig | null;
   refetch: () => Promise<void>;
 };
 
@@ -164,6 +166,10 @@ export function useCurrentUser(): CurrentUserInfo {
   const customRoleCodes = customRoles.map(r => r.role_code);
   const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes);
 
+  // Get role configuration
+  const allRoleCodes = [...userRoleNames, ...customRoleCodes];
+  const roleConfig = getUserRoleConfig(allRoleCodes);
+
   return {
     user,
     profile,
@@ -179,6 +185,7 @@ export function useCurrentUser(): CurrentUserInfo {
     canManageUsers,
     canManageHospitals,
     permissions,
+    roleConfig,
     refetch: loadUserData,
   };
 }

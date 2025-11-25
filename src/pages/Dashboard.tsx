@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import { RecentAlertsCard } from '@/components/dashboard/RecentAlertsCard';
 import { FacilityHealthOverview } from '@/components/dashboard/FacilityHealthOverview';
 import { AssetAvailabilityChart } from '@/components/dashboard/AssetAvailabilityChart';
 import { FinancialSnapshot } from '@/components/dashboard/FinancialSnapshot';
+import { SimpleDashboard } from '@/components/dashboard/SimpleDashboard';
 
 interface DashboardStats {
   activeWorkOrders: number;
@@ -42,6 +44,7 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { language, setLanguage, t, direction } = useLanguage();
   const { isInstalled, isInstallable, installPWA } = usePWAInstall();
+  const { roleConfig, loading: userLoading } = useCurrentUser();
   const [stats, setStats] = useState<DashboardStats>({
     activeWorkOrders: 0,
     completedWorkOrders: 0,
@@ -162,7 +165,7 @@ export default function Dashboard() {
     navigate('/auth');
   };
 
-  if (loading || !user) {
+  if (loading || userLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -171,6 +174,16 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  // Redirect reporters to simple dashboard
+  if (roleConfig?.dashboardView === 'reporter') {
+    return <SimpleDashboard userId={user.id} viewType="own" />;
+  }
+
+  // Show simple dashboard for technicians
+  if (roleConfig?.dashboardView === 'technician') {
+    return <SimpleDashboard userId={user.id} viewType="team" />;
   }
 
   return (

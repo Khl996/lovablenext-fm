@@ -29,7 +29,7 @@ type WorkOrderActionsProps = {
 
 export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActionsProps) {
   const { language } = useLanguage();
-  const { user, permissions, roles, customRoles } = useCurrentUser();
+  const { user, permissions, roles, customRoles, roleConfig } = useCurrentUser();
   
   const [notes, setNotes] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -103,38 +103,34 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     checkTeamMembership();
   }, [user?.id, workOrder.assigned_team]);
 
-  // Determine what actions are available based on state machine
+  // Determine what actions are available using roleConfig
   const status = workOrder.status;
 
-  // Use centralized state machine capabilities, with extra check that
-  // technician actions are only visible to team members
-  const canStartWork = isTeamMember && (state?.can.start ?? false);
-
-  const canCompleteWork = isTeamMember && (state?.can.complete ?? false);
-
-  const canApproveAsSupervisor = state?.can.approve ?? false;
-
-  const canReviewAsEngineer = state?.can.review ?? false;
-
-  const canCloseAsReporter = state?.can.close ?? false;
+  // Check roleConfig permissions
+  const canStartWork = roleConfig?.modules.workOrders.startWork && isTeamMember && (state?.can.start ?? false);
+  const canCompleteWork = roleConfig?.modules.workOrders.completeWork && isTeamMember && (state?.can.complete ?? false);
+  const canApproveAsSupervisor = roleConfig?.modules.workOrders.approve && (state?.can.approve ?? false);
+  const canReviewAsEngineer = roleConfig?.modules.workOrders.reviewAsEngineer && (state?.can.review ?? false);
+  const canCloseAsReporter = isReporter && (state?.can.close ?? false);
 
   const canFinalApprove =
+    roleConfig?.modules.workOrders.finalApprove &&
     permissions.hasPermission('work_orders.final_approve') &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject = isTeamMember && (state?.can.reject ?? false);
+  const canReject = roleConfig?.modules.workOrders.reject && isTeamMember && (state?.can.reject ?? false);
 
-  const canReassign = state?.can.reassign ?? (
+  const canReassign = roleConfig?.modules.workOrders.reassign && (state?.can.reassign ?? (
     permissions.hasPermission('work_orders.approve') ||
     permissions.hasPermission('work_orders.manage')
-  );
+  ));
 
-  const canAddUpdate = state?.can.update ?? (
+  const canAddUpdate = roleConfig?.modules.workOrders.update && (state?.can.update ?? (
     isTeamMember &&
     workOrder.assigned_team &&
     (status === 'assigned' || status === 'pending' || status === 'in_progress')
-  );
+  ));
 
   // Debug logging
   console.log('🎯 Action permissions:', {
