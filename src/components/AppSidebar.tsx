@@ -72,27 +72,52 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { permissions, loading } = useCurrentUser();
+  const { permissions, loading, roleConfig } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
 
-  // Filter main items based on permissions
+  // Filter main items based on roleConfig
   const visibleMainItems = mainItems.filter(item => {
-    if (item.permission) {
-      return permissions.hasPermission(item.permission as any);
+    if (!roleConfig) return false;
+
+    // Check module access
+    if (item.url.includes('/facilities')) {
+      return roleConfig.modules.facilities.view;
     }
+    if (item.url.includes('/assets')) {
+      return roleConfig.modules.assets.view;
+    }
+    if (item.url.includes('/inventory')) {
+      return roleConfig.modules.inventory.view;
+    }
+    if (item.url.includes('/work-orders')) {
+      return roleConfig.modules.workOrders.view !== 'own' || true; // All can see work orders, filtered by content
+    }
+    if (item.url.includes('/maintenance')) {
+      return roleConfig.modules.maintenance.view;
+    }
+    if (item.url.includes('/teams')) {
+      return roleConfig.modules.teams.view;
+    }
+    if (item.url.includes('/operations-log')) {
+      return roleConfig.modules.operationsLog.view;
+    }
+
+    // Dashboard and Settings are visible to all
     return true;
   });
 
-  // Filter admin items based on permissions
-  const visibleAdminItems = adminItems.filter(item => {
-    if (item.permission) {
-      return permissions.hasPermission(item.permission as any);
-    }
-    return true; // items without permission (like settings) are visible to all
-  });
+  // Filter admin items based on roleConfig
+  const visibleAdminItems = roleConfig?.canAccessAdmin
+    ? adminItems.filter(item => {
+        if (item.permission) {
+          return permissions.hasPermission(item.permission as any);
+        }
+        return true;
+      })
+    : [];
 
   if (loading) {
     return (
