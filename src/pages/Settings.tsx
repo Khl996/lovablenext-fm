@@ -17,20 +17,9 @@ export default function Settings() {
   const { permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
   const navigate = useNavigate();
 
-  // Check if user has permission to access settings
-  useEffect(() => {
-    // Don't check permissions while still loading
-    if (loading || permissions.loading) return;
-    
-    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
-      toast.error(
-        language === 'ar'
-          ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة'
-          : 'You do not have permission to access this page'
-      );
-      navigate('/dashboard');
-    }
-  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, loading, navigate, language]);
+  // Determine access level
+  const hasFullAccess = isGlobalAdmin || isHospitalAdmin || isFacilityManager;
+  const hasLimitedAccess = !hasFullAccess; // Profile & Language only
 
   const [generalSettings, setGeneralSettings] = useState({
     systemName: 'FMS',
@@ -124,28 +113,41 @@ export default function Settings() {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
-          <TabsTrigger value="general">
+      <Tabs defaultValue={hasLimitedAccess ? "profile" : "general"} className="space-y-6">
+        <TabsList className={hasFullAccess ? "grid w-full grid-cols-4 lg:w-auto" : "grid w-full grid-cols-2 lg:w-auto"}>
+          {hasFullAccess && (
+            <>
+              <TabsTrigger value="general">
+                <SettingsIcon className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'عام' : 'General'}
+              </TabsTrigger>
+              <TabsTrigger value="facility">
+                <Building2 className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'المنشأة' : 'Facility'}
+              </TabsTrigger>
+              <TabsTrigger value="branding">
+                <Palette className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'الهوية' : 'Branding'}
+              </TabsTrigger>
+              <TabsTrigger value="notifications">
+                <Bell className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'الإشعارات' : 'Notifications'}
+              </TabsTrigger>
+            </>
+          )}
+          <TabsTrigger value="profile">
+            <Users className="h-4 w-4 mr-2" />
+            {language === 'ar' ? 'الملف الشخصي' : 'Profile'}
+          </TabsTrigger>
+          <TabsTrigger value="language">
             <SettingsIcon className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'عام' : 'General'}
-          </TabsTrigger>
-          <TabsTrigger value="facility">
-            <Building2 className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'المنشأة' : 'Facility'}
-          </TabsTrigger>
-          <TabsTrigger value="branding">
-            <Palette className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'الهوية' : 'Branding'}
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 mr-2" />
-            {language === 'ar' ? 'الإشعارات' : 'Notifications'}
+            {language === 'ar' ? 'اللغة' : 'Language'}
           </TabsTrigger>
         </TabsList>
 
-        {/* General Settings */}
-        <TabsContent value="general">
+        {/* General Settings - Full Access Only */}
+        {hasFullAccess && (
+          <TabsContent value="general">
           <Card>
             <CardHeader>
               <CardTitle>{language === 'ar' ? 'الإعدادات العامة' : 'General Settings'}</CardTitle>
@@ -230,9 +232,11 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
-        {/* Facility Info */}
-        <TabsContent value="facility">
+        {/* Facility Info - Full Access Only */}
+        {hasFullAccess && (
+          <TabsContent value="facility">
           <Card>
             <CardHeader>
               <CardTitle>{language === 'ar' ? 'بيانات المنشأة' : 'Facility Information'}</CardTitle>
@@ -301,9 +305,11 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
-        {/* Branding */}
-        <TabsContent value="branding">
+        {/* Branding - Full Access Only */}
+        {hasFullAccess && (
+          <TabsContent value="branding">
           <Card>
             <CardHeader>
               <CardTitle>{language === 'ar' ? 'الهوية البصرية' : 'Visual Branding'}</CardTitle>
@@ -363,9 +369,11 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
-        {/* Notifications */}
-        <TabsContent value="notifications">
+        {/* Notifications - Full Access Only */}
+        {hasFullAccess && (
+          <TabsContent value="notifications">
           <Card>
             <CardHeader>
               <CardTitle>{language === 'ar' ? 'إعدادات الإشعارات' : 'Notification Settings'}</CardTitle>
@@ -475,6 +483,42 @@ export default function Settings() {
               <Button onClick={handleSaveNotifications}>
                 {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        )}
+
+        {/* Profile Tab - Available to All */}
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>{language === 'ar' ? 'الملف الشخصي' : 'Profile'}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'إدارة معلومات حسابك الشخصي' : 'Manage your personal account information'}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                {language === 'ar' 
+                  ? 'يمكنك تحديث معلومات ملفك الشخصي من صفحة المستخدمين' 
+                  : 'You can update your profile information from the Users page'}
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Language Tab - Available to All */}
+        <TabsContent value="language">
+          <Card>
+            <CardHeader>
+              <CardTitle>{language === 'ar' ? 'تفضيلات اللغة' : 'Language Preferences'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {language === 'ar' 
+                  ? 'يمكنك تغيير اللغة من شريط التطبيق العلوي' 
+                  : 'You can change the language from the top app bar'}
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
