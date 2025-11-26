@@ -38,6 +38,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [rejectStage, setRejectStage] = useState('');
   const [isTeamMember, setIsTeamMember] = useState(false);
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
+  const [isAssignedToBuilding, setIsAssignedToBuilding] = useState(false);
 
   // Get user roles for state machine - extract actual user roles
   const baseUserRoles: string[] = [
@@ -103,13 +104,31 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     checkTeamMembership();
   }, [user?.id, workOrder.assigned_team]);
 
+  // Check if user is assigned to the building
+  useEffect(() => {
+    const checkBuildingAssignment = async () => {
+      if (!workOrder.building_id || !user?.id) return;
+      
+      const { data } = await supabase
+        .from('supervisor_buildings')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('building_id', workOrder.building_id)
+        .maybeSingle();
+      
+      setIsAssignedToBuilding(!!data);
+    };
+
+    checkBuildingAssignment();
+  }, [workOrder.building_id, user?.id]);
+
   // Determine what actions are available using roleConfig
   const status = workOrder.status;
 
   // Check roleConfig permissions
   const canStartWork = roleConfig?.modules.workOrders.startWork && isTeamMember && (state?.can.start ?? false);
   const canCompleteWork = roleConfig?.modules.workOrders.completeWork && isTeamMember && (state?.can.complete ?? false);
-  const canApproveAsSupervisor = roleConfig?.modules.workOrders.approve && (state?.can.approve ?? false);
+  const canApproveAsSupervisor = roleConfig?.modules.workOrders.approve && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
   const canReviewAsEngineer = roleConfig?.modules.workOrders.reviewAsEngineer && (state?.can.review ?? false);
   const canCloseAsReporter = isReporter && (state?.can.close ?? false);
 
