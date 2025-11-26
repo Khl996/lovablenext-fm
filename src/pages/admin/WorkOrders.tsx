@@ -96,10 +96,28 @@ export default function WorkOrders() {
   const loadWorkOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Get current user for supervisor filtering
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // Check if user is a supervisor with building assignments
+      const { data: assignedBuildings } = await supabase
+        .from('supervisor_buildings')
+        .select('building_id')
+        .eq('user_id', currentUser?.id || '');
+
+      let query = supabase
         .from('work_orders')
         .select('*')
         .order('reported_at', { ascending: false });
+
+      // If supervisor with assigned buildings, filter by those buildings
+      if (assignedBuildings && assignedBuildings.length > 0) {
+        const buildingIds = assignedBuildings.map(b => b.building_id);
+        query = query.in('building_id', buildingIds);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setWorkOrders(data || []);

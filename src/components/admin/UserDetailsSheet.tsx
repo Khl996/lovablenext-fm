@@ -78,10 +78,15 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     phone: '',
     hospital_id: '',
   });
+  const [buildings, setBuildings] = useState<any[]>([]);
+  const [assignedBuildings, setAssignedBuildings] = useState<string[]>([]);
 
   useEffect(() => {
     loadSystemRoles();
-  }, []);
+    if (currentUser.hospitalId) {
+      loadBuildings();
+    }
+  }, [currentUser.hospitalId]);
 
   useEffect(() => {
     if (user) {
@@ -91,6 +96,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
         phone: user.phone || '',
         hospital_id: user.hospital_id || '',
       });
+      loadAssignedBuildings();
     }
   }, [user]);
 
@@ -106,6 +112,36 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
       setSystemRoles(data || []);
     } catch (error) {
       console.error('Error loading system roles:', error);
+    }
+  };
+
+  const loadBuildings = async () => {
+    if (!currentUser.hospitalId) return;
+    try {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name, name_ar')
+        .eq('hospital_id', currentUser.hospitalId);
+      
+      if (error) throw error;
+      setBuildings(data || []);
+    } catch (error) {
+      console.error('Error loading buildings:', error);
+    }
+  };
+
+  const loadAssignedBuildings = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('supervisor_buildings')
+        .select('building_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      setAssignedBuildings(data?.map(b => b.building_id) || []);
+    } catch (error) {
+      console.error('Error loading assigned buildings:', error);
     }
   };
 
@@ -180,6 +216,34 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Update supervisor buildings if user is supervisor or facility manager
+      const isSupervisorRole = user.roles?.some(r => 
+        r.role === 'supervisor' || r.role === 'facility_manager'
+      );
+
+      if (isSupervisorRole && currentUser.hospitalId) {
+        // Delete existing assignments
+        await supabase
+          .from('supervisor_buildings')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Insert new assignments
+        if (assignedBuildings.length > 0) {
+          const assignments = assignedBuildings.map(buildingId => ({
+            user_id: user.id,
+            building_id: buildingId,
+            hospital_id: currentUser.hospitalId,
+          }));
+
+          const { error: assignError } = await supabase
+            .from('supervisor_buildings')
+            .insert(assignments);
+
+          if (assignError) throw assignError;
+        }
+      }
 
       toast.success(t('profileUpdated'));
       setIsEditingProfile(false);
@@ -336,14 +400,70 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                         <Label className="text-muted-foreground">{t('hospital')}</Label>
                         <p className="font-medium">{user.hospital_name}</p>
                       </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                     )}
+                   </>
+                 )}
+               </CardContent>
+             </Card>
 
-            {/* Roles Section */}
-            <Card>
+             {/* Building Assignments Section - Only for Supervisors and Facility Managers */}
+             {(user.roles?.some(r => 
+               r.role === 'supervisor' || r.role === 'facility_manager'
+             )) && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="text-lg">
+                     {language === 'ar' ? 'المباني المُكلف بها' : 'Assigned Buildings'}
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-3">
+                     {buildings.length === 0 ? (
+                       <p className="text-sm text-muted-foreground">
+                         {language === 'ar' ? 'لا توجد مباني متاحة' : 'No buildings available'}
+                       </p>
+                     ) : (
+                       buildings.map((building) => (
+                         <div key={building.id} className="flex items-center space-x-2 rtl:space-x-reverse">
+                           <input
+                             type="checkbox"
+                             id={`building-${building.id}`}
+                             checked={assignedBuildings.includes(building.id)}
+                             onChange={(e) => {
+                               if (isEditingProfile) {
+                                 if (e.target.checked) {
+                                   setAssignedBuildings([...assignedBuildings, building.id]);
+                                 } else {
+                                   setAssignedBuildings(assignedBuildings.filter(id => id !== building.id));
+                                 }
+                               }
+                             }}
+                             disabled={!isEditingProfile}
+                             className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
+                           />
+                           <label 
+                             htmlFor={`building-${building.id}`} 
+                             className={`text-sm ${!isEditingProfile ? 'opacity-70' : 'cursor-pointer'}`}
+                           >
+                             {language === 'ar' ? building.name_ar : building.name}
+                           </label>
+                         </div>
+                       ))
+                     )}
+                     {isEditingProfile && buildings.length > 0 && (
+                       <p className="text-xs text-muted-foreground mt-2">
+                         {language === 'ar' 
+                           ? 'اختر المباني التي يمكن للمشرف إدارة أوامر العمل فيها'
+                           : 'Select buildings where the supervisor can manage work orders'}
+                       </p>
+                     )}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+
+             {/* Roles Section */}
+             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <CardTitle className="text-lg">{t('roles')}</CardTitle>
               </CardHeader>

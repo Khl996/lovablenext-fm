@@ -2197,21 +2197,27 @@ export type Database = {
       supervisor_buildings: {
         Row: {
           building_id: string
-          created_at: string
+          created_at: string | null
+          hospital_id: string
           id: string
-          supervisor_id: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           building_id: string
-          created_at?: string
+          created_at?: string | null
+          hospital_id: string
           id?: string
-          supervisor_id: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           building_id?: string
-          created_at?: string
+          created_at?: string | null
+          hospital_id?: string
           id?: string
-          supervisor_id?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2219,6 +2225,13 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_buildings_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
             referencedColumns: ["id"]
           },
         ]
@@ -2830,6 +2843,10 @@ export type Database = {
       }
       has_role_by_code: {
         Args: { _role_code: string; _user_id: string }
+        Returns: boolean
+      }
+      is_assigned_to_building: {
+        Args: { _building_id: string; _user_id: string }
         Returns: boolean
       }
       is_team_member: {
