@@ -125,27 +125,27 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Determine what actions are available using roleConfig
   const status = workOrder.status;
 
-  // Check roleConfig permissions
-  const canStartWork = roleConfig?.modules.workOrders.startWork && isTeamMember && (state?.can.start ?? false);
-  const canCompleteWork = roleConfig?.modules.workOrders.completeWork && isTeamMember && (state?.can.complete ?? false);
-  const canApproveAsSupervisor = roleConfig?.modules.workOrders.approve && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
-  const canReviewAsEngineer = roleConfig?.modules.workOrders.reviewAsEngineer && (state?.can.review ?? false);
+  // Check roleConfig permissions - ensure all values are boolean
+  const canStartWork = !!(roleConfig?.modules.workOrders.startWork) && isTeamMember && (state?.can.start ?? false);
+  const canCompleteWork = !!(roleConfig?.modules.workOrders.completeWork) && isTeamMember && (state?.can.complete ?? false);
+  const canApproveAsSupervisor = !!(roleConfig?.modules.workOrders.approve) && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
+  const canReviewAsEngineer = !!(roleConfig?.modules.workOrders.reviewAsEngineer) && (state?.can.review ?? false);
   const canCloseAsReporter = isReporter && (state?.can.close ?? false);
 
   const canFinalApprove =
-    roleConfig?.modules.workOrders.finalApprove &&
+    !!(roleConfig?.modules.workOrders.finalApprove) &&
     permissions.hasPermission('work_orders.final_approve') &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject = roleConfig?.modules.workOrders.reject && isTeamMember && (state?.can.reject ?? false);
+  const canReject = !!(roleConfig?.modules.workOrders.reject) && isTeamMember && (state?.can.reject ?? false);
 
-  const canReassign = roleConfig?.modules.workOrders.reassign && (state?.can.reassign ?? (
+  const canReassign = !!(roleConfig?.modules.workOrders.reassign) && (state?.can.reassign ?? (
     permissions.hasPermission('work_orders.approve') ||
     permissions.hasPermission('work_orders.manage')
   ));
 
-  const canAddUpdate = roleConfig?.modules.workOrders.update && (state?.can.update ?? (
+  const canAddUpdate = !!(roleConfig?.modules.workOrders.update) && (state?.can.update ?? (
     isTeamMember &&
     workOrder.assigned_team &&
     (status === 'assigned' || status === 'pending' || status === 'in_progress')
