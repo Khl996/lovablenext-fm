@@ -38,7 +38,19 @@ export interface WorkOrderTransition {
  * Valid state transitions for work orders
  */
 export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
-  // Technician starts work
+  // Technician starts work (initial status pending or assigned)
+  {
+    from: 'pending',
+    to: 'in_progress',
+    action: 'start_work',
+    requiredRole: ['technician', 'senior_technician'],
+    validation: (wo) => {
+      if (wo.start_time) {
+        return { valid: false, error: 'Work already started' };
+      }
+      return { valid: true };
+    },
+  },
   {
     from: 'assigned',
     to: 'in_progress',
