@@ -14,11 +14,11 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { language } = useLanguage();
-  const { permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
+  const { roleConfig, loading } = useCurrentUser();
   const navigate = useNavigate();
 
-  // Determine access level
-  const hasFullAccess = isGlobalAdmin || isHospitalAdmin || isFacilityManager;
+  // Settings are now exclusive to Global Admin only
+  const hasFullAccess = roleConfig && roleConfig.code === 'global_admin';
   const hasLimitedAccess = !hasFullAccess; // Profile & Language only
 
   const [generalSettings, setGeneralSettings] = useState({

@@ -52,7 +52,7 @@ const mainItems = [
   // { title: 'sla', titleAr: 'SLA', url: '/admin/sla', icon: Timer, permission: 'manage_users' },
   // { title: 'calibration', titleAr: 'المعايرة', url: '/admin/calibration', icon: Gauge, permission: 'manage_users' },
   { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound, permission: 'view_teams' },
-  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
+  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings, permission: 'manage_users' },
 ];
 
 const adminItems = [
