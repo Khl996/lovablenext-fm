@@ -77,26 +77,18 @@ export default function Maintenance() {
   useEffect(() => {
     if (userLoading) return;
 
-    console.log('[Maintenance] userLoading:', userLoading);
-    console.log('[Maintenance] hospitalId:', hospitalId);
-    console.log('[Maintenance] roles:', roles);
-    console.log('[Maintenance] customRoles:', customRoles);
-    console.log('[Maintenance] permissions loaded:', permissions.allPermissions);
-
-    // Temporarily allow all authenticated users who can reach this page
-    // Access to specific actions is still controlled elsewhere via permissions
-  }, [
-    userLoading,
-    hospitalId,
-    isFacilityManager,
-    isHospitalAdmin,
-    permissions,
-    navigate,
-    toast,
-    language,
-    roles,
-    customRoles,
-  ]);
+    // Allow all users who have hospital_id and can navigate to this page
+    // Page content is controlled by roleConfig permissions
+    if (!hospitalId) {
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: language === 'ar' 
+          ? 'لا يوجد مستشفى مرتبط بحسابك' 
+          : 'No hospital linked to your account',
+        variant: 'destructive',
+      });
+    }
+  }, [userLoading, hospitalId, toast, language]);
 
   useEffect(() => {
     if (hospitalId && !userLoading) {
