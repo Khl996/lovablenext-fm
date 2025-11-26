@@ -125,31 +125,27 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Determine what actions are available using roleConfig
   const status = workOrder.status;
 
-  // Check roleConfig permissions with fallback for team members without explicit roles
-  // If roleConfig is null but user is team member, allow basic technician actions
-  const hasRoleConfig = roleConfig !== null;
-  const allowBasicActions = !hasRoleConfig && isTeamMember;
-
-  const canStartWork = (hasRoleConfig ? !!(roleConfig.modules.workOrders.startWork) : allowBasicActions) && isTeamMember && (state?.can.start ?? false);
-  const canCompleteWork = (hasRoleConfig ? !!(roleConfig.modules.workOrders.completeWork) : allowBasicActions) && isTeamMember && (state?.can.complete ?? false);
-  const canApproveAsSupervisor = (hasRoleConfig ? !!(roleConfig.modules.workOrders.approve) : false) && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
-  const canReviewAsEngineer = (hasRoleConfig ? !!(roleConfig.modules.workOrders.reviewAsEngineer) : false) && (state?.can.review ?? false);
+  // Check roleConfig permissions - strictly per roleConfig only
+  const canStartWork = !!(roleConfig?.modules.workOrders.startWork) && isTeamMember && (state?.can.start ?? false);
+  const canCompleteWork = !!(roleConfig?.modules.workOrders.completeWork) && isTeamMember && (state?.can.complete ?? false);
+  const canApproveAsSupervisor = !!(roleConfig?.modules.workOrders.approve) && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
+  const canReviewAsEngineer = !!(roleConfig?.modules.workOrders.reviewAsEngineer) && (state?.can.review ?? false);
   const canCloseAsReporter = isReporter && (state?.can.close ?? false);
 
   const canFinalApprove =
-    (hasRoleConfig ? !!(roleConfig.modules.workOrders.finalApprove) : false) &&
+    !!(roleConfig?.modules.workOrders.finalApprove) &&
     permissions.hasPermission('work_orders.final_approve') &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
-  const canReject = (hasRoleConfig ? !!(roleConfig.modules.workOrders.reject) : allowBasicActions) && isTeamMember && (state?.can.reject ?? false);
+  const canReject = !!(roleConfig?.modules.workOrders.reject) && isTeamMember && (state?.can.reject ?? false);
 
-  const canReassign = (hasRoleConfig ? !!(roleConfig.modules.workOrders.reassign) : false) && (state?.can.reassign ?? (
+  const canReassign = !!(roleConfig?.modules.workOrders.reassign) && (state?.can.reassign ?? (
     permissions.hasPermission('work_orders.approve') ||
     permissions.hasPermission('work_orders.manage')
   ));
 
-  const canAddUpdate = (hasRoleConfig ? !!(roleConfig.modules.workOrders.update) : allowBasicActions) && (state?.can.update ?? (
+  const canAddUpdate = !!(roleConfig?.modules.workOrders.update) && (state?.can.update ?? (
     isTeamMember &&
     workOrder.assigned_team &&
     (status === 'assigned' || status === 'pending' || status === 'in_progress')
