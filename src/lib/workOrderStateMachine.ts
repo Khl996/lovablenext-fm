@@ -105,7 +105,7 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
     from: 'pending_engineer_review',
     to: 'pending_reporter_closure',
     action: 'engineer_review',
-    requiredRole: ['maintenance_manager', 'facility_manager', 'hospital_admin'],
+    requiredRole: ['engineer', 'maintenance_manager', 'facility_manager', 'hospital_admin'],
     requiredFields: ['engineer_notes'],
     validation: (wo) => {
       if (!wo.supervisor_approved_at) {
@@ -155,7 +155,7 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
     from: 'pending_engineer_review',
     to: 'pending_supervisor_approval',
     action: 'reject_engineer',
-    requiredRole: ['maintenance_manager', 'facility_manager', 'hospital_admin'],
+    requiredRole: ['engineer', 'maintenance_manager', 'facility_manager', 'hospital_admin'],
     requiredFields: ['rejection_reason'],
   },
 ];
@@ -231,9 +231,9 @@ export function getWorkOrderState(
     }
   });
 
-  // Reassign and update are available for managers and supervisors
+  // Reassign and update are available for managers (including engineers)
   const isManager = userRoles.some((role) =>
-    ['supervisor', 'facility_manager', 'hospital_admin', 'maintenance_manager'].includes(role)
+    ['engineer', 'supervisor', 'facility_manager', 'hospital_admin', 'maintenance_manager'].includes(role)
   );
   
   if (isManager) {
