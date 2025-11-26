@@ -73,8 +73,8 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     dashboardView: 'executive',
     canAccessAdmin: true,
     modules: {
-      facilities: { view: true, manage: true },
-      assets: { view: true, manage: true, export: true },
+      facilities: { view: true, manage: false },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'all',
         create: true,
@@ -87,10 +87,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: true,
         update: true,
       },
-      inventory: { view: true, manage: true, transactions: true, reports: true },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
       maintenance: { view: true, manage: true },
-      teams: { view: true, manage: true },
-      operationsLog: { view: true, create: false },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
@@ -99,8 +99,8 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     dashboardView: 'manager',
     canAccessAdmin: true,
     modules: {
-      facilities: { view: true, manage: true },
-      assets: { view: true, manage: true, export: true },
+      facilities: { view: true, manage: false },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'all',
         create: true,
@@ -113,10 +113,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: true,
         update: true,
       },
-      inventory: { view: true, manage: true, transactions: true, reports: true },
-      maintenance: { view: true, manage: true },
-      teams: { view: true, manage: true },
-      operationsLog: { view: true, create: false },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
+      maintenance: { view: true, manage: false },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
@@ -126,7 +126,7 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     canAccessAdmin: true,
     modules: {
       facilities: { view: true, manage: false },
-      assets: { view: true, manage: true, export: true },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'all',
         create: true,
@@ -139,10 +139,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: true,
         update: true,
       },
-      inventory: { view: true, manage: true, transactions: true, reports: true },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
       maintenance: { view: true, manage: true },
-      teams: { view: true, manage: true },
-      operationsLog: { view: true, create: true },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
@@ -152,7 +152,7 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     canAccessAdmin: true,
     modules: {
       facilities: { view: true, manage: false },
-      assets: { view: true, manage: true, export: true },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'all',
         create: true,
@@ -165,10 +165,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: true,
         update: true,
       },
-      inventory: { view: true, manage: false, transactions: true, reports: true },
-      maintenance: { view: true, manage: true },
-      teams: { view: true, manage: false },
-      operationsLog: { view: true, create: true },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
+      maintenance: { view: true, manage: false },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
@@ -178,7 +178,7 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     canAccessAdmin: true,
     modules: {
       facilities: { view: true, manage: false },
-      assets: { view: true, manage: false, export: false },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'team',
         create: true,
@@ -191,10 +191,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: true,
         update: true,
       },
-      inventory: { view: true, manage: false, transactions: true, reports: true },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
       maintenance: { view: true, manage: false },
-      teams: { view: true, manage: false },
-      operationsLog: { view: true, create: true },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
@@ -204,7 +204,7 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
     canAccessAdmin: true,
     modules: {
       facilities: { view: true, manage: false },
-      assets: { view: true, manage: false, export: false },
+      assets: { view: false, manage: false, export: false },
       workOrders: {
         view: 'team',
         create: true,
@@ -217,10 +217,10 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
         reassign: false,
         update: false,
       },
-      inventory: { view: true, manage: false, transactions: true, reports: false },
+      inventory: { view: false, manage: false, transactions: false, reports: false },
       maintenance: { view: true, manage: false },
-      teams: { view: true, manage: false },
-      operationsLog: { view: true, create: true },
+      teams: { view: false, manage: false },
+      operationsLog: { view: false, create: false },
     },
   },
 
