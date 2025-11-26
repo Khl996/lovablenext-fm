@@ -43,7 +43,8 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Get user roles for state machine - extract actual user roles
   const baseUserRoles: string[] = [
     ...roles.map((r) => r.role),
-    ...customRoles.map((r) => r.role_code),
+    // Normalize custom role codes like 'eng' to match workflow roles
+    ...customRoles.map((r) => (r.role_code.toLowerCase() === 'eng' ? 'engineer' : r.role_code)),
   ];
   const isReporter = user?.id === workOrder?.reported_by;
 
