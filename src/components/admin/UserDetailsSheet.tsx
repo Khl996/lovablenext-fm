@@ -406,10 +406,8 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                </CardContent>
              </Card>
 
-             {/* Building Assignments Section - Only for Supervisors and Facility Managers */}
-             {(user.roles?.some(r => 
-               r.role === 'supervisor' || r.role === 'facility_manager'
-             )) && (
+             {/* Building Assignments Section - Show in edit mode */}
+             {isEditingProfile && buildings.length > 0 && (
                <Card>
                  <CardHeader>
                    <CardTitle className="text-lg">
@@ -418,45 +416,57 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                  </CardHeader>
                  <CardContent>
                    <div className="space-y-3">
-                     {buildings.length === 0 ? (
-                       <p className="text-sm text-muted-foreground">
-                         {language === 'ar' ? 'لا توجد مباني متاحة' : 'No buildings available'}
-                       </p>
-                     ) : (
-                       buildings.map((building) => (
-                         <div key={building.id} className="flex items-center space-x-2 rtl:space-x-reverse">
-                           <input
-                             type="checkbox"
-                             id={`building-${building.id}`}
-                             checked={assignedBuildings.includes(building.id)}
-                             onChange={(e) => {
-                               if (isEditingProfile) {
-                                 if (e.target.checked) {
-                                   setAssignedBuildings([...assignedBuildings, building.id]);
-                                 } else {
-                                   setAssignedBuildings(assignedBuildings.filter(id => id !== building.id));
-                                 }
-                               }
-                             }}
-                             disabled={!isEditingProfile}
-                             className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
-                           />
-                           <label 
-                             htmlFor={`building-${building.id}`} 
-                             className={`text-sm ${!isEditingProfile ? 'opacity-70' : 'cursor-pointer'}`}
-                           >
-                             {language === 'ar' ? building.name_ar : building.name}
-                           </label>
-                         </div>
-                       ))
-                     )}
-                     {isEditingProfile && buildings.length > 0 && (
-                       <p className="text-xs text-muted-foreground mt-2">
-                         {language === 'ar' 
-                           ? 'اختر المباني التي يمكن للمشرف إدارة أوامر العمل فيها'
-                           : 'Select buildings where the supervisor can manage work orders'}
-                       </p>
-                     )}
+                     <p className="text-sm text-muted-foreground mb-3">
+                       {language === 'ar' 
+                         ? 'اختر المباني التي يمكن للمشرف/مدير المنشأة إدارة أوامر العمل فيها (اختياري)'
+                         : 'Select buildings where supervisor/facility manager can manage work orders (optional)'}
+                     </p>
+                     {buildings.map((building) => (
+                       <div key={building.id} className="flex items-center space-x-2 rtl:space-x-reverse">
+                         <input
+                           type="checkbox"
+                           id={`building-${building.id}`}
+                           checked={assignedBuildings.includes(building.id)}
+                           onChange={(e) => {
+                             if (e.target.checked) {
+                               setAssignedBuildings([...assignedBuildings, building.id]);
+                             } else {
+                               setAssignedBuildings(assignedBuildings.filter(id => id !== building.id));
+                             }
+                           }}
+                           className="h-4 w-4 rounded border-gray-300"
+                         />
+                         <label 
+                           htmlFor={`building-${building.id}`} 
+                           className="text-sm cursor-pointer"
+                         >
+                           {language === 'ar' ? building.name_ar : building.name}
+                         </label>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+             
+             {/* Show assigned buildings in view mode if user has them */}
+             {!isEditingProfile && assignedBuildings.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="text-lg">
+                     {language === 'ar' ? 'المباني المُكلف بها' : 'Assigned Buildings'}
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="flex flex-wrap gap-2">
+                     {assignedBuildings.map((buildingId) => {
+                       const building = buildings.find(b => b.id === buildingId);
+                       return building ? (
+                         <Badge key={buildingId} variant="secondary">
+                           {language === 'ar' ? building.name_ar : building.name}
+                         </Badge>
+                       ) : null;
+                     })}
                    </div>
                  </CardContent>
                </Card>
