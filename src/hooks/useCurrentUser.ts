@@ -166,8 +166,12 @@ export function useCurrentUser(): CurrentUserInfo {
   const customRoleCodes = customRoles.map(r => r.role_code);
   const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes);
 
-  // Get role configuration
-  const allRoleCodes = [...userRoleNames, ...customRoleCodes];
+  // Get role configuration (normalize custom codes like 'eng' to standard app roles)
+  const normalizedCustomRoleCodes = customRoleCodes.map(code => {
+    if (code.toLowerCase() === 'eng') return 'engineer';
+    return code;
+  });
+  const allRoleCodes = [...userRoleNames, ...normalizedCustomRoleCodes];
   const roleConfig = getUserRoleConfig(allRoleCodes);
 
   return {
