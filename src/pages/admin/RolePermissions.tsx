@@ -230,6 +230,24 @@ export default function RolePermissions() {
 
   return (
     <div className="space-y-6">
+      {/* Explanation Card */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="py-4">
+          <div className="text-sm space-y-2">
+            <p className="font-medium">
+              {language === 'ar' 
+                ? '📌 هذه الصلاحيات الافتراضية لكل دور في النظام'
+                : '📌 These are the default permissions for each role in the system'}
+            </p>
+            <p className="text-muted-foreground">
+              {language === 'ar' 
+                ? 'يمكنك تعديل صلاحيات المستخدمين بشكل استثنائي من صفحة تفاصيل المستخدم. صلاحيات أوامر العمل مثبتة ومثالية ولا تظهر هنا.'
+                : 'You can customize individual user permissions from the user details page. Work Orders permissions are finalized and do not appear here.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold flex items-center gap-2">
