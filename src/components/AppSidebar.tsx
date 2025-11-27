@@ -59,7 +59,7 @@ const adminItems = [
   { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital, permission: 'manage_hospitals' },
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2, permission: 'manage_hospitals' },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
-  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/permissions', icon: Shield, permission: 'manage_users' },
+  { title: 'permissionsGuide', titleAr: 'دليل الصلاحيات', url: '/admin/permissions-guide', icon: Shield, permission: 'manage_users' },
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
   { title: 'issueTypes', titleAr: 'أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch, permission: 'manage_users' },
   { title: 'specializations', titleAr: 'التخصصات الفنية', url: '/admin/specializations', icon: Award, permission: 'manage_users' },
