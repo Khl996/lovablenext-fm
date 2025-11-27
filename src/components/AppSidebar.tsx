@@ -78,33 +78,39 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
 
+  // Helper function to check if user has view OR manage permission
+  const hasModuleAccess = (moduleName: string) => {
+    return permissions.hasPermission(`${moduleName}.view`) || 
+           permissions.hasPermission(`${moduleName}.manage`);
+  };
+
   // Filter main items based on NEW DATABASE PERMISSIONS
   const visibleMainItems = mainItems.filter(item => {
     // Dashboard is visible to all authenticated users
     if (item.url === '/dashboard') return true;
 
-    // Check database permissions for each module
+    // Check database permissions for each module (view OR manage)
     if (item.url.includes('/facilities')) {
-      return permissions.hasPermission('facilities.view');
+      return hasModuleAccess('facilities');
     }
     if (item.url.includes('/assets')) {
-      return permissions.hasPermission('assets.view');
+      return hasModuleAccess('assets');
     }
     if (item.url.includes('/inventory')) {
-      return permissions.hasPermission('inventory.view');
+      return hasModuleAccess('inventory');
     }
     if (item.url.includes('/work-orders')) {
       // Work orders use OLD perfect system - check roleConfig
       return roleConfig && roleConfig.modules.workOrders.view !== 'own';
     }
     if (item.url.includes('/maintenance')) {
-      return permissions.hasPermission('maintenance.view');
+      return hasModuleAccess('maintenance');
     }
     if (item.url.includes('/teams')) {
-      return permissions.hasPermission('teams.view');
+      return hasModuleAccess('teams');
     }
     if (item.url.includes('/operations-log')) {
-      return permissions.hasPermission('operations_log.view');
+      return hasModuleAccess('operations_log');
     }
     if (item.url.includes('/settings')) {
       return permissions.hasPermission('settings.access');
@@ -118,12 +124,12 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { canAccessAdmin } = useCurrentUser();
   const visibleAdminItems = canAccessAdmin
     ? adminItems.filter(item => {
-        // Check specific permissions for admin items
+        // Check specific permissions for admin items (view OR manage)
         if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
           return permissions.hasPermission('settings.hospitals');
         }
         if (item.url.includes('/users') || item.url.includes('/permissions')) {
-          return permissions.hasPermission('users.manage');
+          return permissions.hasPermission('users.manage') || permissions.hasPermission('users.view');
         }
         if (item.url.includes('/locations') || item.url.includes('/issue-types') || 
             item.url.includes('/specializations') || item.url.includes('/lookup-tables')) {
