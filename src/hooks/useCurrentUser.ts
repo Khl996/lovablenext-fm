@@ -46,8 +46,9 @@ export type CurrentUserInfo = {
   isFacilityManager: boolean;
   canManageUsers: boolean;
   canManageHospitals: boolean;
+  canAccessAdmin: boolean; // NEW: Based on database permissions
   permissions: UserPermissionsInfo;
-  roleConfig: RoleConfig | null;
+  roleConfig: RoleConfig | null; // Only for Work Orders (perfect system)
   refetch: () => Promise<void>;
 };
 
@@ -167,12 +168,25 @@ export function useCurrentUser(): CurrentUserInfo {
   const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes);
 
   // Get role configuration (normalize custom codes like 'eng' to standard app roles)
+  // NOTE: roleConfig is ONLY used for Work Orders (already perfect)
   const normalizedCustomRoleCodes = customRoleCodes.map(code => {
     if (code.toLowerCase() === 'eng') return 'engineer';
     return code;
   });
   const allRoleCodes = [...userRoleNames, ...normalizedCustomRoleCodes];
   const roleConfig = getUserRoleConfig(allRoleCodes);
+
+  // NEW: canAccessAdmin based on database permissions
+  const canAccessAdmin = 
+    permissions.hasAnyPermission([
+      'facilities.manage',
+      'assets.manage',
+      'inventory.manage',
+      'maintenance.manage',
+      'teams.manage',
+      'users.manage',
+      'settings.access',
+    ]);
 
   return {
     user,
@@ -181,13 +195,14 @@ export function useCurrentUser(): CurrentUserInfo {
     customRoles,
     primaryRole,
     hospitalId,
-    loading,
+    loading: loading || permissions.loading,
     error,
     isGlobalAdmin,
     isHospitalAdmin,
     isFacilityManager,
     canManageUsers,
     canManageHospitals,
+    canAccessAdmin,
     permissions,
     roleConfig,
     refetch: loadUserData,

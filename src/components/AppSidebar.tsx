@@ -78,42 +78,59 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
 
-  // Filter main items based on roleConfig
+  // Filter main items based on NEW DATABASE PERMISSIONS
   const visibleMainItems = mainItems.filter(item => {
-    if (!roleConfig) return false;
+    // Dashboard is visible to all authenticated users
+    if (item.url === '/dashboard') return true;
 
-    // Check module access
+    // Check database permissions for each module
     if (item.url.includes('/facilities')) {
-      return roleConfig.modules.facilities.view;
+      return permissions.hasPermission('facilities.view');
     }
     if (item.url.includes('/assets')) {
-      return roleConfig.modules.assets.view;
+      return permissions.hasPermission('assets.view');
     }
     if (item.url.includes('/inventory')) {
-      return roleConfig.modules.inventory.view;
+      return permissions.hasPermission('inventory.view');
     }
     if (item.url.includes('/work-orders')) {
-      return roleConfig.modules.workOrders.view !== 'own' || true; // All can see work orders, filtered by content
+      // Work orders use OLD perfect system - check roleConfig
+      return roleConfig && roleConfig.modules.workOrders.view !== 'own';
     }
     if (item.url.includes('/maintenance')) {
-      return roleConfig.modules.maintenance.view;
+      return permissions.hasPermission('maintenance.view');
     }
     if (item.url.includes('/teams')) {
-      return roleConfig.modules.teams.view;
+      return permissions.hasPermission('teams.view');
     }
     if (item.url.includes('/operations-log')) {
-      return roleConfig.modules.operationsLog.view;
+      return permissions.hasPermission('operations_log.view');
+    }
+    if (item.url.includes('/settings')) {
+      return permissions.hasPermission('settings.access');
     }
 
-    // Dashboard and Settings are visible to all
+    // Default: show if no specific permission required
     return true;
   });
 
-  // Filter admin items based on roleConfig
-  const visibleAdminItems = roleConfig?.canAccessAdmin
+  // Filter admin items based on NEW SYSTEM
+  const { canAccessAdmin } = useCurrentUser();
+  const visibleAdminItems = canAccessAdmin
     ? adminItems.filter(item => {
-        if (item.permission) {
-          return permissions.hasPermission(item.permission as any);
+        // Check specific permissions for admin items
+        if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
+          return permissions.hasPermission('settings.hospitals');
+        }
+        if (item.url.includes('/users') || item.url.includes('/permissions')) {
+          return permissions.hasPermission('users.manage');
+        }
+        if (item.url.includes('/locations') || item.url.includes('/issue-types') || 
+            item.url.includes('/specializations') || item.url.includes('/lookup-tables')) {
+          return permissions.hasPermission('settings.lookup_tables');
+        }
+        if (item.url.includes('/settings')) {
+          return permissions.hasPermission('settings.access');
         }
         return true;
       })
