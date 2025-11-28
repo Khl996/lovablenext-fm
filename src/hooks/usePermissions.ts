@@ -80,14 +80,6 @@ export function usePermissions(
           .eq('user_id', userId),
       ]);
 
-      console.log('[usePermissions] Raw fetch results for', userId, {
-        rolePerms: rolePermsResult.data,
-        customRolePerms: customRolePermsResult.data,
-        userPerms: userPermsResult.data,
-        userRoles,
-        customRoleCodes,
-      });
-
       if (rolePermsResult.error) throw rolePermsResult.error;
       if (customRolePermsResult.error) throw customRolePermsResult.error;
       if (userPermsResult.error) throw userPermsResult.error;
@@ -135,11 +127,6 @@ export function usePermissions(
         } else if (effect === 'deny') {
           newCache.permissions.delete(key);
         }
-      });
-
-      console.log('[usePermissions] Final cache built:', {
-        totalPermissions: newCache.permissions.size,
-        permissionsList: Array.from(newCache.permissions),
       });
 
       setCache(newCache);
