@@ -2798,6 +2798,12 @@ export type Database = {
           warranty_provider: string
         }[]
       }
+      get_effective_permissions: {
+        Args: { _user_id: string }
+        Returns: {
+          permission_key: string
+        }[]
+      }
       get_user_contact_info: {
         Args: { _user_id: string }
         Returns: {
