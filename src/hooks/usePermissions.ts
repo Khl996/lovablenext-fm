@@ -53,80 +53,43 @@ export function usePermissions(
       setLoading(true);
       setError(undefined);
 
-      // Parallel fetch for better performance
-      const [rolePermsResult, customRolePermsResult, userPermsResult] = await Promise.all([
-        // Fetch old system permissions
-        userRoles.length > 0
-          ? supabase
-              .from('role_permissions')
-              .select('permission_key, allowed')
-              .in('role', userRoles)
-              .eq('allowed', true)
-          : Promise.resolve({ data: null, error: null }),
-        
-        // Fetch custom role permissions
-        customRoleCodes.length > 0
-          ? supabase
-              .from('role_permissions')
-              .select('permission_key, allowed')
-              .in('role_code', customRoleCodes)
-              .eq('allowed', true)
-          : Promise.resolve({ data: null, error: null }),
-        
-        // Fetch user-specific overrides
+      // استخدم دالة backend الموحدة للحصول على كل الصلاحيات الفعّالة
+      const [effectivePermsResult, hospitalOverridesResult] = await Promise.all([
+        supabase.rpc('get_effective_permissions', { _user_id: userId }),
         supabase
           .from('user_permissions')
           .select('permission_key, effect, hospital_id')
-          .eq('user_id', userId),
+          .eq('user_id', userId)
+          .not('hospital_id', 'is', null), // فقط overrides المرتبطة بمستشفى
       ]);
 
-      if (rolePermsResult.error) throw rolePermsResult.error;
-      if (customRolePermsResult.error) throw customRolePermsResult.error;
-      if (userPermsResult.error) throw userPermsResult.error;
+      if (effectivePermsResult.error) throw effectivePermsResult.error;
+      if (hospitalOverridesResult.error) throw hospitalOverridesResult.error;
 
-      // Build cache
+      // بناء الكاش الجديد
       const newCache: PermissionsCache = {
         permissions: new Set<PermissionKey>(),
         userOverrides: new Map<string, PermissionEffect>(),
         hospitalOverrides: new Map<string, Map<string, PermissionEffect>>(),
       };
 
-      // Add role permissions to set
-      rolePermsResult.data?.forEach((rp) => {
-        if (rp.allowed) {
-          newCache.permissions.add(rp.permission_key);
+      // أضف كل الصلاحيات الفعّالة القادمة من الدالة المخزّنة
+      (effectivePermsResult.data || []).forEach((row: any) => {
+        const key = row.permission_key || row.perm || row.permission; // احتياط لأسماء أعمدة مختلفة
+        if (key) {
+          newCache.permissions.add(key as PermissionKey);
         }
       });
 
-      customRolePermsResult.data?.forEach((rp) => {
-        if (rp.allowed) {
-          newCache.permissions.add(rp.permission_key);
+      // عالج hospital-specific overrides فقط (global overrides مطبّقة بالفعل في الدالة المخزّنة)
+      hospitalOverridesResult.data?.forEach((up) => {
+        if (!up.hospital_id) return;
+        if (!newCache.hospitalOverrides.has(up.hospital_id)) {
+          newCache.hospitalOverrides.set(up.hospital_id, new Map());
         }
-      });
-
-      // Process user overrides
-      userPermsResult.data?.forEach((up) => {
-        if (!up.hospital_id) {
-          // Global override
-          newCache.userOverrides.set(up.permission_key, up.effect as PermissionEffect);
-        } else {
-          // Hospital-specific override
-          if (!newCache.hospitalOverrides.has(up.hospital_id)) {
-            newCache.hospitalOverrides.set(up.hospital_id, new Map());
-          }
-          newCache.hospitalOverrides
-            .get(up.hospital_id)!
-            .set(up.permission_key, up.effect as PermissionEffect);
-        }
-      });
-
-      // Apply global overrides to permissions set
-      newCache.userOverrides.forEach((effect, key) => {
-        if (effect === 'grant') {
-          newCache.permissions.add(key);
-        } else if (effect === 'deny') {
-          newCache.permissions.delete(key);
-        }
+        newCache.hospitalOverrides
+          .get(up.hospital_id)!
+          .set(up.permission_key, up.effect as PermissionEffect);
       });
 
       setCache(newCache);
@@ -136,7 +99,7 @@ export function usePermissions(
     } finally {
       setLoading(false);
     }
-  }, [userId, JSON.stringify(userRoles), JSON.stringify(customRoleCodes)]);
+  }, [userId]);
 
   useEffect(() => {
     loadPermissions();
