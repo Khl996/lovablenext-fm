@@ -72,8 +72,15 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { permissions, loading, roleConfig } = useCurrentUser();
+  const { permissions, loading, roleConfig, canAccessAdmin } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
+
+  console.log('AppSidebar permissions debug', {
+    allPermissions: permissions.allPermissions,
+    loadingPermissions: permissions.loading,
+    canAccessAdmin,
+    roleConfig,
+  });
 
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === 'collapsed';
@@ -121,7 +128,6 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   });
 
   // Filter admin items based on NEW SYSTEM
-  const { canAccessAdmin } = useCurrentUser();
   const visibleAdminItems = canAccessAdmin
     ? adminItems.filter(item => {
         // Check specific permissions for admin items (view OR manage)
