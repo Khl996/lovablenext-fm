@@ -72,7 +72,7 @@ interface Asset {
 
 export default function Assets() {
   const { t, language } = useLanguage();
-  const { hospitalId, roleConfig } = useCurrentUser();
+  const { hospitalId, permissions } = useCurrentUser();
   const { toast } = useToast();
 
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -100,7 +100,8 @@ export default function Assets() {
   const [buildingFilter, setBuildingFilter] = useState<string>('all');
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; name_ar: string }>>([]);
 
-  const canManage = roleConfig?.modules.assets.manage || false;
+  const canView = permissions.hasPermission('assets.view', hospitalId);
+  const canManage = permissions.hasPermission('assets.manage', hospitalId);
   const canDelete = canManage;
   
   const { lookups, loading: lookupsLoading } = useLookupTables(['asset_statuses', 'asset_categories']);
@@ -343,7 +344,7 @@ export default function Assets() {
   };
 
 
-  if (!roleConfig?.modules.assets.view) {
+  if (!canView) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">

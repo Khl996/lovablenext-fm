@@ -49,7 +49,11 @@ interface Hospital {
 
 export default function Users() {
   const { language, t } = useLanguage();
-  const { isGlobalAdmin, hospitalId: currentUserHospitalId, canManageUsers } = useCurrentUser();
+  const { permissions, hospitalId: currentUserHospitalId } = useCurrentUser();
+  
+  const canManageUsers = permissions.hasPermission('users.manage', currentUserHospitalId);
+  const canViewUsers = permissions.hasPermission('users.view', currentUserHospitalId);
+  const isGlobalAdmin = permissions.hasPermission('manage_hospitals', currentUserHospitalId);
   const [users, setUsers] = useState<UserData[]>([]);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [lookupRoles, setLookupRoles] = useState<any[]>([]);
@@ -76,10 +80,10 @@ export default function Users() {
   });
 
   useEffect(() => {
-    if (canManageUsers) {
+    if (canViewUsers || canManageUsers) {
       Promise.all([loadUsers(), loadHospitals(), loadLookupRoles()]);
     }
-  }, [canManageUsers, isGlobalAdmin, currentUserHospitalId]);
+  }, [canViewUsers, canManageUsers, isGlobalAdmin, currentUserHospitalId]);
 
   const loadUsers = async () => {
     try {
@@ -416,7 +420,7 @@ export default function Users() {
     users.flatMap(u => u.roles.map(r => r.role))
   ));
 
-  if (!canManageUsers) {
+  if (!canViewUsers && !canManageUsers) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="max-w-md">

@@ -16,16 +16,18 @@ import { useNavigate } from 'react-router-dom';
 
 export default function IssueTypeSettings() {
   const { language } = useLanguage();
-  const { hospitalId, permissions, loading, isHospitalAdmin, isFacilityManager, isGlobalAdmin } = useCurrentUser();
+  const { hospitalId, permissions, loading } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const canManage = permissions.hasPermission('settings.lookup_tables', hospitalId);
 
   // Check if user has permission to access settings
   useEffect(() => {
     // Don't check permissions while still loading
     if (loading || permissions.loading) return;
     
-    if (!isHospitalAdmin && !isFacilityManager && !isGlobalAdmin) {
+    if (!canManage) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar'
@@ -35,7 +37,7 @@ export default function IssueTypeSettings() {
       });
       navigate('/dashboard');
     }
-  }, [isHospitalAdmin, isFacilityManager, isGlobalAdmin, loading, navigate, language, toast]);
+  }, [canManage, loading, permissions.loading, navigate, language, toast]);
 
   const [mappings, setMappings] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);

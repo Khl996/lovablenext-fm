@@ -54,13 +54,12 @@ export default function Maintenance() {
     hospitalId,
     permissions,
     loading: userLoading,
-    isFacilityManager,
-    isHospitalAdmin,
-    roles,
-    customRoles,
   } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const canView = permissions.hasPermission('maintenance.view', hospitalId);
+  const canManage = permissions.hasPermission('maintenance.manage', hospitalId);
 
   const [plans, setPlans] = useState<MaintenancePlan[]>([]);
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
@@ -77,27 +76,26 @@ export default function Maintenance() {
   useEffect(() => {
     if (userLoading) return;
 
-    // Allow all users who have hospital_id and can navigate to this page
-    // Page content is controlled by roleConfig permissions
-    if (!hospitalId) {
+    if (!canView) {
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
         description: language === 'ar' 
-          ? 'لا يوجد مستشفى مرتبط بحسابك' 
-          : 'No hospital linked to your account',
+          ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' 
+          : 'You do not have permission to access this page',
         variant: 'destructive',
       });
+      navigate('/dashboard');
     }
-  }, [userLoading, hospitalId, toast, language]);
+  }, [userLoading, canView, navigate, toast, language]);
 
   useEffect(() => {
-    if (hospitalId && !userLoading) {
+    if (canView && hospitalId && !userLoading) {
       loadPlans();
       loadTasks();
     } else if (!userLoading) {
       setLoading(false);
     }
-  }, [hospitalId, statusFilter, typeFilter]);
+  }, [canView, hospitalId, statusFilter, typeFilter, userLoading]);
 
   const loadPlans = async () => {
     if (!hospitalId) return;
@@ -316,10 +314,12 @@ export default function Maintenance() {
                     </Button>
                   </div>
                   <ExportButton data={filteredTasks} filename="maintenance_tasks" language={language} />
-                  <Button onClick={() => setShowTaskDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
-                  </Button>
+                  {canManage && (
+                    <Button onClick={() => setShowTaskDialog(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      {language === 'ar' ? 'إضافة مهمة' : 'Add Task'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
