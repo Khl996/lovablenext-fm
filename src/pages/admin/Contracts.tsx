@@ -254,10 +254,12 @@ export default function Contracts() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              {language === 'ar' ? 'إضافة عقد' : 'Add Contract'}
-            </Button>
+            {canManage && (
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'إضافة عقد' : 'Add Contract'}
+              </Button>
+            )}
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
