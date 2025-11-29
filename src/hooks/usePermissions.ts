@@ -33,7 +33,8 @@ interface PermissionsCache {
 export function usePermissions(
   userId: string | null,
   userRoles: AppRole[] = [],
-  customRoleCodes: string[] = []
+  customRoleCodes: string[] = [],
+  hospitalId: string | null = null
 ): UserPermissionsInfo {
   const [cache, setCache] = useState<PermissionsCache>({
     permissions: new Set(),
@@ -54,8 +55,12 @@ export function usePermissions(
       setError(undefined);
 
       // استخدم دالة backend الموحدة للحصول على كل الصلاحيات الفعّالة
+      // تمرير hospital_id للحصول على الصلاحيات المرتبطة بالمستشفى فقط
       const [effectivePermsResult, allUserOverridesResult] = await Promise.all([
-        supabase.rpc('get_effective_permissions', { _user_id: userId }),
+        supabase.rpc('get_effective_permissions', { 
+          _user_id: userId,
+          _hospital_id: hospitalId 
+        }),
         supabase
           .from('user_permissions')
           .select('permission_key, effect, hospital_id')
@@ -103,7 +108,7 @@ export function usePermissions(
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, hospitalId]);
 
   useEffect(() => {
     loadPermissions();

@@ -2799,7 +2799,7 @@ export type Database = {
         }[]
       }
       get_effective_permissions: {
-        Args: { _user_id: string }
+        Args: { _hospital_id?: string; _user_id: string }
         Returns: {
           permission_key: string
         }[]
