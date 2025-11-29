@@ -72,7 +72,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { permissions, loading, roleConfig, canAccessAdmin } = useCurrentUser();
+  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
 
   console.log('AppSidebar permissions debug', {
@@ -87,8 +87,8 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
 
   // Helper function to check if user has view OR manage permission
   const hasModuleAccess = (moduleName: string) => {
-    return permissions.hasPermission(`${moduleName}.view`) || 
-           permissions.hasPermission(`${moduleName}.manage`);
+    return permissions.hasPermission(`${moduleName}.view`, hospitalId) || 
+           permissions.hasPermission(`${moduleName}.manage`, hospitalId);
   };
 
   // Filter main items based on NEW DATABASE PERMISSIONS
@@ -120,7 +120,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
       return hasModuleAccess('operations_log');
     }
     if (item.url.includes('/settings')) {
-      return permissions.hasPermission('settings.access');
+      return permissions.hasPermission('settings.access', hospitalId);
     }
 
     // Default: show if no specific permission required
@@ -132,17 +132,17 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
     ? adminItems.filter(item => {
         // Check specific permissions for admin items (view OR manage)
         if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
-          return permissions.hasPermission('settings.hospitals');
+          return permissions.hasPermission('settings.hospitals', hospitalId);
         }
         if (item.url.includes('/users') || item.url.includes('/permissions')) {
-          return permissions.hasPermission('users.manage') || permissions.hasPermission('users.view');
+          return permissions.hasPermission('users.manage', hospitalId) || permissions.hasPermission('users.view', hospitalId);
         }
         if (item.url.includes('/locations') || item.url.includes('/issue-types') || 
             item.url.includes('/specializations') || item.url.includes('/lookup-tables')) {
-          return permissions.hasPermission('settings.lookup_tables');
+          return permissions.hasPermission('settings.lookup_tables', hospitalId);
         }
         if (item.url.includes('/settings')) {
-          return permissions.hasPermission('settings.access');
+          return permissions.hasPermission('settings.access', hospitalId);
         }
         return true;
       })

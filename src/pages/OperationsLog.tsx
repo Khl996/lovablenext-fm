@@ -132,7 +132,7 @@ export default function OperationsLog() {
     );
   }
 
-  if (!permissions.hasPermission('view_operations_log')) {
+  if (!permissions.hasPermission('view_operations_log', hospitalId)) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -153,7 +153,7 @@ export default function OperationsLog() {
             {language === 'ar' ? 'سجل جميع عمليات الأصول والمرافق' : 'Log of all asset and facility operations'}
           </p>
         </div>
-        {permissions.hasPermission('manage_operations_log') && (
+        {permissions.hasPermission('manage_operations_log', hospitalId) && (
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             {language === 'ar' ? 'إضافة عملية' : 'Add Operation'}

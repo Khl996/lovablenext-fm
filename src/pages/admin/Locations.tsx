@@ -87,7 +87,7 @@ export default function Locations() {
 
   const [loading, setLoading] = useState(true);
 
-  const canManageLocations = permissions.hasPermission('manage_locations');
+  const canManageLocations = permissions.hasPermission('manage_locations', hospitalId);
 
   useEffect(() => {
     loadHospitals();

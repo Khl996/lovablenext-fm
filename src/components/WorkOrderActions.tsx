@@ -29,7 +29,7 @@ type WorkOrderActionsProps = {
 
 export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActionsProps) {
   const { language } = useLanguage();
-  const { user, permissions, roles, customRoles, roleConfig } = useCurrentUser();
+  const { user, permissions, roles, customRoles, roleConfig, hospitalId } = useCurrentUser();
   
   const [notes, setNotes] = useState('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -135,15 +135,15 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
   const canFinalApprove =
     !!(roleConfig?.modules.workOrders.finalApprove) &&
-    permissions.hasPermission('work_orders.final_approve') &&
+    permissions.hasPermission('work_orders.final_approve', hospitalId) &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
 
   const canReject = !!(roleConfig?.modules.workOrders.reject) && isTeamMember && (state?.can.reject ?? false);
 
   const canReassign = !!(roleConfig?.modules.workOrders.reassign) && (state?.can.reassign ?? (
-    permissions.hasPermission('work_orders.approve') ||
-    permissions.hasPermission('work_orders.manage')
+    permissions.hasPermission('work_orders.approve', hospitalId) ||
+    permissions.hasPermission('work_orders.manage', hospitalId)
   ));
 
   const canAddUpdate = !!(roleConfig?.modules.workOrders.update) && (state?.can.update ?? (

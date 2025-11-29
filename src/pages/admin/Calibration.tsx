@@ -47,7 +47,7 @@ interface CalibrationStats {
 
 export default function Calibration() {
   const { language } = useLanguage();
-  const { profile, permissions, loading: userLoading, isFacilityManager, isHospitalAdmin } = useCurrentUser();
+  const { profile, permissions, loading: userLoading, isFacilityManager, isHospitalAdmin, hospitalId } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -122,7 +122,7 @@ export default function Calibration() {
   };
 
   useEffect(() => {
-    if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('calibration.view')) {
+    if (!userLoading && profile?.hospital_id && !isFacilityManager && !isHospitalAdmin && !permissions.hasPermission('calibration.view', hospitalId)) {
       toast({
         title: language === 'ar' ? 'غير مصرح' : 'Unauthorized',
         description: language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page',

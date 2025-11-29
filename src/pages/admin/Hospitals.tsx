@@ -32,7 +32,7 @@ interface HospitalData {
 
 export default function Hospitals() {
   const { language, t } = useLanguage();
-  const { user, permissions, isGlobalAdmin, loading: userLoading } = useCurrentUser();
+  const { user, permissions, isGlobalAdmin, loading: userLoading, hospitalId } = useCurrentUser();
   const navigate = useNavigate();
   const [hospitals, setHospitals] = useState<HospitalData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,8 +56,8 @@ export default function Hospitals() {
     notes: '',
   });
 
-  const canSuspend = permissions.hasPermission('hospitals.suspend');
-  const canDelete = permissions.hasPermission('hospitals.delete');
+  const canSuspend = permissions.hasPermission('hospitals.suspend', hospitalId);
+  const canDelete = permissions.hasPermission('hospitals.delete', hospitalId);
 
   useEffect(() => {
     if (!userLoading && !isGlobalAdmin) {
