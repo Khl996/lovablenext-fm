@@ -13,6 +13,7 @@ import {
   Hospital,
   LayoutDashboard,
   Shield,
+  ShieldCheck,
   Download,
   FileText,
   UsersRound,
@@ -59,6 +60,7 @@ const adminItems = [
   { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital, permission: 'manage_hospitals' },
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2, permission: 'manage_hospitals' },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permission: 'manage_users' },
+  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/role-permissions', icon: ShieldCheck, permission: 'manage_users' },
   { title: 'permissionsGuide', titleAr: 'دليل الصلاحيات', url: '/admin/permissions-guide', icon: Shield, permission: 'manage_users' },
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2, permission: 'manage_locations' },
   { title: 'issueTypes', titleAr: 'أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch, permission: 'manage_users' },
@@ -72,7 +74,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId } = useCurrentUser();
+  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
 
   console.log('AppSidebar permissions debug', {
@@ -134,8 +136,14 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
         if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
           return permissions.hasPermission('settings.hospitals', hospitalId);
         }
-        if (item.url.includes('/users') || item.url.includes('/permissions')) {
+        if (item.url.includes('/users')) {
           return permissions.hasPermission('users.manage', hospitalId) || permissions.hasPermission('users.view', hospitalId);
+        }
+        if (item.url.includes('/role-permissions')) {
+          return isGlobalAdmin || isHospitalAdmin;
+        }
+        if (item.url.includes('/permissions-guide')) {
+          return permissions.hasPermission('users.view', hospitalId);
         }
         if (item.url.includes('/locations') || item.url.includes('/issue-types') || 
             item.url.includes('/specializations') || item.url.includes('/lookup-tables')) {

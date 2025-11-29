@@ -208,7 +208,7 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/admin/permissions" 
+                path="/admin/role-permissions" 
                 element={
                   <ProtectedRoute>
                     <AppLayout>
