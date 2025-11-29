@@ -44,7 +44,7 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { language, setLanguage, t, direction } = useLanguage();
   const { isInstalled, isInstallable, installPWA } = usePWAInstall();
-  const { roleConfig, permissions, loading: userLoading } = useCurrentUser();
+  const { roleConfig, permissions, hospitalId, loading: userLoading } = useCurrentUser();
   const [stats, setStats] = useState<DashboardStats>({
     activeWorkOrders: 0,
     completedWorkOrders: 0,
@@ -177,7 +177,7 @@ export default function Dashboard() {
   }
 
   // Check if reporter has view_analytics permission (exceptional permission)
-  const hasAnalyticsAccess = permissions.hasPermission('view_analytics');
+  const hasAnalyticsAccess = permissions.hasPermission('view_analytics', hospitalId);
 
   // Redirect reporters to simple dashboard (unless they have analytics permission)
   if (roleConfig?.dashboardView === 'reporter' && !hasAnalyticsAccess) {
