@@ -32,7 +32,7 @@ interface HospitalData {
 
 export default function Hospitals() {
   const { language, t } = useLanguage();
-  const { user, permissions, isGlobalAdmin, loading: userLoading, hospitalId } = useCurrentUser();
+  const { user, permissions, loading: userLoading, hospitalId } = useCurrentUser();
   const navigate = useNavigate();
   const [hospitals, setHospitals] = useState<HospitalData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,21 +56,22 @@ export default function Hospitals() {
     notes: '',
   });
 
+  const canManageHospitals = permissions.hasPermission('manage_hospitals', hospitalId);
   const canSuspend = permissions.hasPermission('hospitals.suspend', hospitalId);
   const canDelete = permissions.hasPermission('hospitals.delete', hospitalId);
 
   useEffect(() => {
-    if (!userLoading && !isGlobalAdmin) {
+    if (!userLoading && !canManageHospitals) {
       toast.error(language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page');
       navigate('/dashboard');
     }
-  }, [userLoading, isGlobalAdmin, navigate]);
+  }, [userLoading, canManageHospitals, navigate]);
 
   useEffect(() => {
-    if (isGlobalAdmin) {
+    if (canManageHospitals) {
       loadHospitals();
     }
-  }, [isGlobalAdmin]);
+  }, [canManageHospitals]);
 
   const loadHospitals = async () => {
     try {
@@ -305,7 +306,7 @@ export default function Hospitals() {
     );
   }
 
-  if (!isGlobalAdmin) {
+  if (!canManageHospitals) {
     return null;
   }
 

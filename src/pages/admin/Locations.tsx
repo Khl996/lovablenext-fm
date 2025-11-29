@@ -59,7 +59,7 @@ type Room = {
 
 export default function Locations() {
   const { t, language } = useLanguage();
-  const { user, primaryRole, permissions, hospitalId } = useCurrentUser();
+  const { user, permissions, hospitalId } = useCurrentUser();
   const { toast } = useToast();
 
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -87,7 +87,9 @@ export default function Locations() {
 
   const [loading, setLoading] = useState(true);
 
-  const canManageLocations = permissions.hasPermission('manage_locations', hospitalId);
+  const canViewFacilities = permissions.hasPermission('facilities.view', hospitalId);
+  const canManageFacilities = permissions.hasPermission('facilities.manage', hospitalId);
+  const canManageLocations = canManageFacilities || permissions.hasPermission('manage_locations', hospitalId);
 
   useEffect(() => {
     loadHospitals();

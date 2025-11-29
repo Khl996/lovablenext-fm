@@ -134,7 +134,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
     ? adminItems.filter(item => {
         // Check specific permissions for admin items (view OR manage)
         if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
-          return permissions.hasPermission('settings.hospitals', hospitalId);
+          return permissions.hasPermission('manage_hospitals', hospitalId);
         }
         if (item.url.includes('/users')) {
           return permissions.hasPermission('users.manage', hospitalId) || permissions.hasPermission('users.view', hospitalId);
