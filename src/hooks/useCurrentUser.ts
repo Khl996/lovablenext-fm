@@ -165,7 +165,7 @@ export function useCurrentUser(): CurrentUserInfo {
   // Use permissions hook with both old and new role systems
   const userRoleNames = roles.map(r => r.role);
   const customRoleCodes = customRoles.map(r => r.role_code);
-  const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes);
+  const permissions = usePermissions(user?.id || null, userRoleNames, customRoleCodes, hospitalId);
 
   // Get role configuration (normalize custom codes like 'eng' to standard app roles)
   // NOTE: roleConfig is ONLY used for Work Orders (already perfect)
