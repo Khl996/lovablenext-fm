@@ -91,7 +91,7 @@ export default function Teams() {
     specialization: [] as string[],
   });
 
-  const canManage = permissions.hasPermission('teams.manage');
+  const canManage = permissions.hasPermission('teams.manage', hospitalId);
 
   useEffect(() => {
     if (hospitalId) {
@@ -524,7 +524,7 @@ export default function Teams() {
     );
   }
 
-  if (!permissions.hasPermission('view_teams')) {
+  if (!permissions.hasPermission('view_teams', hospitalId)) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">

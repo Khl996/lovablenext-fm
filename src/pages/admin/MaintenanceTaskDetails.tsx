@@ -190,7 +190,7 @@ export default function MaintenanceTaskDetails() {
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(task.status)}
-          {permissions.hasPermission('execute_maintenance') && (
+          {permissions.hasPermission('execute_maintenance', hospitalId) && (
             <Button onClick={() => setShowEditDialog(true)}>
               <Edit className="h-4 w-4 mr-2" />
               {language === 'ar' ? 'تعديل' : 'Edit'}
@@ -309,7 +309,7 @@ export default function MaintenanceTaskDetails() {
       </div>
 
       {/* Status Actions */}
-      {permissions.hasPermission('execute_maintenance') && task.status !== 'completed' && (
+      {permissions.hasPermission('execute_maintenance', hospitalId) && task.status !== 'completed' && (
         <Card>
           <CardHeader>
             <CardTitle>{language === 'ar' ? 'إجراءات الحالة' : 'Status Actions'}</CardTitle>
