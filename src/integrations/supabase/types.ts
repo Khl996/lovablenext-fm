@@ -1912,6 +1912,7 @@ export type Database = {
         Row: {
           allowed: boolean
           created_at: string
+          hospital_id: string | null
           id: string
           permission_key: string
           role: Database["public"]["Enums"]["app_role"] | null
@@ -1920,6 +1921,7 @@ export type Database = {
         Insert: {
           allowed?: boolean
           created_at?: string
+          hospital_id?: string | null
           id?: string
           permission_key: string
           role?: Database["public"]["Enums"]["app_role"] | null
@@ -1928,12 +1930,20 @@ export type Database = {
         Update: {
           allowed?: boolean
           created_at?: string
+          hospital_id?: string | null
           id?: string
           permission_key?: string
           role?: Database["public"]["Enums"]["app_role"] | null
           role_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "role_permissions_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "role_permissions_permission_key_fkey"
             columns: ["permission_key"]
