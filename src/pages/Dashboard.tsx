@@ -44,7 +44,7 @@ export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { language, setLanguage, t, direction } = useLanguage();
   const { isInstalled, isInstallable, installPWA } = usePWAInstall();
-  const { roleConfig, loading: userLoading } = useCurrentUser();
+  const { roleConfig, permissions, loading: userLoading } = useCurrentUser();
   const [stats, setStats] = useState<DashboardStats>({
     activeWorkOrders: 0,
     completedWorkOrders: 0,
@@ -176,8 +176,11 @@ export default function Dashboard() {
     );
   }
 
-  // Redirect reporters to simple dashboard
-  if (roleConfig?.dashboardView === 'reporter') {
+  // Check if reporter has view_analytics permission (exceptional permission)
+  const hasAnalyticsAccess = permissions.hasPermission('view_analytics');
+
+  // Redirect reporters to simple dashboard (unless they have analytics permission)
+  if (roleConfig?.dashboardView === 'reporter' && !hasAnalyticsAccess) {
     return <SimpleDashboard userId={user.id} viewType="own" />;
   }
 
