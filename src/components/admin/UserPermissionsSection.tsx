@@ -173,12 +173,27 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
     }
 
     try {
+      // Determine hospital scope based on admin type
+      const targetHospitalId = isGlobalAdmin
+        ? formData.hospitalId || null // Global admin can choose specific hospital or all (null)
+        : userHospitalId; // Hospital admin/facility manager always scoped to their hospital
+
+      if (!isGlobalAdmin && !targetHospitalId) {
+        // Safety guard – should not normally happen
+        toast.error(
+          language === 'ar'
+            ? 'لا يمكن إضافة صلاحية بدون مستشفى للمستخدم الحالي'
+            : 'Cannot add permission without a hospital for this user'
+        );
+        return;
+      }
+
       const { error } = await supabase.from('user_permissions').insert([
         {
           user_id: userId,
           permission_key: formData.permissionKey,
           effect: formData.effect,
-          hospital_id: formData.hospitalId || null,
+          hospital_id: targetHospitalId,
         },
       ]);
 
@@ -193,7 +208,6 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
       toast.error(error.message || t('errorOccurred'));
     }
   };
-
   const handleRemovePermission = async (permissionId: string) => {
     try {
       const { error } = await supabase.from('user_permissions').delete().eq('id', permissionId);
