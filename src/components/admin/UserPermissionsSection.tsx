@@ -203,6 +203,8 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
       setShowAddForm(false);
       setFormData({ permissionKey: '', effect: 'grant', hospitalId: '' });
       loadData();
+      // Force page reload to update permissions globally
+      setTimeout(() => window.location.reload(), 500);
     } catch (error: any) {
       console.error('Error adding permission:', error);
       toast.error(error.message || t('errorOccurred'));
@@ -216,6 +218,8 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
 
       toast.success(language === 'ar' ? 'تم حذف الصلاحية بنجاح' : 'Permission removed successfully');
       loadData();
+      // Force page reload to update permissions globally
+      setTimeout(() => window.location.reload(), 500);
     } catch (error: any) {
       console.error('Error removing permission:', error);
       toast.error(error.message || t('errorOccurred'));
