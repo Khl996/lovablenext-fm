@@ -148,8 +148,8 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
 
   engineer: {
     code: 'engineer',
-    dashboardView: 'manager',
-    canAccessAdmin: true,
+    dashboardView: 'technician',
+    canAccessAdmin: false,
     modules: {
       facilities: { view: true, manage: false },
       assets: { view: true, manage: false, export: false },
@@ -168,7 +168,7 @@ export const ROLE_CONFIGS: Record<RoleCode, RoleConfig> = {
       inventory: { view: true, manage: false, transactions: false, reports: true },
       maintenance: { view: true, manage: false },
       teams: { view: false, manage: false },
-      operationsLog: { view: false, create: false },
+      operationsLog: { view: true, create: false },
     },
   },
 
