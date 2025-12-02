@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ interface AssetFormDialogProps {
 export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFormDialogProps) {
   const { t, language } = useLanguage();
   const { hospitalId } = useCurrentUser();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -265,6 +267,60 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
     }
   };
 
+  // Log asset operation to operations_log
+  const logAssetOperation = async (
+    assetId: string,
+    assetName: string,
+    operationType: 'status_change' | 'created' | 'updated',
+    previousStatus?: string,
+    newStatus?: string,
+    description?: string
+  ) => {
+    if (!hospitalId || !user) return;
+
+    try {
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, full_name_ar')
+        .eq('id', user.id)
+        .single();
+
+      const technicianName = profile?.full_name || profile?.full_name_ar || 'Unknown';
+      
+      // Generate operation code
+      const { count } = await supabase
+        .from('operations_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('hospital_id', hospitalId);
+      
+      const opCode = `OP-${Date.now().toString().slice(-6)}-${((count || 0) + 1).toString().padStart(4, '0')}`;
+
+      // Use valid operation types: adjustment, maintenance, shutdown, startup, transfer
+      const validType: 'adjustment' | 'maintenance' | 'shutdown' | 'startup' | 'transfer' = 
+        operationType === 'status_change' ? 'maintenance' : 'adjustment';
+
+      await supabase.from('operations_log').insert([{
+        code: opCode,
+        hospital_id: hospitalId,
+        asset_id: assetId,
+        asset_name: assetName,
+        type: validType,
+        status: 'completed',
+        reason: description || `Asset ${operationType}`,
+        location: 'N/A',
+        system_type: 'asset',
+        technician_name: technicianName,
+        performed_by: user.id,
+        previous_status: previousStatus || null,
+        new_status: newStatus || null,
+        timestamp: new Date().toISOString(),
+      }]);
+    } catch (error) {
+      console.error('Error logging asset operation:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -303,6 +359,9 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
       };
 
       if (asset) {
+        const previousStatus = asset.status;
+        const newStatus = formData.status;
+        
         // Update QR code URL if code changed
         payload.qr_code = `${window.location.origin}/admin/assets/${asset.code}`;
         
@@ -312,16 +371,53 @@ export function AssetFormDialog({ open, onOpenChange, asset, onSaved }: AssetFor
           .eq('id', asset.id);
 
         if (error) throw error;
+
+        // Log status change if status was updated
+        if (previousStatus !== newStatus) {
+          await logAssetOperation(
+            asset.id,
+            formData.name,
+            'status_change',
+            previousStatus,
+            newStatus,
+            language === 'ar' 
+              ? `تم تغيير حالة الأصل من "${previousStatus}" إلى "${newStatus}"`
+              : `Asset status changed from "${previousStatus}" to "${newStatus}"`
+          );
+        } else {
+          await logAssetOperation(
+            asset.id,
+            formData.name,
+            'updated',
+            undefined,
+            undefined,
+            language === 'ar' ? 'تم تحديث بيانات الأصل' : 'Asset data updated'
+          );
+        }
       } else {
         payload.code = generatedCode;
         // Set QR code URL for new asset
         payload.qr_code = `${window.location.origin}/admin/assets/${generatedCode}`;
         
-        const { error } = await supabase
+        const { data: newAsset, error } = await supabase
           .from('assets')
-          .insert([payload]);
+          .insert([payload])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Log asset creation
+        if (newAsset) {
+          await logAssetOperation(
+            newAsset.id,
+            formData.name,
+            'created',
+            undefined,
+            formData.status,
+            language === 'ar' ? 'تم إنشاء أصل جديد' : 'New asset created'
+          );
+        }
       }
 
       toast({
