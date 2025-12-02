@@ -9,16 +9,19 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Calendar, Clock, Wrench, AlertTriangle, CheckCircle2, Edit } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Wrench, AlertTriangle, CheckCircle2, Edit, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { MaintenanceTaskFormDialog } from '@/components/admin/MaintenanceTaskFormDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MaintenanceTaskDetails() {
   const { code } = useParams();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { hospitalId, permissions } = useCurrentUser();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [creatingWorkOrder, setCreatingWorkOrder] = useState(false);
 
   const [task, setTask] = useState<any>(null);
   const [plan, setPlan] = useState<any>(null);
@@ -134,6 +137,65 @@ export default function MaintenanceTaskDetails() {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const createWorkOrder = async () => {
+    if (!hospitalId || !user || !task) return;
+    
+    setCreatingWorkOrder(true);
+    try {
+      // Generate work order code
+      const { data: hospital } = await supabase
+        .from('hospitals')
+        .select('code')
+        .eq('id', hospitalId)
+        .single();
+
+      const hospitalCode = hospital?.code || 'HOS';
+      const { count } = await supabase
+        .from('work_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('hospital_id', hospitalId);
+      
+      const nextNumber = (count || 0) + 1;
+      const workOrderCode = `${hospitalCode}-WO-${nextNumber.toString().padStart(5, '0')}`;
+
+      // Create work order from maintenance task
+      const { data: workOrder, error } = await supabase
+        .from('work_orders')
+        .insert({
+          code: workOrderCode,
+          hospital_id: hospitalId,
+          reported_by: user.id,
+          issue_type: 'preventive_maintenance',
+          description: `${language === 'ar' ? task.name_ar : task.name}\n\n${language === 'ar' ? 'مهمة صيانة دورية من الخطة:' : 'Scheduled maintenance task from plan:'} ${plan?.name || plan?.name_ar}`,
+          priority: task.is_critical ? 'urgent' : 'medium',
+          status: 'pending',
+          assigned_team: task.assigned_to || null,
+          due_date: task.end_date,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: language === 'ar' ? 'تم إنشاء أمر العمل' : 'Work Order Created',
+        description: language === 'ar' ? `تم إنشاء أمر العمل ${workOrderCode}` : `Work order ${workOrderCode} created successfully`,
+      });
+
+      // Navigate to the new work order
+      navigate(`/admin/work-orders/${workOrder.code}`);
+    } catch (error: any) {
+      console.error('Error creating work order:', error);
+      toast({
+        title: language === 'ar' ? 'خطأ' : 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingWorkOrder(false);
     }
   };
 
@@ -315,7 +377,7 @@ export default function MaintenanceTaskDetails() {
             <CardTitle>{language === 'ar' ? 'إجراءات الحالة' : 'Status Actions'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {task.status === 'scheduled' && (
                 <Button onClick={() => updateStatus('in_progress')}>
                   {language === 'ar' ? 'بدء التنفيذ' : 'Start Task'}
@@ -327,6 +389,18 @@ export default function MaintenanceTaskDetails() {
                   {language === 'ar' ? 'إكمال المهمة' : 'Complete Task'}
                 </Button>
               )}
+              
+              {/* Create Work Order Button */}
+              <Button 
+                variant="outline" 
+                onClick={createWorkOrder}
+                disabled={creatingWorkOrder}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                {creatingWorkOrder 
+                  ? (language === 'ar' ? 'جاري الإنشاء...' : 'Creating...') 
+                  : (language === 'ar' ? 'إنشاء أمر عمل' : 'Create Work Order')}
+              </Button>
             </div>
           </CardContent>
         </Card>

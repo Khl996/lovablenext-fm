@@ -371,7 +371,7 @@ export default function Maintenance() {
                   {language === 'ar' ? 'لا توجد مهام' : 'No tasks found'}
                 </div>
               ) : viewMode === 'kanban' ? (
-                <KanbanBoard tasks={filteredTasks} language={language} />
+                <KanbanBoard tasks={filteredTasks} language={language} onTaskUpdated={loadTasks} />
               ) : viewMode === 'timeline' ? (
                 <TimelineView tasks={filteredTasks} language={language} />
               ) : (
