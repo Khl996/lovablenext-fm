@@ -132,12 +132,20 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const canApproveAsSupervisor = !!(roleConfig?.modules.workOrders.approve) && (isTeamMember || isAssignedToBuilding) && (state?.can.approve ?? false);
   const canReviewAsEngineer = !!(roleConfig?.modules.workOrders.reviewAsEngineer) && (state?.can.review ?? false);
   const canCloseAsReporter = isReporter && (state?.can.close ?? false);
+  // Reporter can reject when in pending_reporter_closure status
+  const canRejectAsReporter = isReporter && status === 'pending_reporter_closure';
 
   const canFinalApprove =
     !!(roleConfig?.modules.workOrders.finalApprove) &&
     permissions.hasPermission('work_orders.final_approve', hospitalId) &&
     (workOrder.customer_reviewed_at || status === 'auto_closed') &&
     !workOrder.maintenance_manager_approved_at;
+
+  // Manager can add notes at any stage before final approval
+  const canAddManagerNotes = 
+    permissions.hasPermission('work_orders.final_approve', hospitalId) &&
+    !workOrder.maintenance_manager_approved_at &&
+    status !== 'completed' && status !== 'cancelled';
 
   const canReject = !!(roleConfig?.modules.workOrders.reject) && isTeamMember && (state?.can.reject ?? false);
 
@@ -163,7 +171,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     canApproveAsSupervisor,
     canReviewAsEngineer,
     canCloseAsReporter,
+    canRejectAsReporter,
     canFinalApprove,
+    canAddManagerNotes,
     canReject,
     canReassign,
     canAddUpdate,
@@ -204,6 +214,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     setNotes('');
   };
 
+  const handleAddManagerNotes = () => {
+    actions.addManagerNotes({ workOrderId: workOrder.id, notes });
+    setNotes('');
+  };
+
   // Show loading while checking team membership
   if (checkingTeamMembership) {
     return (
@@ -217,7 +232,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
   // If no action is available, don't render
   if (!canStartWork && !canCompleteWork && !canApproveAsSupervisor && !canReviewAsEngineer && 
-      !canCloseAsReporter && !canFinalApprove) {
+      !canCloseAsReporter && !canFinalApprove && !canAddManagerNotes) {
     return null;
   }
 
@@ -336,14 +351,28 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             )}
 
             {canCloseAsReporter && (
-              <Button
-                onClick={handleReporterClosure}
-                disabled={actions.loading}
-                className="flex-1"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                {language === 'ar' ? 'إغلاق' : 'Close'}
-              </Button>
+              <>
+                <Button
+                  onClick={handleReporterClosure}
+                  disabled={actions.loading}
+                  className="flex-1"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'إغلاق' : 'Close'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRejectStage('reporter');
+                    setShowRejectDialog(true);
+                  }}
+                  disabled={actions.loading}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'رفض وإرجاع' : 'Reject & Return'}
+                </Button>
+              </>
             )}
 
             {canFinalApprove && (
@@ -354,6 +383,18 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 {language === 'ar' ? 'اعتماد نهائي' : 'Final Approve'}
+              </Button>
+            )}
+
+            {canAddManagerNotes && !canFinalApprove && (
+              <Button
+                onClick={handleAddManagerNotes}
+                disabled={actions.loading || !notes.trim()}
+                variant="secondary"
+                className="flex-1"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'إضافة ملاحظة المدير' : 'Add Manager Note'}
               </Button>
             )}
           </div>

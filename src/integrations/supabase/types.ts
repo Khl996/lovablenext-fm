@@ -2869,6 +2869,10 @@ export type Database = {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
+      work_order_add_manager_notes: {
+        Args: { _manager_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
       work_order_complete_work: {
         Args: { _technician_notes: string; _work_order_id: string }
         Returns: undefined

@@ -252,6 +252,36 @@ export function useWorkOrderActions(onSuccess?: () => void) {
     }
   }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
+  const addManagerNotes = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
+    if (!notes?.trim()) {
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة الملاحظات' : 'Please add notes' },
+        toast,
+        language
+      );
+      return;
+    }
+
+    if (!checkRateLimit()) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('work_order_add_manager_notes', {
+        _work_order_id: workOrderId,
+        _manager_notes: notes,
+      });
+
+      if (error) throw error;
+
+      handleSuccess(language === 'ar' ? 'تمت إضافة ملاحظات المدير' : 'Manager notes added', toast, language);
+      onSuccess?.();
+    } catch (error: any) {
+      handleApiError(error, toast, language);
+    } finally {
+      setLoading(false);
+    }
+  }, [language, toast, onSuccess, checkRateLimit]);
+
   return {
     loading,
     startWork,
@@ -261,5 +291,6 @@ export function useWorkOrderActions(onSuccess?: () => void) {
     closeAsReporter,
     finalApprove,
     reject,
+    addManagerNotes,
   };
 }

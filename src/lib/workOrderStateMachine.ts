@@ -158,6 +158,20 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
     requiredRole: ['engineer', 'maintenance_manager', 'facility_manager', 'hospital_admin'],
     requiredFields: ['rejection_reason'],
   },
+  // Reporter can reject and return to engineer
+  {
+    from: 'pending_reporter_closure',
+    to: 'pending_engineer_review',
+    action: 'reject_reporter',
+    requiredRole: ['reporter'],
+    requiredFields: ['rejection_reason'],
+    validation: (wo) => {
+      if (!wo.engineer_approved_at) {
+        return { valid: false, error: 'Must be reviewed by engineer first' };
+      }
+      return { valid: true };
+    },
+  },
 ];
 
 /**
@@ -226,6 +240,7 @@ export function getWorkOrderState(
       case 'reject_technician':
       case 'reject_supervisor':
       case 'reject_engineer':
+      case 'reject_reporter':
         state.can.reject = true;
         break;
     }
