@@ -216,6 +216,20 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       }
 
+      case "manager_notes_added": {
+        // Manager added notes - notify team and supervisors
+        if (workOrder.assigned_team) {
+          const teamEmails = await getTeamMemberEmails(workOrder.assigned_team);
+          recipients = [...teamEmails];
+        }
+        const supervisors = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+        const managers = await getUsersWithPermission("work_orders.final_approve", workOrder.hospital_id);
+        recipients = [...new Set([...recipients, ...supervisors, ...managers])];
+        subject = `Manager Notes Added | ملاحظات المدير - ${workOrder.code}`;
+        htmlContent = buildManagerNotesEmail(workOrder);
+        break;
+      }
+
       default: {
         // Generic update
         if (reporterProfile?.email) recipients.push(reporterProfile.email);
@@ -547,6 +561,49 @@ function buildRejectionEmail(workOrder: any, stage: string, stageNameEn: string,
   `;
 }
 
+function buildManagerNotesEmail(workOrder: any): string {
+  const notes = workOrder.maintenance_manager_notes || '';
+  // Get the last note (latest addition)
+  const noteLines = notes.split('\n---\n');
+  const latestNote = noteLines[noteLines.length - 1] || notes;
+  
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">📝 Manager Notes Added</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">ملاحظات المدير</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <div style="text-align: center; margin-bottom: 25px;">
+          <div style="display: inline-block; background: #fff9e6; border: 2px solid #f39c12; border-radius: 8px; padding: 12px 24px;">
+            <span style="color: #666; font-size: 13px;">Report #</span>
+            <div style="color: #f39c12; font-size: 24px; font-weight: 700;">${workOrder.code}</div>
+          </div>
+        </div>
+        
+        <p style="color: #666; line-height: 1.6;">
+          <strong>English:</strong> The maintenance manager has added notes to this work order.
+        </p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">
+          <strong>عربي:</strong> أضاف مدير الصيانة ملاحظات على أمر العمل هذا.
+        </p>
+        
+        <div style="margin: 20px 0; padding: 15px; background: #fff9e6; border-left: 4px solid #f39c12; border-radius: 4px;">
+          <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">Manager Notes | ملاحظات المدير</div>
+          <div style="color: #856404; line-height: 1.6;">${latestNote}</div>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; background: #fff9e6; border-radius: 8px; margin-top: 20px;">
+          <p style="color: #856404; margin: 0; font-weight: 600;">⚠️ Please Review | يرجى المراجعة</p>
+          <p style="color: #856404; margin: 10px 0 0 0;">Please take note of the manager's comments</p>
+          <p dir="rtl" style="color: #856404; margin: 5px 0 0 0;">يرجى الأخذ بملاحظات المدير</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
 function buildGenericUpdateEmail(workOrder: any): string {
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
@@ -672,6 +729,14 @@ function getNotificationData(eventType: string, workOrder: any, rejectionStage?:
         type: "overdue_task"
       };
     }
+    case "manager_notes_added":
+      return {
+        title: `Manager Notes: ${code}`,
+        titleAr: `ملاحظات المدير: ${code}`,
+        message: `Maintenance manager added notes to the work order`,
+        messageAr: `أضاف مدير الصيانة ملاحظات على أمر العمل`,
+        type: "task_assigned"
+      };
     default:
       return null;
   }
