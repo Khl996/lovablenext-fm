@@ -137,18 +137,18 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
   },
   
   // Rejections
-  // Technician can reject from assigned (before starting work)
+  // Technician can reject from assigned (before starting work) -> goes to rejected_by_technician
   {
     from: 'assigned',
-    to: 'assigned',
+    to: 'rejected_by_technician',
     action: 'reject_technician',
     requiredRole: ['technician', 'senior_technician'],
     requiredFields: ['rejection_reason'],
   },
-  // Technician can reject from in_progress (after starting work)
+  // Technician can reject from in_progress (after starting work) -> goes to rejected_by_technician
   {
     from: 'in_progress',
-    to: 'assigned',
+    to: 'rejected_by_technician',
     action: 'reject_technician',
     requiredRole: ['technician', 'senior_technician'],
     requiredFields: ['rejection_reason'],
@@ -261,7 +261,8 @@ export function getWorkOrderState(
   );
   
   if (isManager) {
-    state.can.reassign = ['pending', 'assigned', 'in_progress'].includes(status);
+    // Supervisor can reassign from rejected_by_technician status as well
+    state.can.reassign = ['pending', 'assigned', 'in_progress', 'rejected_by_technician'].includes(status);
     state.can.update = true;
   }
 
