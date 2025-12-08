@@ -15,6 +15,7 @@ interface EmailRequest {
   workOrderId: string;
   eventType: string;
   recipientEmail?: string;
+  rejectionStage?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,15 +24,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { workOrderId, eventType, recipientEmail }: EmailRequest = await req.json();
+    const { workOrderId, eventType, recipientEmail, rejectionStage }: EmailRequest = await req.json();
     
-    console.log("Processing email notification:", { workOrderId, eventType, recipientEmail });
+    console.log("Processing email notification:", { workOrderId, eventType, recipientEmail, rejectionStage });
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    console.log("Fetching work order with ID:", workOrderId);
-
-    // Fetch work order details
+    // Fetch work order details with all related data
     const { data: workOrder, error: woError } = await supabase
       .from("work_orders")
       .select(`
@@ -41,8 +40,6 @@ const handler = async (req: Request): Promise<Response> => {
       `)
       .eq("id", workOrderId)
       .maybeSingle();
-
-    console.log("Work order fetch result:", { workOrder, woError });
 
     if (woError) {
       console.error("Database error fetching work order:", woError);
@@ -54,7 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Work order not found with ID: ${workOrderId}`);
     }
 
-    // Fetch reporter profile separately
+    // Fetch reporter profile
     let reporterProfile = null;
     if (workOrder.reported_by) {
       const { data: profile } = await supabase
@@ -62,317 +59,174 @@ const handler = async (req: Request): Promise<Response> => {
         .select("full_name, email")
         .eq("id", workOrder.reported_by)
         .maybeSingle();
-      
       reporterProfile = profile;
-      console.log("Reporter profile:", reporterProfile);
     }
 
-    // Determine email subject and body based on event type
-    let subject = "";
-    let htmlContent = "";
-    let toEmail = recipientEmail || reporterProfile?.email;
-    let toEmails: string[] = [];
-
-    // For new work orders, get team members' emails
-    if (eventType === "new_work_order" && workOrder.assigned_team) {
-      console.log("Fetching team members for team:", workOrder.assigned_team);
-      const { data: teamMembers, error: teamError } = await supabase
+    // Helper function to get team members' emails
+    const getTeamMemberEmails = async (teamId: string): Promise<string[]> => {
+      const { data: teamMembers } = await supabase
         .from("team_members")
         .select("user_id")
-        .eq("team_id", workOrder.assigned_team);
+        .eq("team_id", teamId);
 
-      console.log("Team members result:", { teamMembers, teamError });
+      if (!teamMembers || teamMembers.length === 0) return [];
 
-      if (!teamError && teamMembers && teamMembers.length > 0) {
-        const userIds = teamMembers.map(tm => tm.user_id);
-        console.log("Fetching profiles for user IDs:", userIds);
-        
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("email")
-          .in("id", userIds);
+      const userIds = teamMembers.map(tm => tm.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("email")
+        .in("id", userIds);
 
-        console.log("Profiles result:", { profiles, profilesError });
+      return profiles?.map(p => p.email).filter(email => email) || [];
+    };
 
-        if (!profilesError && profiles) {
-          toEmails = profiles.map(p => p.email).filter(email => email);
-          console.log("Team member emails found:", toEmails);
+    // Helper function to get users with specific permission in hospital
+    const getUsersWithPermission = async (permission: string, hospitalId: string): Promise<string[]> => {
+      // Get all users with the permission through their roles
+      const { data: rolePermissions } = await supabase
+        .from("role_permissions")
+        .select("role_code")
+        .eq("permission_key", permission)
+        .eq("allowed", true);
+
+      if (!rolePermissions || rolePermissions.length === 0) return [];
+
+      const roleCodes = rolePermissions.map(rp => rp.role_code).filter(Boolean);
+
+      const { data: userRoles } = await supabase
+        .from("user_custom_roles")
+        .select("user_id")
+        .in("role_code", roleCodes)
+        .eq("hospital_id", hospitalId);
+
+      if (!userRoles || userRoles.length === 0) return [];
+
+      const userIds = [...new Set(userRoles.map(ur => ur.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("email")
+        .in("id", userIds);
+
+      return profiles?.map(p => p.email).filter(email => email) || [];
+    };
+
+    // Determine recipients based on event type
+    let recipients: string[] = [];
+    let subject = "";
+    let htmlContent = "";
+
+    switch (eventType) {
+      case "new_work_order": {
+        // Send to assigned team members
+        if (workOrder.assigned_team) {
+          recipients = await getTeamMemberEmails(workOrder.assigned_team);
         }
-      } else {
-        console.log("No team members found for this team");
+        subject = `New Maintenance Report | بلاغ صيانة جديد - ${workOrder.code}`;
+        htmlContent = buildNewWorkOrderEmail(workOrder, reporterProfile);
+        break;
+      }
+
+      case "work_started": {
+        // Send to reporter and supervisors
+        if (reporterProfile?.email) recipients.push(reporterProfile.email);
+        const supervisors = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+        recipients = [...new Set([...recipients, ...supervisors])];
+        subject = `Work Started | بدء العمل - ${workOrder.code}`;
+        htmlContent = buildWorkStartedEmail(workOrder);
+        break;
+      }
+
+      case "work_completed": {
+        // Send to supervisors who can approve
+        recipients = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+        subject = `Pending Approval | بانتظار الموافقة - ${workOrder.code}`;
+        htmlContent = buildWorkCompletedEmail(workOrder);
+        break;
+      }
+
+      case "supervisor_approved": {
+        // Send to engineers who can review
+        recipients = await getUsersWithPermission("work_orders.review_as_engineer", workOrder.hospital_id);
+        subject = `Pending Engineer Review | بانتظار مراجعة المهندس - ${workOrder.code}`;
+        htmlContent = buildSupervisorApprovedEmail(workOrder);
+        break;
+      }
+
+      case "engineer_approved": {
+        // Send to reporter for closure
+        if (reporterProfile?.email) recipients.push(reporterProfile.email);
+        subject = `Pending Closure | بانتظار الإغلاق - ${workOrder.code}`;
+        htmlContent = buildEngineerApprovedEmail(workOrder);
+        break;
+      }
+
+      case "customer_reviewed": {
+        // Send to team and managers
+        if (workOrder.assigned_team) {
+          const teamEmails = await getTeamMemberEmails(workOrder.assigned_team);
+          recipients = [...teamEmails];
+        }
+        const managers = await getUsersWithPermission("work_orders.final_approve", workOrder.hospital_id);
+        recipients = [...new Set([...recipients, ...managers])];
+        subject = `Work Order Closed | تم إغلاق أمر العمل - ${workOrder.code}`;
+        htmlContent = buildCustomerReviewedEmail(workOrder);
+        break;
+      }
+
+      case "final_approved": {
+        // Send to reporter and team
+        if (reporterProfile?.email) recipients.push(reporterProfile.email);
+        if (workOrder.assigned_team) {
+          const teamEmails = await getTeamMemberEmails(workOrder.assigned_team);
+          recipients = [...new Set([...recipients, ...teamEmails])];
+        }
+        subject = `Final Approval | اعتماد نهائي - ${workOrder.code}`;
+        htmlContent = buildFinalApprovedEmail(workOrder);
+        break;
+      }
+
+      case "rejected": {
+        // Determine recipient based on rejection stage
+        const stage = rejectionStage || workOrder.rejection_stage;
+        
+        if (stage === "technician") {
+          // Technician rejected -> notify supervisors
+          recipients = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+          subject = `Technician Rejected | رفض الفني - ${workOrder.code}`;
+          htmlContent = buildRejectionEmail(workOrder, "technician", "Technician", "الفني");
+        } else if (stage === "supervisor") {
+          // Supervisor rejected -> notify team (technicians)
+          if (workOrder.assigned_team) {
+            recipients = await getTeamMemberEmails(workOrder.assigned_team);
+          }
+          subject = `Supervisor Rejected | رفض المشرف - ${workOrder.code}`;
+          htmlContent = buildRejectionEmail(workOrder, "supervisor", "Supervisor", "المشرف");
+        } else if (stage === "engineer") {
+          // Engineer rejected -> notify supervisors
+          recipients = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+          subject = `Engineer Rejected | رفض المهندس - ${workOrder.code}`;
+          htmlContent = buildRejectionEmail(workOrder, "engineer", "Engineer", "المهندس");
+        } else if (stage === "reporter") {
+          // Reporter rejected -> notify engineers
+          recipients = await getUsersWithPermission("work_orders.review_as_engineer", workOrder.hospital_id);
+          subject = `Reporter Rejected | رفض المُبلِّغ - ${workOrder.code}`;
+          htmlContent = buildRejectionEmail(workOrder, "reporter", "Reporter", "المُبلِّغ");
+        }
+        break;
+      }
+
+      default: {
+        // Generic update
+        if (reporterProfile?.email) recipients.push(reporterProfile.email);
+        subject = `Update | تحديث - ${workOrder.code}`;
+        htmlContent = buildGenericUpdateEmail(workOrder);
       }
     }
 
-    switch (eventType) {
-      case "new_work_order":
-        subject = `New Maintenance Report | بلاغ صيانة جديد - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">New Maintenance Report</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">بلاغ صيانة جديد</h2>
-            </div>
-            
-            <!-- Content -->
-            <div style="padding: 30px 20px;">
-              <!-- Report Number -->
-              <div style="text-align: center; margin-bottom: 25px;">
-                <div style="display: inline-block; background: #f7f9fc; border: 2px solid #667eea; border-radius: 8px; padding: 12px 24px;">
-                  <span style="color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Report #</span>
-                  <div style="color: #667eea; font-size: 24px; font-weight: 700; margin-top: 4px;">${workOrder.code}</div>
-                </div>
-              </div>
+    // Remove duplicates and filter empty
+    recipients = [...new Set(recipients)].filter(email => email);
 
-              <!-- Details Table -->
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                <tr>
-                  <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; width: 40%; font-weight: 600; color: #444;">Issue Type | نوع المشكلة</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">${workOrder.issue_type}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #444;">Priority | الأولوية</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">
-                    <span style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; 
-                      ${workOrder.priority === 'high' || workOrder.priority === 'urgent' 
-                        ? 'background: #fee; color: #c33;' 
-                        : workOrder.priority === 'medium' 
-                        ? 'background: #ffeaa7; color: #d63031;' 
-                        : 'background: #dfe6e9; color: #2d3436;'}">
-                      ${workOrder.priority.toUpperCase()}
-                    </span>
-                  </td>
-                </tr>
-                ${workOrder.assets ? `
-                <tr>
-                  <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #444;">Asset | الأصل</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">${workOrder.assets?.name_ar || workOrder.assets?.name || "-"}</td>
-                </tr>
-                ` : ''}
-                <tr>
-                  <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #444;">Reporter | المبلغ</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">${reporterProfile?.full_name || "Not specified"}</td>
-                </tr>
-              </table>
-
-              <!-- Description -->
-              <div style="margin: 25px 0; padding: 20px; background: #f7f9fc; border-left: 4px solid #667eea; border-radius: 4px;">
-                <div style="font-weight: 600; color: #444; margin-bottom: 8px; font-size: 14px;">Description | الوصف</div>
-                <div style="color: #666; line-height: 1.6; white-space: pre-wrap;">${workOrder.description}</div>
-              </div>
-
-              <!-- Call to Action -->
-              <div style="text-align: center; margin-top: 30px; padding-top: 25px; border-top: 2px solid #e0e0e0;">
-                <p style="color: #666; margin: 0 0 15px 0; font-size: 15px;">
-                  <strong>English:</strong> Please review and take action on this maintenance report as soon as possible.
-                </p>
-                <p dir="rtl" style="color: #666; margin: 0; font-size: 15px;">
-                  <strong>عربي:</strong> يرجى المراجعة والعمل على هذا البلاغ في أقرب وقت ممكن.
-                </p>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div style="background: #f7f9fc; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
-              <p style="color: #999; font-size: 12px; margin: 0;">
-                This is an automated notification from the Maintenance Management System<br>
-                هذا إشعار تلقائي من نظام إدارة الصيانة
-              </p>
-            </div>
-          </div>
-        `;
-        break;
-
-      case "work_started":
-        subject = `Work Started | بدء العمل - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Work Started</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">تم بدء العمل</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> Work has been started on maintenance report <strong style="color: #4facfe;">${workOrder.code}</strong>
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تم بدء العمل على طلب الصيانة رقم <strong style="color: #4facfe;">${workOrder.code}</strong>
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-              ${workOrder.teams ? `<p style="color: #666;"><strong>Team | الفريق:</strong> ${workOrder.teams?.name_ar || workOrder.teams?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "work_completed":
-        subject = `Work Completed | اكتمال العمل - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Work Completed</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">تم إكمال العمل</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> Work has been completed on maintenance report <strong style="color: #43e97b;">${workOrder.code}</strong>. Please review and approve the completed work.
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تم إكمال العمل على طلب الصيانة رقم <strong style="color: #43e97b;">${workOrder.code}</strong>. يرجى مراجعة والموافقة على العمل المنجز.
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "supervisor_approved":
-        subject = `Supervisor Approved | موافقة المشرف - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Supervisor Approved</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">موافقة المشرف</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> The supervisor has approved maintenance report <strong style="color: #f5576c;">${workOrder.code}</strong>
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تمت الموافقة من المشرف على طلب الصيانة رقم <strong style="color: #f5576c;">${workOrder.code}</strong>
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "engineer_approved":
-        subject = `Engineer Approved | موافقة المهندس - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Engineer Approved</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">موافقة المهندس</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> The engineer has approved maintenance report <strong style="color: #fa709a;">${workOrder.code}</strong>. The report is ready for closure.
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تمت الموافقة من المهندس على طلب الصيانة رقم <strong style="color: #fa709a;">${workOrder.code}</strong>. الطلب جاهز للإغلاق.
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "rejected_by_technician":
-        subject = `Rejected | رفض - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Report Rejected</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">تم رفض البلاغ</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> Maintenance report <strong style="color: #ff6b6b;">${workOrder.code}</strong> has been rejected by the technician.
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تم رفض طلب الصيانة رقم <strong style="color: #ff6b6b;">${workOrder.code}</strong> من قبل الفني.
-              </p>
-              ${workOrder.technician_notes ? `
-              <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ff6b6b; border-radius: 4px;">
-                <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">Technician Notes | ملاحظات الفني</div>
-                <div style="color: #856404; line-height: 1.6;">${workOrder.technician_notes}</div>
-              </div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "customer_reviewed":
-        subject = `Customer Review | مراجعة العميل - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Customer Review</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">مراجعة العميل</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> Customer has reviewed maintenance report <strong>${workOrder.code}</strong>
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تمت مراجعة طلب الصيانة رقم <strong>${workOrder.code}</strong>
-              </p>
-              ${workOrder.customer_rating ? `
-              <div style="text-align: center; margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 8px;">
-                <div style="font-size: 14px; color: #666; margin-bottom: 8px;">Rating | التقييم</div>
-                <div style="font-size: 32px; color: #ffa000; font-weight: bold;">${workOrder.customer_rating}/5 ⭐</div>
-              </div>
-              ` : ''}
-              ${workOrder.customer_feedback ? `
-              <div style="margin: 20px 0; padding: 15px; background: #f7f9fc; border-left: 4px solid #19547b; border-radius: 4px;">
-                <div style="font-weight: 600; color: #444; margin-bottom: 8px;">Feedback | الملاحظات</div>
-                <div style="color: #666; line-height: 1.6;">${workOrder.customer_feedback}</div>
-              </div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      case "final_approved":
-        subject = `Final Approval | اعتماد نهائي - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">✓ Final Approval</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">اعتماد نهائي</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> Maintenance report <strong style="color: #11998e;">${workOrder.code}</strong> has been finally approved. The report has been successfully closed.
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> تم اعتماد طلب الصيانة رقم <strong style="color: #11998e;">${workOrder.code}</strong> نهائياً. تم إغلاق الطلب بنجاح.
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-        break;
-
-      default:
-        subject = `Update | تحديث - ${workOrder.code}`;
-        htmlContent = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Maintenance Report Update</h1>
-              <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">تحديث طلب صيانة</h2>
-            </div>
-            <div style="padding: 30px 20px;">
-              <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-                <strong>English:</strong> There is an update on maintenance report <strong>${workOrder.code}</strong>
-              </p>
-              <p dir="rtl" style="color: #666; line-height: 1.6; margin-bottom: 25px;">
-                <strong>عربي:</strong> هناك تحديث على طلب الصيانة رقم <strong>${workOrder.code}</strong>
-              </p>
-              ${workOrder.assets ? `<p style="color: #666;"><strong>Asset | الأصل:</strong> ${workOrder.assets?.name_ar || workOrder.assets?.name}</p>` : ''}
-            </div>
-          </div>
-        `;
-    }
-
-    // Determine recipients
-    const recipients = toEmails.length > 0 ? toEmails : (toEmail ? [toEmail] : []);
-    
-    console.log("Final recipients list:", recipients);
-    console.log("toEmails:", toEmails, "toEmail:", toEmail);
+    console.log("Final recipients:", recipients);
 
     if (recipients.length === 0) {
       console.warn("No recipient email found, skipping email send");
@@ -393,22 +247,310 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Email sent successfully:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResponse.data?.id }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ success: true, emailId: emailResponse.data?.id, recipients }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
     console.error("Error in send-work-order-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 };
+
+// Email template builders
+function buildNewWorkOrderEmail(workOrder: any, reporterProfile: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">🆕 New Maintenance Report</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px; font-weight: 400;">بلاغ صيانة جديد</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <div style="text-align: center; margin-bottom: 25px;">
+          <div style="display: inline-block; background: #f7f9fc; border: 2px solid #667eea; border-radius: 8px; padding: 12px 24px;">
+            <span style="color: #666; font-size: 13px;">Report #</span>
+            <div style="color: #667eea; font-size: 24px; font-weight: 700;">${workOrder.code}</div>
+          </div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr>
+            <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; width: 40%; font-weight: 600;">Issue Type | نوع المشكلة</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${workOrder.issue_type || '-'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Priority | الأولوية</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">
+              <span style="padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; ${getPriorityStyle(workOrder.priority)}">
+                ${workOrder.priority?.toUpperCase() || 'NORMAL'}
+              </span>
+            </td>
+          </tr>
+          ${workOrder.assets ? `
+          <tr>
+            <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Asset | الأصل</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${workOrder.assets?.name_ar || workOrder.assets?.name || '-'}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td style="padding: 12px; background: #f7f9fc; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Reporter | المبلغ</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">${reporterProfile?.full_name || 'غير محدد'}</td>
+          </tr>
+        </table>
+        <div style="margin: 25px 0; padding: 20px; background: #f7f9fc; border-left: 4px solid #667eea; border-radius: 4px;">
+          <div style="font-weight: 600; color: #444; margin-bottom: 8px;">Description | الوصف</div>
+          <div style="color: #666; line-height: 1.6;">${workOrder.description || '-'}</div>
+        </div>
+        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px;">
+          <p style="color: #856404; margin: 0; font-weight: 600;">⚡ Action Required | مطلوب إجراء</p>
+          <p style="color: #856404; margin: 10px 0 0 0;">Please start work on this report as soon as possible</p>
+          <p dir="rtl" style="color: #856404; margin: 5px 0 0 0;">يرجى بدء العمل على هذا البلاغ في أقرب وقت</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildWorkStartedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">▶️ Work Started | بدء العمل</h1>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Work has been started on maintenance report <strong style="color: #4facfe;">${workOrder.code}</strong></p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">تم بدء العمل على طلب الصيانة رقم <strong style="color: #4facfe;">${workOrder.code}</strong></p>
+        ${workOrder.teams ? `<p style="color: #666;"><strong>Team | الفريق:</strong> ${workOrder.teams?.name_ar || workOrder.teams?.name}</p>` : ''}
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildWorkCompletedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">⏳ Pending Supervisor Approval</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">بانتظار موافقة المشرف</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Work has been completed on maintenance report <strong>${workOrder.code}</strong>. Please review and approve.</p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">تم إكمال العمل على طلب الصيانة رقم <strong>${workOrder.code}</strong>. يرجى المراجعة والموافقة.</p>
+        ${workOrder.technician_notes ? `
+        <div style="margin: 20px 0; padding: 15px; background: #f7f9fc; border-left: 4px solid #f5576c; border-radius: 4px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">Technician Notes | ملاحظات الفني</div>
+          <div style="color: #666;">${workOrder.technician_notes}</div>
+        </div>
+        ` : ''}
+        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin-top: 20px;">
+          <p style="color: #856404; margin: 0; font-weight: 600;">⚡ Your Approval Required | مطلوب موافقتك</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildSupervisorApprovedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">⏳ Pending Engineer Review</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">بانتظار مراجعة المهندس</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Supervisor has approved maintenance report <strong>${workOrder.code}</strong>. Please review as engineer.</p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">وافق المشرف على طلب الصيانة رقم <strong>${workOrder.code}</strong>. يرجى المراجعة كمهندس.</p>
+        ${workOrder.supervisor_notes ? `
+        <div style="margin: 20px 0; padding: 15px; background: #f7f9fc; border-left: 4px solid #fa709a; border-radius: 4px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">Supervisor Notes | ملاحظات المشرف</div>
+          <div style="color: #666;">${workOrder.supervisor_notes}</div>
+        </div>
+        ` : ''}
+        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin-top: 20px;">
+          <p style="color: #856404; margin: 0; font-weight: 600;">⚡ Your Review Required | مطلوب مراجعتك</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildEngineerApprovedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">✅ Ready for Closure</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">جاهز للإغلاق</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Maintenance report <strong>${workOrder.code}</strong> has been reviewed and approved. Please close the report.</p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">تمت مراجعة طلب الصيانة رقم <strong>${workOrder.code}</strong> والموافقة عليه. يرجى إغلاق البلاغ.</p>
+        ${workOrder.engineer_notes ? `
+        <div style="margin: 20px 0; padding: 15px; background: #f7f9fc; border-left: 4px solid #43e97b; border-radius: 4px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">Engineer Notes | ملاحظات المهندس</div>
+          <div style="color: #666;">${workOrder.engineer_notes}</div>
+        </div>
+        ` : ''}
+        <div style="text-align: center; padding: 20px; background: #d4edda; border-radius: 8px; margin-top: 20px;">
+          <p style="color: #155724; margin: 0; font-weight: 600;">⚡ Please Close the Report | يرجى إغلاق البلاغ</p>
+          <p style="color: #155724; margin: 10px 0 0 0; font-size: 14px;">سيتم إغلاق البلاغ تلقائياً خلال 24 ساعة إذا لم يتم الإغلاق يدوياً</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildCustomerReviewedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">📋 Report Closed | تم إغلاق البلاغ</h1>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Maintenance report <strong>${workOrder.code}</strong> has been closed by the reporter.</p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">تم إغلاق طلب الصيانة رقم <strong>${workOrder.code}</strong> من قبل المُبلِّغ.</p>
+        ${workOrder.customer_rating ? `
+        <div style="text-align: center; margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 8px;">
+          <div style="font-size: 14px; color: #666; margin-bottom: 8px;">Rating | التقييم</div>
+          <div style="font-size: 32px; color: #ffa000; font-weight: bold;">${workOrder.customer_rating}/5 ⭐</div>
+        </div>
+        ` : ''}
+        ${workOrder.reporter_notes ? `
+        <div style="margin: 20px 0; padding: 15px; background: #f7f9fc; border-left: 4px solid #19547b; border-radius: 4px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">Reporter Notes | ملاحظات المُبلِّغ</div>
+          <div style="color: #666;">${workOrder.reporter_notes}</div>
+        </div>
+        ` : ''}
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildFinalApprovedEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">✓ Final Approval Complete</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">تم الاعتماد النهائي</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">Maintenance report <strong style="color: #11998e;">${workOrder.code}</strong> has been finally approved and archived.</p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">تم اعتماد طلب الصيانة رقم <strong style="color: #11998e;">${workOrder.code}</strong> نهائياً وأرشفته.</p>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildRejectionEmail(workOrder: any, stage: string, stageNameEn: string, stageNameAr: string): string {
+  const notesField = `${stage}_notes`;
+  const notes = workOrder[notesField] || workOrder.rejection_reason || '';
+  
+  // Determine what needs to happen next based on stage
+  let actionEn = "";
+  let actionAr = "";
+  
+  switch (stage) {
+    case "technician":
+      actionEn = "Please reassign the work order to another technician or team.";
+      actionAr = "يرجى إعادة تعيين أمر العمل لفني أو فريق آخر.";
+      break;
+    case "supervisor":
+      actionEn = "Please redo the work according to the supervisor's feedback.";
+      actionAr = "يرجى إعادة العمل وفقاً لملاحظات المشرف.";
+      break;
+    case "engineer":
+      actionEn = "Please review the work again with the technician.";
+      actionAr = "يرجى مراجعة العمل مرة أخرى مع الفني.";
+      break;
+    case "reporter":
+      actionEn = "The reporter is not satisfied. Please review and address the concerns.";
+      actionAr = "المُبلِّغ غير راضٍ. يرجى المراجعة ومعالجة الملاحظات.";
+      break;
+  }
+
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">❌ Work Order Rejected</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">تم رفض أمر العمل</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <div style="text-align: center; margin-bottom: 25px;">
+          <div style="display: inline-block; background: #fee; border: 2px solid #ff6b6b; border-radius: 8px; padding: 12px 24px;">
+            <span style="color: #666; font-size: 13px;">Report #</span>
+            <div style="color: #ff6b6b; font-size: 24px; font-weight: 700;">${workOrder.code}</div>
+          </div>
+        </div>
+        
+        <p style="color: #666; line-height: 1.6;">
+          <strong>English:</strong> This work order has been rejected by the <strong style="color: #ff6b6b;">${stageNameEn}</strong>.
+        </p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">
+          <strong>عربي:</strong> تم رفض أمر العمل هذا من قبل <strong style="color: #ff6b6b;">${stageNameAr}</strong>.
+        </p>
+        
+        ${notes ? `
+        <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ff6b6b; border-radius: 4px;">
+          <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">Rejection Reason | سبب الرفض</div>
+          <div style="color: #856404; line-height: 1.6;">${notes.replace('رفض: ', '')}</div>
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin-top: 20px;">
+          <p style="color: #856404; margin: 0; font-weight: 600;">⚡ Action Required | مطلوب إجراء</p>
+          <p style="color: #856404; margin: 10px 0 0 0;">${actionEn}</p>
+          <p dir="rtl" style="color: #856404; margin: 5px 0 0 0;">${actionAr}</p>
+        </div>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildGenericUpdateEmail(workOrder: any): string {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">📢 Work Order Update</h1>
+        <h2 style="color: #f0f0f0; margin: 8px 0 0 0; font-size: 18px;">تحديث أمر العمل</h2>
+      </div>
+      <div style="padding: 30px 20px;">
+        <p style="color: #666; line-height: 1.6;">There is an update on maintenance report <strong>${workOrder.code}</strong></p>
+        <p dir="rtl" style="color: #666; line-height: 1.6;">هناك تحديث على طلب الصيانة رقم <strong>${workOrder.code}</strong></p>
+      </div>
+      ${buildFooter()}
+    </div>
+  `;
+}
+
+function buildFooter(): string {
+  return `
+    <div style="background: #f7f9fc; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
+      <p style="color: #999; font-size: 12px; margin: 0;">
+        This is an automated notification from Mutqan CMMS<br>
+        هذا إشعار تلقائي من نظام متقن لإدارة الصيانة
+      </p>
+    </div>
+  `;
+}
+
+function getPriorityStyle(priority: string): string {
+  switch (priority?.toLowerCase()) {
+    case 'urgent':
+    case 'high':
+      return 'background: #fee; color: #c33;';
+    case 'medium':
+      return 'background: #ffeaa7; color: #d63031;';
+    default:
+      return 'background: #dfe6e9; color: #2d3436;';
+  }
+}
 
 serve(handler);
