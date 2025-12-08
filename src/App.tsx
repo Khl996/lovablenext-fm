@@ -3,14 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { useCurrentUser } from "./hooks/useCurrentUser";
 import { NotificationBell } from "./components/NotificationBell";
-import { Languages, LogOut } from "lucide-react";
+import { UserMenu } from "./components/UserMenu";
+import { Languages } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { useLanguage } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
@@ -21,6 +21,7 @@ import Facilities from "./pages/Facilities";
 import Settings from "./pages/Settings";
 import Maintenance from "./pages/Maintenance";
 import WorkOrderDetails from "./pages/WorkOrderDetails";
+import Profile from "./pages/Profile";
 import Hospitals from "./pages/admin/Hospitals";
 import Companies from "./pages/admin/Companies";
 import Users from "./pages/admin/Users";
@@ -48,8 +49,6 @@ const queryClient = new QueryClient();
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { language, setLanguage, direction } = useLanguage();
-  const { signOut, user } = useAuth();
-  const { profile } = useCurrentUser();
 
   return (
     <SidebarProvider>
@@ -72,13 +71,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             
             {/* Notification Bell */}
             <NotificationBell />
-            
-            {/* User Info */}
-            {profile && (
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                {language === 'ar' ? 'مرحباً' : 'Welcome'}, {profile.full_name}
-              </div>
-            )}
 
             {/* Language Toggle */}
             <Button
@@ -91,18 +83,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
               {language === 'ar' ? 'EN' : 'ع'}
             </Button>
 
-            {/* Logout Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-              </span>
-            </Button>
+            {/* User Menu */}
+            <UserMenu />
           </header>
 
           {/* Main Content */}
@@ -133,6 +115,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Dashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Profile />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
