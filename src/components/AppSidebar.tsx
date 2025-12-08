@@ -143,25 +143,33 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   // Filter admin items based on NEW SYSTEM
   const visibleAdminItems = canAccessAdmin
     ? adminItems.filter(item => {
-        // Check specific permissions for admin items (view OR manage)
-        if (item.url.includes('/hospitals') || item.url.includes('/companies')) {
-          return permissions.hasPermission('manage_hospitals', hospitalId);
+        // Check specific permissions for admin items
+        if (item.url.includes('/hospitals')) {
+          return permissions.hasPermission('hospitals.view', hospitalId) || permissions.hasPermission('hospitals.manage', hospitalId);
+        }
+        if (item.url.includes('/companies')) {
+          return permissions.hasPermission('companies.view', hospitalId) || permissions.hasPermission('companies.manage', hospitalId);
         }
         if (item.url.includes('/users')) {
           return permissions.hasPermission('users.manage', hospitalId) || permissions.hasPermission('users.view', hospitalId);
         }
         if (item.url.includes('/role-permissions')) {
-          return isGlobalAdmin || isHospitalAdmin;
+          return permissions.hasPermission('settings.role_permissions', hospitalId);
         }
         if (item.url.includes('/permissions-guide')) {
-          return permissions.hasPermission('users.view', hospitalId);
+          return permissions.hasPermission('settings.permissions_guide', hospitalId);
         }
-        if (item.url.includes('/locations') || item.url.includes('/issue-types') || 
-            item.url.includes('/specializations') || item.url.includes('/lookup-tables')) {
+        if (item.url.includes('/locations')) {
+          return permissions.hasPermission('settings.locations', hospitalId);
+        }
+        if (item.url.includes('/issue-types')) {
+          return permissions.hasPermission('settings.issue_types', hospitalId);
+        }
+        if (item.url.includes('/specializations')) {
+          return permissions.hasPermission('settings.specializations', hospitalId);
+        }
+        if (item.url.includes('/lookup-tables')) {
           return permissions.hasPermission('settings.lookup_tables', hospitalId);
-        }
-        if (item.url.includes('/settings')) {
-          return permissions.hasPermission('settings.access', hospitalId);
         }
         return true;
       })
