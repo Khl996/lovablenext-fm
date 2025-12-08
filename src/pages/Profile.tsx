@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,22 @@ const Profile = () => {
   const { language } = useLanguage();
   const { profile, roles } = useCurrentUser();
   const { user } = useAuth();
+
+  // Fetch hospital name
+  const { data: hospital } = useQuery({
+    queryKey: ['hospital', profile?.hospital_id],
+    queryFn: async () => {
+      if (!profile?.hospital_id) return null;
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('name, name_ar')
+        .eq('id', profile.hospital_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.hospital_id,
+  });
   const isArabic = language === 'ar';
 
   // Password change states
@@ -149,14 +166,14 @@ const Profile = () => {
               </div>
             </div>
 
-            {profile?.hospital_id && (
+            {profile?.hospital_id && hospital && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   {isArabic ? 'المستشفى' : 'Hospital'}
                 </Label>
                 <div className="p-3 bg-muted rounded-md text-sm">
-                  {profile.hospital_id}
+                  {isArabic ? hospital.name_ar : hospital.name}
                 </div>
               </div>
             )}
