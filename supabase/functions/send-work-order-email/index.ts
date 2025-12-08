@@ -228,6 +228,38 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Final recipients:", recipients);
 
+    // Create in-app notifications for recipient users
+    const notificationData = getNotificationData(eventType, workOrder, rejectionStage);
+    if (notificationData && recipients.length > 0) {
+      // Get user IDs from emails
+      const { data: recipientProfiles } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("email", recipients);
+
+      if (recipientProfiles && recipientProfiles.length > 0) {
+        const inAppNotifications = recipientProfiles.map(profile => ({
+          user_id: profile.id,
+          title: notificationData.title,
+          title_ar: notificationData.titleAr,
+          message: notificationData.message,
+          message_ar: notificationData.messageAr,
+          type: notificationData.type,
+          related_task_id: null, // work orders don't link to maintenance_tasks
+        }));
+
+        const { error: notifError } = await supabase
+          .from("notifications")
+          .insert(inAppNotifications);
+
+        if (notifError) {
+          console.error("Error creating in-app notifications:", notifError);
+        } else {
+          console.log(`Created ${inAppNotifications.length} in-app notifications`);
+        }
+      }
+    }
+
     if (recipients.length === 0) {
       console.warn("No recipient email found, skipping email send");
       return new Response(
@@ -550,6 +582,97 @@ function getPriorityStyle(priority: string): string {
       return 'background: #ffeaa7; color: #d63031;';
     default:
       return 'background: #dfe6e9; color: #2d3436;';
+  }
+}
+
+interface NotificationContent {
+  title: string;
+  titleAr: string;
+  message: string;
+  messageAr: string;
+  type: string;
+}
+
+function getNotificationData(eventType: string, workOrder: any, rejectionStage?: string): NotificationContent | null {
+  const code = workOrder.code;
+  
+  switch (eventType) {
+    case "new_work_order":
+      return {
+        title: `New Work Order: ${code}`,
+        titleAr: `بلاغ صيانة جديد: ${code}`,
+        message: `A new maintenance report has been assigned to your team`,
+        messageAr: `تم تعيين بلاغ صيانة جديد لفريقك`,
+        type: "task_assigned"
+      };
+    case "work_started":
+      return {
+        title: `Work Started: ${code}`,
+        titleAr: `بدء العمل: ${code}`,
+        message: `Work has been started on your maintenance report`,
+        messageAr: `تم بدء العمل على بلاغ الصيانة الخاص بك`,
+        type: "upcoming_task"
+      };
+    case "work_completed":
+      return {
+        title: `Pending Approval: ${code}`,
+        titleAr: `بانتظار الموافقة: ${code}`,
+        message: `A work order is awaiting your approval`,
+        messageAr: `أمر عمل ينتظر موافقتك`,
+        type: "task_assigned"
+      };
+    case "supervisor_approved":
+      return {
+        title: `Pending Review: ${code}`,
+        titleAr: `بانتظار المراجعة: ${code}`,
+        message: `A work order is awaiting your engineering review`,
+        messageAr: `أمر عمل ينتظر مراجعتك الهندسية`,
+        type: "task_assigned"
+      };
+    case "engineer_approved":
+      return {
+        title: `Ready for Closure: ${code}`,
+        titleAr: `جاهز للإغلاق: ${code}`,
+        message: `Your maintenance report is ready to be closed`,
+        messageAr: `بلاغ الصيانة الخاص بك جاهز للإغلاق`,
+        type: "upcoming_task"
+      };
+    case "customer_reviewed":
+      return {
+        title: `Report Closed: ${code}`,
+        titleAr: `تم إغلاق البلاغ: ${code}`,
+        message: `The maintenance report has been closed`,
+        messageAr: `تم إغلاق بلاغ الصيانة`,
+        type: "task_completed"
+      };
+    case "final_approved":
+      return {
+        title: `Final Approval: ${code}`,
+        titleAr: `الاعتماد النهائي: ${code}`,
+        message: `The work order has received final approval`,
+        messageAr: `حصل أمر العمل على الاعتماد النهائي`,
+        type: "task_completed"
+      };
+    case "rejected": {
+      const stage = rejectionStage || workOrder.rejection_stage;
+      const stageNames: Record<string, { en: string; ar: string }> = {
+        technician: { en: "Technician", ar: "الفني" },
+        supervisor: { en: "Supervisor", ar: "المشرف" },
+        engineer: { en: "Engineer", ar: "المهندس" },
+        reporter: { en: "Reporter", ar: "المُبلِّغ" }
+      };
+      const stageName = stageNames[stage] || { en: stage, ar: stage };
+      
+      return {
+        title: `Rejected by ${stageName.en}: ${code}`,
+        titleAr: `مرفوض من ${stageName.ar}: ${code}`,
+        message: `Work order has been rejected and requires action`,
+        messageAr: `تم رفض أمر العمل ويتطلب إجراء`,
+        type: "overdue_task"
+      };
+    }
+    default:
+      return null;
   }
 }
 
