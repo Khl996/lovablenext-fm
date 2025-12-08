@@ -135,6 +135,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   // Reporter can reject when in pending_reporter_closure status
   const canRejectAsReporter = isReporter && status === 'pending_reporter_closure';
 
+  // Technician can reject from assigned status (before starting work)
+  const canRejectFromAssigned = isTeamMember && status === 'assigned';
+
   const canFinalApprove =
     !!(roleConfig?.modules.workOrders.finalApprove) &&
     permissions.hasPermission('work_orders.final_approve', hospitalId) &&
@@ -172,6 +175,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     canReviewAsEngineer,
     canCloseAsReporter,
     canRejectAsReporter,
+    canRejectFromAssigned,
     canFinalApprove,
     canAddManagerNotes,
     canReject,
@@ -232,7 +236,7 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
   // If no action is available, don't render
   if (!canStartWork && !canCompleteWork && !canApproveAsSupervisor && !canReviewAsEngineer && 
-      !canCloseAsReporter && !canFinalApprove && !canAddManagerNotes) {
+      !canCloseAsReporter && !canFinalApprove && !canAddManagerNotes && !canRejectFromAssigned) {
     return null;
   }
 
@@ -265,13 +269,44 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
           <div className="flex gap-2">
             {canStartWork && (
+              <>
+                <Button
+                  onClick={handleStartWork}
+                  disabled={actions.loading}
+                  className="flex-1"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'بدء العمل' : 'Start Work'}
+                </Button>
+                {canRejectFromAssigned && (
+                  <Button
+                    onClick={() => {
+                      setRejectStage('technician');
+                      setShowRejectDialog(true);
+                    }}
+                    disabled={actions.loading}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {language === 'ar' ? 'رفض' : 'Reject'}
+                  </Button>
+                )}
+              </>
+            )}
+
+            {!canStartWork && canRejectFromAssigned && (
               <Button
-                onClick={handleStartWork}
+                onClick={() => {
+                  setRejectStage('technician');
+                  setShowRejectDialog(true);
+                }}
                 disabled={actions.loading}
+                variant="destructive"
                 className="w-full"
               >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                {language === 'ar' ? 'بدء العمل' : 'Start Work'}
+                <XCircle className="h-4 w-4 mr-2" />
+                {language === 'ar' ? 'رفض أمر العمل' : 'Reject Work Order'}
               </Button>
             )}
 
