@@ -273,14 +273,16 @@ export function useWorkOrderActions(onSuccess?: () => void) {
 
       if (error) throw error;
 
-      handleSuccess(language === 'ar' ? 'تمت إضافة ملاحظات المدير' : 'Manager notes added', toast, language);
+      // Send notification to team and management
+      await sendNotification(workOrderId, 'manager_notes_added');
+      handleSuccess(language === 'ar' ? 'تمت إضافة ملاحظات المدير وإرسال الإشعارات' : 'Manager notes added and notifications sent', toast, language);
       onSuccess?.();
     } catch (error: any) {
       handleApiError(error, toast, language);
     } finally {
       setLoading(false);
     }
-  }, [language, toast, onSuccess, checkRateLimit]);
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
   return {
     loading,
