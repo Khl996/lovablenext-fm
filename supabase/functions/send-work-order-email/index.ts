@@ -190,8 +190,9 @@ const handler = async (req: Request): Promise<Response> => {
         const stage = rejectionStage || workOrder.rejection_stage;
         
         if (stage === "technician") {
-          // Technician rejected -> notify supervisors
+          // Technician rejected -> notify supervisors AND reporter
           recipients = await getUsersWithPermission("work_orders.approve", workOrder.hospital_id);
+          if (reporterProfile?.email) recipients.push(reporterProfile.email);
           subject = `Technician Rejected | رفض الفني - ${workOrder.code}`;
           htmlContent = buildRejectionEmail(workOrder, "technician", "Technician", "الفني");
         } else if (stage === "supervisor") {
