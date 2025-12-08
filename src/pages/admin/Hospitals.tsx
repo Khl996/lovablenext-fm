@@ -56,22 +56,23 @@ export default function Hospitals() {
     notes: '',
   });
 
-  const canManageHospitals = permissions.hasPermission('manage_hospitals', hospitalId);
+  const canViewHospitals = permissions.hasPermission('hospitals.view', hospitalId);
+  const canManageHospitals = permissions.hasPermission('hospitals.manage', hospitalId);
   const canSuspend = permissions.hasPermission('hospitals.suspend', hospitalId);
   const canDelete = permissions.hasPermission('hospitals.delete', hospitalId);
 
   useEffect(() => {
-    if (!userLoading && !canManageHospitals) {
+    if (!userLoading && !canViewHospitals) {
       toast.error(language === 'ar' ? 'ليس لديك صلاحية للوصول إلى هذه الصفحة' : 'You do not have permission to access this page');
       navigate('/dashboard');
     }
-  }, [userLoading, canManageHospitals, navigate]);
+  }, [userLoading, canViewHospitals, navigate]);
 
   useEffect(() => {
-    if (canManageHospitals) {
+    if (canViewHospitals) {
       loadHospitals();
     }
-  }, [canManageHospitals]);
+  }, [canViewHospitals]);
 
   const loadHospitals = async () => {
     try {
@@ -306,7 +307,7 @@ export default function Hospitals() {
     );
   }
 
-  if (!canManageHospitals) {
+  if (!canViewHospitals) {
     return null;
   }
 
@@ -320,13 +321,14 @@ export default function Hospitals() {
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('addHospital')}
-            </Button>
-          </DialogTrigger>
+        {canManageHospitals && (
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('addHospital')}
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingHospital ? t('editHospital') : t('addHospital')}</DialogTitle>
@@ -449,6 +451,7 @@ export default function Hospitals() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
