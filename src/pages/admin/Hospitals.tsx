@@ -329,7 +329,7 @@ export default function Hospitals() {
                 {t('addHospital')}
               </Button>
             </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingHospital ? t('editHospital') : t('addHospital')}</DialogTitle>
             </DialogHeader>
