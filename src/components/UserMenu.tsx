@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, Bell } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 
 export const UserMenu = () => {
   const navigate = useNavigate();
@@ -90,11 +90,6 @@ export const UserMenu = () => {
         <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
           <User className="h-4 w-4 me-2" />
           {isArabic ? 'الملف الشخصي' : 'Profile'}
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => navigate('/notification-settings')} className="cursor-pointer">
-          <Bell className="h-4 w-4 me-2" />
-          {isArabic ? 'إعدادات الإشعارات' : 'Notification Settings'}
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
