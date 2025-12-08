@@ -137,6 +137,15 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
   },
   
   // Rejections
+  // Technician can reject from assigned (before starting work)
+  {
+    from: 'assigned',
+    to: 'assigned',
+    action: 'reject_technician',
+    requiredRole: ['technician', 'senior_technician'],
+    requiredFields: ['rejection_reason'],
+  },
+  // Technician can reject from in_progress (after starting work)
   {
     from: 'in_progress',
     to: 'assigned',
