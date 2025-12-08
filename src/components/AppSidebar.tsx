@@ -47,6 +47,10 @@ const mainItems = [
   { title: 'inventory', titleAr: 'المخزون', url: '/admin/inventory', icon: Database },
   { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },
   { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: Wrench },
+  { title: 'calibration', titleAr: 'المعايرة', url: '/admin/calibration', icon: Gauge },
+  { title: 'contracts', titleAr: 'العقود', url: '/admin/contracts', icon: FileSignature },
+  { title: 'sla', titleAr: 'اتفاقيات الخدمة', url: '/admin/sla', icon: Timer },
+  { title: 'costs', titleAr: 'التكاليف', url: '/admin/costs', icon: DollarSign },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History },
   { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound },
   { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
@@ -109,6 +113,18 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
     }
     if (item.url.includes('/maintenance')) {
       return hasModuleAccess('maintenance');
+    }
+    if (item.url.includes('/calibration')) {
+      return hasModuleAccess('calibration');
+    }
+    if (item.url.includes('/contracts')) {
+      return hasModuleAccess('contracts');
+    }
+    if (item.url.includes('/sla')) {
+      return hasModuleAccess('sla');
+    }
+    if (item.url.includes('/costs')) {
+      return hasModuleAccess('costs');
     }
     if (item.url.includes('/teams')) {
       return hasModuleAccess('teams');
