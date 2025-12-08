@@ -25,7 +25,7 @@ import Hospitals from "./pages/admin/Hospitals";
 import Companies from "./pages/admin/Companies";
 import Users from "./pages/admin/Users";
 import RolePermissions from "./pages/admin/RolePermissions";
-import PermissionsGuide from "./pages/admin/PermissionsGuide";
+
 import Locations from "./pages/admin/Locations";
 import Assets from "./pages/admin/Assets";
 import AssetDetails from "./pages/admin/AssetDetails";
@@ -213,16 +213,6 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <RolePermissions />
-                    </AppLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/permissions-guide" 
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <PermissionsGuide />
                     </AppLayout>
                   </ProtectedRoute>
                 } 

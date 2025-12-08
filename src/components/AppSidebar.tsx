@@ -12,7 +12,6 @@ import {
   Settings,
   Hospital,
   LayoutDashboard,
-  Shield,
   ShieldCheck,
   Download,
   FileText,
@@ -61,7 +60,6 @@ const adminItems = [
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2 },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
   { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/role-permissions', icon: ShieldCheck },
-  { title: 'permissionsGuide', titleAr: 'دليل الصلاحيات', url: '/admin/permissions-guide', icon: Shield },
   { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2 },
   { title: 'issueTypes', titleAr: 'أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch },
   { title: 'specializations', titleAr: 'التخصصات الفنية', url: '/admin/specializations', icon: Award },
@@ -155,9 +153,6 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
         }
         if (item.url.includes('/role-permissions')) {
           return permissions.hasPermission('settings.role_permissions', hospitalId);
-        }
-        if (item.url.includes('/permissions-guide')) {
-          return permissions.hasPermission('settings.permissions_guide', hospitalId);
         }
         if (item.url.includes('/locations')) {
           return permissions.hasPermission('settings.locations', hospitalId);
