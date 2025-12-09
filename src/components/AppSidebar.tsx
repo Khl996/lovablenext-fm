@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 import {
   Building2,
   Users,
@@ -73,6 +74,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const navigate = useNavigate();
   const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
+  const { appName, appNameAr, logoUrl } = useSystemSettings();
 
   console.log('AppSidebar permissions debug', {
     allPermissions: permissions.allPermissions,
@@ -187,11 +189,15 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
       <SidebarContent>
         {/* Logo Header */}
         <div className="p-4 border-b flex items-center gap-3">
-          <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-8 w-8 flex-shrink-0" />
+          <img 
+            src={logoUrl || '/mutqan-logo.png'} 
+            alt="App Logo" 
+            className="h-8 w-8 flex-shrink-0 object-contain" 
+          />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <h2 className="text-sm font-semibold truncate">
-                {language === 'ar' ? 'متقن' : 'Mutqan'}
+                {language === 'ar' ? appNameAr : appName}
               </h2>
             </div>
           )}
