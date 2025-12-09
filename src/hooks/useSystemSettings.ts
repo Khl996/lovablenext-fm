@@ -11,6 +11,8 @@ interface SystemSetting {
 interface SystemSettings {
   appName: string;
   appNameAr: string;
+  appTagline: string;
+  appTaglineAr: string;
   logoUrl: string | null;
   defaultLanguage: string;
   emailFromAddress: string;
@@ -39,6 +41,8 @@ export function useSystemSettings() {
   const systemSettings: SystemSettings = {
     appName: getValue('app_name') || 'Mutqan FM',
     appNameAr: getValue('app_name_ar') || 'متقن FM',
+    appTagline: getValue('app_tagline') || 'Hospital Facility and Maintenance Management',
+    appTaglineAr: getValue('app_tagline_ar') || 'إدارة المرافق والصيانة للمستشفيات',
     logoUrl: getValue('app_logo_url'),
     defaultLanguage: getValue('default_language') || 'ar',
     emailFromAddress: getValue('email_from_address') || 'noreply@facility-management.space',
