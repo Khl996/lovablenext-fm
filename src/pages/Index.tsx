@@ -5,12 +5,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Download } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { language } = useLanguage();
   const { isInstalled } = usePWAInstall();
+  const { appName, appNameAr, logoUrl } = useSystemSettings();
 
   useEffect(() => {
     if (user && !loading) {
@@ -31,15 +33,17 @@ const Index = () => {
       <div className="container max-w-3xl mx-auto px-6 text-center space-y-12">
         {/* Logo */}
         <div className="flex justify-center">
-          <img src="/mutqan-logo.png" alt="Mutqan Logo" className="h-32 w-32" />
+          <img 
+            src={logoUrl || '/mutqan-logo.png'} 
+            alt="App Logo" 
+            className="h-32 w-32 object-contain" 
+          />
         </div>
 
         {/* Main Heading */}
         <div className="space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            {language === 'ar' 
-              ? 'متقن' 
-              : 'Mutqan'}
+            {language === 'ar' ? appNameAr : appName}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             {language === 'ar' 
