@@ -12,7 +12,7 @@ const Index = () => {
   const { user, loading } = useAuth();
   const { language } = useLanguage();
   const { isInstalled } = usePWAInstall();
-  const { appName, appNameAr, logoUrl } = useSystemSettings();
+  const { appName, appNameAr, appTagline, appTaglineAr, logoUrl } = useSystemSettings();
 
   useEffect(() => {
     if (user && !loading) {
@@ -46,9 +46,7 @@ const Index = () => {
             {language === 'ar' ? appNameAr : appName}
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            {language === 'ar' 
-              ? 'إدارة المرافق والصيانة للمستشفيات' 
-              : 'Hospital Facility and Maintenance Management'}
+            {language === 'ar' ? appTaglineAr : appTagline}
           </p>
         </div>
 
