@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, Upload, Loader2, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Settings as SettingsIcon, Upload, Loader2, Image as ImageIcon, RefreshCw, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -32,6 +33,11 @@ export default function Settings() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Email gateway settings
+  const [emailFromAddress, setEmailFromAddress] = useState('noreply@facility-management.space');
+  const [emailFromName, setEmailFromName] = useState('نظام الصيانة');
+  const [emailEnabled, setEmailEnabled] = useState(true);
+
   // Fetch settings from database
   const { data: settings, isLoading } = useQuery({
     queryKey: ['system-settings'],
@@ -52,10 +58,16 @@ export default function Settings() {
       const nameEn = settings.find(s => s.setting_key === 'app_name');
       const nameAr = settings.find(s => s.setting_key === 'app_name_ar');
       const logo = settings.find(s => s.setting_key === 'app_logo_url');
+      const fromAddress = settings.find(s => s.setting_key === 'email_from_address');
+      const fromName = settings.find(s => s.setting_key === 'email_from_name');
+      const enabled = settings.find(s => s.setting_key === 'email_enabled');
       
       if (nameEn?.setting_value) setAppName(nameEn.setting_value);
       if (nameAr?.setting_value) setAppNameAr(nameAr.setting_value);
       if (logo?.setting_value) setLogoUrl(logo.setting_value);
+      if (fromAddress?.setting_value) setEmailFromAddress(fromAddress.setting_value);
+      if (fromName?.setting_value) setEmailFromName(fromName.setting_value);
+      if (enabled?.setting_value !== undefined) setEmailEnabled(enabled.setting_value === 'true');
     }
   }, [settings]);
 
@@ -123,8 +135,8 @@ export default function Settings() {
     }
   };
 
-  // Handle save
-  const handleSave = async () => {
+  // Handle save branding
+  const handleSaveBranding = async () => {
     try {
       await Promise.all([
         updateSetting.mutateAsync({ key: 'app_name', value: appName }),
@@ -135,6 +147,22 @@ export default function Settings() {
     } catch (error) {
       console.error('Save error:', error);
       toast.error(language === 'ar' ? 'فشل حفظ الإعدادات' : 'Failed to save settings');
+    }
+  };
+
+  // Handle save email settings
+  const handleSaveEmailSettings = async () => {
+    try {
+      await Promise.all([
+        updateSetting.mutateAsync({ key: 'email_from_address', value: emailFromAddress }),
+        updateSetting.mutateAsync({ key: 'email_from_name', value: emailFromName }),
+        updateSetting.mutateAsync({ key: 'email_enabled', value: emailEnabled.toString() }),
+      ]);
+
+      toast.success(language === 'ar' ? 'تم حفظ إعدادات البريد بنجاح' : 'Email settings saved successfully');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error(language === 'ar' ? 'فشل حفظ إعدادات البريد' : 'Failed to save email settings');
     }
   };
 
@@ -297,11 +325,102 @@ export default function Settings() {
           {/* Save Button */}
           <div className="flex justify-end pt-4 border-t">
             <Button 
-              onClick={handleSave}
+              onClick={handleSaveBranding}
               disabled={updateSetting.isPending}
             >
               {updateSetting.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Gateway Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            {language === 'ar' ? 'بوابة البريد الإلكتروني' : 'Email Gateway'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'ar' 
+              ? 'إعدادات إرسال إشعارات البريد الإلكتروني' 
+              : 'Configure email notification settings'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Email Enabled Toggle */}
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+            <div className="space-y-0.5">
+              <Label className="text-base">
+                {language === 'ar' ? 'تفعيل إشعارات البريد' : 'Enable Email Notifications'}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' 
+                  ? 'تفعيل أو إيقاف إرسال الإشعارات عبر البريد الإلكتروني' 
+                  : 'Turn email notifications on or off'}
+              </p>
+            </div>
+            <Switch
+              checked={emailEnabled}
+              onCheckedChange={setEmailEnabled}
+            />
+          </div>
+
+          {/* Sender Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'اسم المرسل' : 'Sender Name'}</Label>
+              <Input
+                value={emailFromName}
+                onChange={(e) => setEmailFromName(e.target.value)}
+                placeholder={language === 'ar' ? 'نظام الصيانة' : 'Maintenance System'}
+                disabled={!emailEnabled}
+              />
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' 
+                  ? 'الاسم الذي يظهر في صندوق الوارد للمستلم' 
+                  : 'Name that appears in recipient\'s inbox'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'عنوان البريد المرسل' : 'Sender Email Address'}</Label>
+              <Input
+                type="email"
+                value={emailFromAddress}
+                onChange={(e) => setEmailFromAddress(e.target.value)}
+                placeholder="noreply@example.com"
+                disabled={!emailEnabled}
+              />
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar' 
+                  ? 'يجب أن يكون نطاقاً موثقاً في خدمة البريد' 
+                  : 'Must be a verified domain in your email service'}
+              </p>
+            </div>
+          </div>
+
+          {/* Provider Info */}
+          <div className="p-4 bg-muted/50 rounded-lg border">
+            <p className="text-sm text-muted-foreground">
+              <strong>{language === 'ar' ? 'مزود الخدمة:' : 'Provider:'}</strong>{' '}
+              Resend API
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {language === 'ar' 
+                ? 'لتغيير مفتاح API أو مزود الخدمة، تواصل مع المطور' 
+                : 'To change API key or provider, contact the developer'}
+            </p>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button 
+              onClick={handleSaveEmailSettings}
+              disabled={updateSetting.isPending}
+            >
+              {updateSetting.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {language === 'ar' ? 'حفظ إعدادات البريد' : 'Save Email Settings'}
             </Button>
           </div>
         </CardContent>

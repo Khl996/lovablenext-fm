@@ -6,6 +6,25 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Helper function to get email settings
+async function getEmailSettings(supabase: any) {
+  const { data } = await supabase
+    .from("system_settings")
+    .select("setting_key, setting_value")
+    .in("setting_key", ["email_from_address", "email_from_name", "email_enabled"]);
+  
+  const settings: Record<string, string> = {};
+  data?.forEach((s: any) => {
+    settings[s.setting_key] = s.setting_value;
+  });
+  
+  return {
+    fromAddress: settings.email_from_address || "noreply@facility-management.space",
+    fromName: settings.email_from_name || "نظام الصيانة",
+    enabled: settings.email_enabled !== "false",
+  };
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -29,6 +48,18 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing email notification:", { workOrderId, eventType, recipientEmail, rejectionStage });
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get email settings from database
+    const emailSettings = await getEmailSettings(supabase);
+    
+    // Check if email is enabled
+    if (!emailSettings.enabled) {
+      console.log("Email notifications are disabled, skipping email send");
+      return new Response(
+        JSON.stringify({ message: "Email notifications are disabled" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     // Fetch work order details with all related data
     const { data: workOrder, error: woError } = await supabase
@@ -283,9 +314,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send email via Resend
+    // Send email via Resend with settings from database
     const emailResponse = await resend.emails.send({
-      from: "نظام الصيانة <noreply@facility-management.space>",
+      from: `${emailSettings.fromName} <${emailSettings.fromAddress}>`,
       to: recipients,
       subject,
       html: htmlContent,

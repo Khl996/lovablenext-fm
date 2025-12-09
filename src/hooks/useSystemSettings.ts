@@ -13,6 +13,9 @@ interface SystemSettings {
   appNameAr: string;
   logoUrl: string | null;
   defaultLanguage: string;
+  emailFromAddress: string;
+  emailFromName: string;
+  emailEnabled: boolean;
 }
 
 export function useSystemSettings() {
@@ -38,6 +41,9 @@ export function useSystemSettings() {
     appNameAr: getValue('app_name_ar') || 'متقن FM',
     logoUrl: getValue('app_logo_url'),
     defaultLanguage: getValue('default_language') || 'ar',
+    emailFromAddress: getValue('email_from_address') || 'noreply@facility-management.space',
+    emailFromName: getValue('email_from_name') || 'نظام الصيانة',
+    emailEnabled: getValue('email_enabled') !== 'false',
   };
 
   return {
