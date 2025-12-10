@@ -57,6 +57,7 @@ const mainItems = [
 ];
 
 const adminItems = [
+  { title: 'systemStats', titleAr: 'إحصائيات النظام', url: '/admin/system-stats', icon: BarChart3 },
   { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital },
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2 },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
@@ -144,6 +145,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const visibleAdminItems = canAccessAdmin
     ? adminItems.filter(item => {
         // Check specific permissions for admin items
+        if (item.url.includes('/system-stats')) {
+          return permissions.hasPermission('analytics.view', hospitalId) || isGlobalAdmin;
+        }
         if (item.url.includes('/hospitals')) {
           return permissions.hasPermission('hospitals.view', hospitalId) || permissions.hasPermission('hospitals.manage', hospitalId);
         }
