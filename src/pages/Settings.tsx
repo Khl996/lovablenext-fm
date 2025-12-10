@@ -30,6 +30,8 @@ export default function Settings() {
 
   const [appName, setAppName] = useState('Mutqan FM');
   const [appNameAr, setAppNameAr] = useState('متقن FM');
+  const [appTagline, setAppTagline] = useState('Hospital Facility and Maintenance Management');
+  const [appTaglineAr, setAppTaglineAr] = useState('إدارة المرافق والصيانة للمستشفيات');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -57,6 +59,8 @@ export default function Settings() {
     if (settings) {
       const nameEn = settings.find(s => s.setting_key === 'app_name');
       const nameAr = settings.find(s => s.setting_key === 'app_name_ar');
+      const taglineEn = settings.find(s => s.setting_key === 'app_tagline');
+      const taglineAr = settings.find(s => s.setting_key === 'app_tagline_ar');
       const logo = settings.find(s => s.setting_key === 'app_logo_url');
       const fromAddress = settings.find(s => s.setting_key === 'email_from_address');
       const fromName = settings.find(s => s.setting_key === 'email_from_name');
@@ -64,6 +68,8 @@ export default function Settings() {
       
       if (nameEn?.setting_value) setAppName(nameEn.setting_value);
       if (nameAr?.setting_value) setAppNameAr(nameAr.setting_value);
+      if (taglineEn?.setting_value) setAppTagline(taglineEn.setting_value);
+      if (taglineAr?.setting_value) setAppTaglineAr(taglineAr.setting_value);
       if (logo?.setting_value) setLogoUrl(logo.setting_value);
       if (fromAddress?.setting_value) setEmailFromAddress(fromAddress.setting_value);
       if (fromName?.setting_value) setEmailFromName(fromName.setting_value);
@@ -141,6 +147,8 @@ export default function Settings() {
       await Promise.all([
         updateSetting.mutateAsync({ key: 'app_name', value: appName }),
         updateSetting.mutateAsync({ key: 'app_name_ar', value: appNameAr }),
+        updateSetting.mutateAsync({ key: 'app_tagline', value: appTagline }),
+        updateSetting.mutateAsync({ key: 'app_tagline_ar', value: appTaglineAr }),
       ]);
 
       toast.success(language === 'ar' ? 'تم حفظ الإعدادات بنجاح' : 'Settings saved successfully');
@@ -242,6 +250,27 @@ export default function Settings() {
                 value={appNameAr}
                 onChange={(e) => setAppNameAr(e.target.value)}
                 placeholder="متقن FM"
+                dir="rtl"
+              />
+            </div>
+          </div>
+
+          {/* App Taglines */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'العبارة الوصفية (إنجليزي)' : 'Tagline (English)'}</Label>
+              <Input
+                value={appTagline}
+                onChange={(e) => setAppTagline(e.target.value)}
+                placeholder="Hospital Facility and Maintenance Management"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'العبارة الوصفية (عربي)' : 'Tagline (Arabic)'}</Label>
+              <Input
+                value={appTaglineAr}
+                onChange={(e) => setAppTaglineAr(e.target.value)}
+                placeholder="إدارة المرافق والصيانة للمستشفيات"
                 dir="rtl"
               />
             </div>
