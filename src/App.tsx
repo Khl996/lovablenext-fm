@@ -43,6 +43,7 @@ import Costs from './pages/admin/Costs';
 import Contracts from './pages/admin/Contracts';
 import SLA from './pages/admin/SLA';
 import Calibration from './pages/admin/Calibration';
+import SystemStats from './pages/admin/SystemStats';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -365,6 +366,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Calibration />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/system-stats" 
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SystemStats />
                     </AppLayout>
                   </ProtectedRoute>
                 } 
