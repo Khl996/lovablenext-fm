@@ -4,7 +4,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Smartphone, Download, Share, Chrome, Apple, Plus, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Smartphone, Download, Share, Chrome, Apple, Plus, Check, Monitor } from 'lucide-react';
 
 export default function Install() {
   const { language } = useLanguage();
@@ -96,7 +97,7 @@ export default function Install() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Android/Chrome Installation */}
+          {/* Quick Install Button for supported browsers */}
           {isInstallable && (
             <div className="space-y-4">
               <Button 
@@ -110,144 +111,306 @@ export default function Install() {
             </div>
           )}
 
-          {/* iOS Installation Instructions */}
-          {isIOS && (
-            <Card className="border-2 border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  {language === 'ar' ? 'للآيفون والآيباد (iOS)' : 'For iPhone and iPad (iOS)'}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {language === 'ar' 
-                    ? '⚠️ ملاحظة مهمة: يجب استخدام متصفح Safari فقط على iOS' 
-                    : '⚠️ Important: You must use Safari browser on iOS'}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Alert className="bg-primary/5 border-primary/20">
-                  <AlertDescription>
-                    <p className="font-medium mb-2">
-                      {language === 'ar' ? 'خطوات التثبيت:' : 'Installation Steps:'}
-                    </p>
-                  </AlertDescription>
-                </Alert>
+          {/* Platform-specific Installation Instructions */}
+          <Tabs defaultValue={isIOS ? 'ios' : 'android'} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="android" className="gap-2">
+                <Chrome className="h-4 w-4" />
+                {language === 'ar' ? 'أندرويد' : 'Android'}
+              </TabsTrigger>
+              <TabsTrigger value="ios" className="gap-2">
+                <Apple className="h-4 w-4" />
+                {language === 'ar' ? 'آيفون' : 'iPhone'}
+              </TabsTrigger>
+              <TabsTrigger value="windows" className="gap-2">
+                <Monitor className="h-4 w-4" />
+                {language === 'ar' ? 'ويندوز' : 'Windows'}
+              </TabsTrigger>
+            </TabsList>
 
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-lg">
-                      {language === 'ar' ? 'افتح Safari' : 'Open Safari'}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {language === 'ar' 
-                        ? 'يجب استخدام متصفح Safari فقط - لن يعمل من Chrome أو Firefox على الآيفون' 
-                        : 'Must use Safari browser only - will not work from Chrome or Firefox on iPhone'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Share className="h-5 w-5 text-primary" />
-                      <p className="font-medium text-lg">
-                        {language === 'ar' ? 'اضغط على زر المشاركة' : 'Tap the Share button'}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ar' 
-                        ? 'الزر يشبه مربع بسهم للأعلى 📤 في أسفل الشاشة أو في شريط العنوان' 
-                        : 'The button looks like a box with an arrow pointing up 📤 at the bottom or in the address bar'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Plus className="h-5 w-5 text-primary" />
-                      <p className="font-medium text-lg">
-                        {language === 'ar' ? 'اختر "إضافة إلى الشاشة الرئيسية"' : 'Select "Add to Home Screen"'}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ar' 
-                        ? 'مرّر للأسفل في قائمة الخيارات حتى تجد "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)' 
-                        : 'Scroll down in the options menu until you find "Add to Home Screen"'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
-                    4
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Check className="h-5 w-5 text-primary" />
-                      <p className="font-medium text-lg">
-                        {language === 'ar' ? 'اضغط "إضافة"' : 'Tap "Add"'}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ar' 
-                        ? 'اضغط زر "إضافة" في الزاوية العلوية - سيظهر التطبيق على شاشتك الرئيسية مثل أي تطبيق آخر ✨' 
-                        : 'Tap "Add" button in the top corner - the app will appear on your home screen like any other app ✨'}
-                    </p>
-                  </div>
-                </div>
-
-                <Alert className="bg-success/10 border-success/20 mt-4">
-                  <Check className="h-4 w-4 text-success" />
-                  <AlertDescription className="text-sm">
+            {/* Android Tab */}
+            <TabsContent value="android" className="mt-4">
+              <Card className="border-2 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Chrome className="h-5 w-5 text-primary" />
+                    {language === 'ar' ? 'لأجهزة الأندرويد' : 'For Android Devices'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
                     {language === 'ar' 
-                      ? '💡 بعد التثبيت، ستتمكن من استقبال الإشعارات والوصول للتطبيق بسرعة من الشاشة الرئيسية!' 
-                      : '💡 After installation, you can receive notifications and access the app quickly from home screen!'}
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          )}
+                      ? 'استخدم متصفح Chrome أو Edge للحصول على أفضل تجربة' 
+                      : 'Use Chrome or Edge browser for the best experience'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">
+                        {language === 'ar' ? 'افتح قائمة المتصفح' : 'Open browser menu'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {language === 'ar' 
+                          ? 'اضغط على النقاط الثلاث (⋮) في أعلى يمين الشاشة' 
+                          : 'Tap the three dots (⋮) at the top right of the screen'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      2
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Download className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اختر "تثبيت التطبيق"' : 'Select "Install app"'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'قد يظهر كـ "إضافة إلى الشاشة الرئيسية" أو "Install app"' 
+                          : 'May appear as "Add to Home screen" or "Install app"'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      3
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Check className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اضغط "تثبيت"' : 'Tap "Install"'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'سيظهر التطبيق على شاشتك الرئيسية ✨' 
+                          : 'The app will appear on your home screen ✨'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Chrome Installation Instructions */}
-          {!isInstallable && !isIOS && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                <Chrome className="w-6 h-6 text-primary flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-2">
-                    {language === 'ar' ? 'للأندرويد:' : 'For Android:'}
-                  </h3>
-                  <ol className="text-sm space-y-2 list-decimal list-inside">
-                    <li>
-                      {language === 'ar' 
-                        ? 'اضغط على قائمة المتصفح (⋮)'
-                        : 'Tap the browser menu (⋮)'}
-                    </li>
-                    <li>
-                      {language === 'ar' 
-                        ? 'اختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"'
-                        : 'Select "Install app" or "Add to Home screen"'}
-                    </li>
-                    <li>
-                      {language === 'ar' 
-                        ? 'اضغط "تثبيت"'
-                        : 'Tap "Install"'}
-                    </li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-          )}
+            {/* iOS Tab */}
+            <TabsContent value="ios" className="mt-4">
+              <Card className="border-2 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Apple className="h-5 w-5 text-primary" />
+                    {language === 'ar' ? 'للآيفون والآيباد (iOS)' : 'For iPhone and iPad (iOS)'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {language === 'ar' 
+                      ? '⚠️ ملاحظة مهمة: يجب استخدام متصفح Safari فقط على iOS' 
+                      : '⚠️ Important: You must use Safari browser on iOS'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">
+                        {language === 'ar' ? 'افتح Safari' : 'Open Safari'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {language === 'ar' 
+                          ? 'يجب استخدام متصفح Safari فقط - لن يعمل من Chrome أو Firefox على الآيفون' 
+                          : 'Must use Safari browser only - will not work from Chrome or Firefox on iPhone'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      2
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Share className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اضغط على زر المشاركة' : 'Tap the Share button'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'الزر يشبه مربع بسهم للأعلى 📤 في أسفل الشاشة أو في شريط العنوان' 
+                          : 'The button looks like a box with an arrow pointing up 📤 at the bottom or in the address bar'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      3
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Plus className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اختر "إضافة إلى الشاشة الرئيسية"' : 'Select "Add to Home Screen"'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'مرّر للأسفل في قائمة الخيارات حتى تجد "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)' 
+                          : 'Scroll down in the options menu until you find "Add to Home Screen"'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      4
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Check className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اضغط "إضافة"' : 'Tap "Add"'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'اضغط زر "إضافة" في الزاوية العلوية - سيظهر التطبيق على شاشتك الرئيسية مثل أي تطبيق آخر ✨' 
+                          : 'Tap "Add" button in the top corner - the app will appear on your home screen like any other app ✨'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Windows Tab */}
+            <TabsContent value="windows" className="mt-4">
+              <Card className="border-2 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5 text-primary" />
+                    {language === 'ar' ? 'لأجهزة الكمبيوتر (Windows)' : 'For Desktop (Windows)'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {language === 'ar' 
+                      ? 'استخدم متصفح Chrome أو Edge للتثبيت' 
+                      : 'Use Chrome or Edge browser to install'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <AlertDescription>
+                      <p className="font-medium mb-2">
+                        {language === 'ar' ? 'الطريقة الأولى: من شريط العنوان' : 'Method 1: From Address Bar'}
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">
+                        {language === 'ar' ? 'ابحث عن أيقونة التثبيت' : 'Look for install icon'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {language === 'ar' 
+                          ? 'في شريط العنوان، ابحث عن أيقونة الكمبيوتر مع السهم (⊕) أو أيقونة التثبيت' 
+                          : 'In the address bar, look for a computer icon with arrow (⊕) or install icon'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      2
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Download className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اضغط على الأيقونة' : 'Click the icon'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'اضغط على أيقونة التثبيت ثم اختر "تثبيت"' 
+                          : 'Click the install icon then select "Install"'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Alert className="bg-muted border-muted-foreground/20 mt-4">
+                    <AlertDescription>
+                      <p className="font-medium mb-2">
+                        {language === 'ar' ? 'الطريقة الثانية: من القائمة' : 'Method 2: From Menu'}
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex items-start gap-3">
+                    <div className="bg-secondary text-secondary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">
+                        {language === 'ar' ? 'افتح قائمة المتصفح' : 'Open browser menu'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {language === 'ar' 
+                          ? 'اضغط على النقاط الثلاث (⋮) أو (⋯) في أعلى يمين المتصفح' 
+                          : 'Click the three dots (⋮) or (⋯) at the top right of the browser'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="bg-secondary text-secondary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      2
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-lg">
+                        {language === 'ar' ? 'اختر "تثبيت التطبيق"' : 'Select "Install app"'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {language === 'ar' 
+                          ? 'في Chrome: "تثبيت متقن..." أو في Edge: "تطبيقات" ثم "تثبيت هذا الموقع كتطبيق"' 
+                          : 'In Chrome: "Install Mutqan..." or in Edge: "Apps" then "Install this site as an app"'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="bg-secondary text-secondary-foreground p-2 rounded-lg font-bold min-w-[32px] h-8 flex items-center justify-center">
+                      3
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Check className="h-5 w-5 text-primary" />
+                        <p className="font-medium text-lg">
+                          {language === 'ar' ? 'اضغط "تثبيت"' : 'Click "Install"'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'سيُضاف التطبيق إلى قائمة البداية وسطح المكتب ✨' 
+                          : 'The app will be added to Start menu and Desktop ✨'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           {/* Features */}
           <div className="space-y-3 pt-4 border-t">
