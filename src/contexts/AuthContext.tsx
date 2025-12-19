@@ -57,6 +57,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const lang = getLanguage();
+      
+      // First check if the user is active BEFORE signing in
+      // Using service-level query via RPC or direct query with email
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+      
+      if (profileCheck && !profileCheck.is_active) {
+        const deactivatedMsg = lang === 'ar' 
+          ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.' 
+          : 'Your account has been deactivated. Please contact administrator.';
+        toast.error(deactivatedMsg);
+        return { error: { message: deactivatedMsg } };
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -67,18 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
       
-      // Check if user is active
+      // Double-check after login (in case email case differs)
       if (data.user) {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('is_active')
           .eq('id', data.user.id)
           .single();
         
-        if (profileError) {
-          console.error('Error checking user status:', profileError);
-        } else if (profile && !profile.is_active) {
-          // User is deactivated - sign them out
+        if (profile && !profile.is_active) {
           await supabase.auth.signOut();
           const deactivatedMsg = lang === 'ar' 
             ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.' 
