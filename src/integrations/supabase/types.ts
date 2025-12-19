@@ -2906,6 +2906,10 @@ export type Database = {
         Args: { _manager_notes: string; _work_order_id: string }
         Returns: undefined
       }
+      work_order_cancel: {
+        Args: { _reason: string; _work_order_id: string }
+        Returns: undefined
+      }
       work_order_complete_work: {
         Args: { _technician_notes: string; _work_order_id: string }
         Returns: undefined
@@ -2928,6 +2932,10 @@ export type Database = {
       }
       work_order_reporter_closure: {
         Args: { _reporter_notes: string; _work_order_id: string }
+        Returns: undefined
+      }
+      work_order_return_to_pending: {
+        Args: { _reason: string; _work_order_id: string }
         Returns: undefined
       }
       work_order_start_work: {
