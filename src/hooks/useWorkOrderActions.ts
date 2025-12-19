@@ -284,6 +284,68 @@ export function useWorkOrderActions(onSuccess?: () => void) {
     }
   }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
 
+  const cancelWorkOrder = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
+    if (!notes?.trim()) {
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة سبب الإلغاء' : 'Please add cancellation reason' },
+        toast,
+        language
+      );
+      return;
+    }
+
+    if (!checkRateLimit()) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('work_order_cancel', {
+        _work_order_id: workOrderId,
+        _reason: notes,
+      });
+
+      if (error) throw error;
+
+      await sendNotification(workOrderId, 'cancelled');
+      handleSuccess(language === 'ar' ? 'تم إلغاء أمر العمل' : 'Work order cancelled', toast, language);
+      onSuccess?.();
+    } catch (error: any) {
+      handleApiError(error, toast, language);
+    } finally {
+      setLoading(false);
+    }
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
+
+  const returnToPending = useCallback(async ({ workOrderId, notes }: WorkOrderActionParams) => {
+    if (!notes?.trim()) {
+      handleApiError(
+        { message: language === 'ar' ? 'يرجى إضافة السبب' : 'Please add reason' },
+        toast,
+        language
+      );
+      return;
+    }
+
+    if (!checkRateLimit()) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('work_order_return_to_pending', {
+        _work_order_id: workOrderId,
+        _reason: notes,
+      });
+
+      if (error) throw error;
+
+      await sendNotification(workOrderId, 'returned_to_pending');
+      handleSuccess(language === 'ar' ? 'تم إرجاع أمر العمل للتوزيع التلقائي' : 'Work order returned to pending', toast, language);
+      onSuccess?.();
+    } catch (error: any) {
+      handleApiError(error, toast, language);
+    } finally {
+      setLoading(false);
+    }
+  }, [language, sendNotification, toast, onSuccess, checkRateLimit]);
+
   return {
     loading,
     startWork,
@@ -294,5 +356,7 @@ export function useWorkOrderActions(onSuccess?: () => void) {
     finalApprove,
     reject,
     addManagerNotes,
+    cancelWorkOrder,
+    returnToPending,
   };
 }

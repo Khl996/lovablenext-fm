@@ -19,6 +19,8 @@ export interface WorkOrderState {
     reject: boolean;
     reassign: boolean;
     update: boolean;
+    cancel: boolean;
+    returnToPending: boolean;
   };
   nextStatus?: WorkOrderStatus;
   requiredRole?: string[];
@@ -181,6 +183,31 @@ export const WORK_ORDER_TRANSITIONS: WorkOrderTransition[] = [
       return { valid: true };
     },
   },
+  
+  // Actions from rejected_by_technician status (Supervisor/Manager can handle)
+  // Option 1: Reassign to another technician (handled via reassign dialog, sets status to 'assigned')
+  {
+    from: 'rejected_by_technician',
+    to: 'assigned',
+    action: 'reassign',
+    requiredRole: ['supervisor', 'engineer', 'facility_manager', 'hospital_admin', 'maintenance_manager'],
+  },
+  // Option 2: Cancel the work order
+  {
+    from: 'rejected_by_technician',
+    to: 'cancelled',
+    action: 'cancel',
+    requiredRole: ['supervisor', 'engineer', 'facility_manager', 'hospital_admin', 'maintenance_manager'],
+    requiredFields: ['cancellation_reason'],
+  },
+  // Option 3: Return to pending for automatic redistribution
+  {
+    from: 'rejected_by_technician',
+    to: 'pending',
+    action: 'return_to_pending',
+    requiredRole: ['supervisor', 'engineer', 'facility_manager', 'hospital_admin', 'maintenance_manager'],
+    requiredFields: ['reason'],
+  },
 ];
 
 /**
@@ -203,6 +230,8 @@ export function getWorkOrderState(
       reject: false,
       reassign: false,
       update: false,
+      cancel: false,
+      returnToPending: false,
     },
   };
 
@@ -251,6 +280,15 @@ export function getWorkOrderState(
       case 'reject_engineer':
       case 'reject_reporter':
         state.can.reject = true;
+        break;
+      case 'cancel':
+        state.can.cancel = true;
+        break;
+      case 'return_to_pending':
+        state.can.returnToPending = true;
+        break;
+      case 'reassign':
+        state.can.reassign = true;
         break;
     }
   });

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, XCircle, MessageSquare, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, MessageSquare, RefreshCw, Ban, RotateCcw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,10 +35,13 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showReassignDialog, setShowReassignDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReturnToPendingDialog, setShowReturnToPendingDialog] = useState(false);
   const [rejectStage, setRejectStage] = useState('');
   const [isTeamMember, setIsTeamMember] = useState(false);
   const [checkingTeamMembership, setCheckingTeamMembership] = useState(true);
   const [isAssignedToBuilding, setIsAssignedToBuilding] = useState(false);
+  const [dialogNotes, setDialogNotes] = useState('');
 
   // Get user roles for state machine - extract actual user roles
   const baseUserRoles: string[] = [
@@ -163,6 +166,11 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     (status === 'assigned' || status === 'pending' || status === 'in_progress')
   ));
 
+  // Check if supervisor/manager can handle rejected_by_technician status
+  const isRejectedByTechnician = status === 'rejected_by_technician';
+  const canCancelWorkOrder = isRejectedByTechnician && (state?.can.cancel ?? false);
+  const canReturnToPending = isRejectedByTechnician && (state?.can.returnToPending ?? false);
+
   // Debug logging
   console.log('🎯 Action permissions:', {
     status,
@@ -181,6 +189,9 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     canReject,
     canReassign,
     canAddUpdate,
+    canCancelWorkOrder,
+    canReturnToPending,
+    isRejectedByTechnician,
   });
 
   // Action handlers using the new hooks
@@ -223,6 +234,18 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
     setNotes('');
   };
 
+  const handleCancelWorkOrder = () => {
+    actions.cancelWorkOrder({ workOrderId: workOrder.id, notes: dialogNotes });
+    setShowCancelDialog(false);
+    setDialogNotes('');
+  };
+
+  const handleReturnToPending = () => {
+    actions.returnToPending({ workOrderId: workOrder.id, notes: dialogNotes });
+    setShowReturnToPendingDialog(false);
+    setDialogNotes('');
+  };
+
   // Show loading while checking team membership
   if (checkingTeamMembership) {
     return (
@@ -236,7 +259,8 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
 
   // If no action is available, don't render
   if (!canStartWork && !canCompleteWork && !canApproveAsSupervisor && !canReviewAsEngineer && 
-      !canCloseAsReporter && !canFinalApprove && !canAddManagerNotes && !canRejectFromAssigned) {
+      !canCloseAsReporter && !canFinalApprove && !canAddManagerNotes && !canRejectFromAssigned &&
+      !isRejectedByTechnician) {
     return null;
   }
 
@@ -245,16 +269,27 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
       <Card>
         <CardHeader>
           <CardTitle>
-            {canStartWork && (language === 'ar' ? 'بدء العمل' : 'Start Work')}
-            {canCompleteWork && (language === 'ar' ? 'إكمال العمل' : 'Complete Work')}
-            {canApproveAsSupervisor && (language === 'ar' ? 'اعتماد المشرف' : 'Supervisor Approval')}
-            {canReviewAsEngineer && (language === 'ar' ? 'مراجعة المهندس' : 'Engineer Review')}
-            {canCloseAsReporter && (language === 'ar' ? 'إغلاق البلاغ' : 'Close Work Order')}
-            {canFinalApprove && (language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval')}
+            {isRejectedByTechnician && (language === 'ar' ? 'معالجة الرفض' : 'Handle Rejection')}
+            {!isRejectedByTechnician && canStartWork && (language === 'ar' ? 'بدء العمل' : 'Start Work')}
+            {!isRejectedByTechnician && canCompleteWork && (language === 'ar' ? 'إكمال العمل' : 'Complete Work')}
+            {!isRejectedByTechnician && canApproveAsSupervisor && (language === 'ar' ? 'اعتماد المشرف' : 'Supervisor Approval')}
+            {!isRejectedByTechnician && canReviewAsEngineer && (language === 'ar' ? 'مراجعة المهندس' : 'Engineer Review')}
+            {!isRejectedByTechnician && canCloseAsReporter && (language === 'ar' ? 'إغلاق البلاغ' : 'Close Work Order')}
+            {!isRejectedByTechnician && canFinalApprove && (language === 'ar' ? 'الاعتماد النهائي' : 'Final Approval')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!canStartWork && (
+          {/* Show rejection info for rejected_by_technician status */}
+          {isRejectedByTechnician && workOrder.rejection_reason && (
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm font-medium text-destructive mb-1">
+                {language === 'ar' ? 'سبب رفض الفني:' : 'Technician rejection reason:'}
+              </p>
+              <p className="text-sm text-muted-foreground">{workOrder.rejection_reason}</p>
+            </div>
+          )}
+
+          {!canStartWork && !isRejectedByTechnician && (
             <div className="space-y-2">
               <Label>{language === 'ar' ? 'الملاحظات' : 'Notes'} *</Label>
               <Textarea
@@ -434,7 +469,52 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
             )}
           </div>
 
-          {canReassign && (
+          {/* Actions for rejected_by_technician status */}
+          {isRejectedByTechnician && (
+            <div className="space-y-2 pt-2 border-t">
+              <p className="text-sm font-medium text-muted-foreground mb-3">
+                {language === 'ar' ? 'اختر الإجراء المناسب:' : 'Choose an action:'}
+              </p>
+              
+              {canReassign && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowReassignDialog(true)}
+                  disabled={actions.loading}
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'إعادة تعيين لفني آخر' : 'Reassign to Another Technician'}
+                </Button>
+              )}
+              
+              {canReturnToPending && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowReturnToPendingDialog(true)}
+                  disabled={actions.loading}
+                  className="w-full"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'إرجاع للتوزيع التلقائي' : 'Return to Auto-Distribution'}
+                </Button>
+              )}
+              
+              {canCancelWorkOrder && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowCancelDialog(true)}
+                  disabled={actions.loading}
+                  className="w-full"
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  {language === 'ar' ? 'إلغاء أمر العمل' : 'Cancel Work Order'}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {!isRejectedByTechnician && canReassign && (
             <Button
               variant="outline"
               onClick={() => setShowReassignDialog(true)}
@@ -459,6 +539,87 @@ export function WorkOrderActions({ workOrder, onActionComplete }: WorkOrderActio
           )}
         </CardContent>
       </Card>
+
+      {/* Cancel Work Order Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancellation'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                {language === 'ar'
+                  ? 'هل أنت متأكد من إلغاء أمر العمل نهائيًا؟'
+                  : 'Are you sure you want to permanently cancel this work order?'}
+              </p>
+              <div className="space-y-2">
+                <Label>
+                  {language === 'ar' ? 'سبب الإلغاء' : 'Cancellation Reason'}
+                </Label>
+                <Textarea
+                  value={dialogNotes}
+                  onChange={(e) => setDialogNotes(e.target.value)}
+                  placeholder={language === 'ar' ? 'اكتب سبب الإلغاء...' : 'Enter cancellation reason...'}
+                  rows={4}
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialogNotes('')}>
+              {language === 'ar' ? 'تراجع' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCancelWorkOrder} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!dialogNotes.trim()}
+            >
+              {language === 'ar' ? 'إلغاء أمر العمل' : 'Cancel Work Order'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Return to Pending Dialog */}
+      <AlertDialog open={showReturnToPendingDialog} onOpenChange={setShowReturnToPendingDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === 'ar' ? 'إرجاع للتوزيع التلقائي' : 'Return to Auto-Distribution'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                {language === 'ar'
+                  ? 'سيتم إزالة الفريق المعين وإرجاع الأمر لقائمة الانتظار للتوزيع على فريق آخر تلقائيًا'
+                  : 'The assigned team will be removed and the work order will be returned to the queue for automatic distribution'}
+              </p>
+              <div className="space-y-2">
+                <Label>
+                  {language === 'ar' ? 'سبب الإرجاع' : 'Return Reason'}
+                </Label>
+                <Textarea
+                  value={dialogNotes}
+                  onChange={(e) => setDialogNotes(e.target.value)}
+                  placeholder={language === 'ar' ? 'اكتب السبب...' : 'Enter reason...'}
+                  rows={4}
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialogNotes('')}>
+              {language === 'ar' ? 'تراجع' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleReturnToPending}
+              disabled={!dialogNotes.trim()}
+            >
+              {language === 'ar' ? 'إرجاع للتوزيع' : 'Return to Queue'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
