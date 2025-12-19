@@ -2,12 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from './LanguageContext';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isActive: boolean | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isActive, setIsActive] = useState<boolean | null>(null);
   
   // Get language from context if available, fallback to browser language
   const getLanguage = () => {
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT') {
           setUser(null);
           setSession(null);
+          setIsActive(null);
         }
       }
     );
@@ -54,54 +56,95 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Enforce deactivation even for existing sessions
+  useEffect(() => {
+    if (!user) {
+      setIsActive(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkActive = async () => {
+      const lang = getLanguage();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        // If we can't verify, don't block access, but also don't mark as inactive
+        console.warn('Unable to verify user active status:', error);
+        setIsActive(true);
+        return;
+      }
+
+      const active = data?.is_active !== false;
+      setIsActive(active);
+
+      if (!active) {
+        await supabase.auth.signOut();
+        const deactivatedMsg = lang === 'ar'
+          ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.'
+          : 'Your account has been deactivated. Please contact administrator.';
+        toast.error(deactivatedMsg);
+      }
+    };
+
+    checkActive();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const signIn = async (email: string, password: string) => {
     try {
       const lang = getLanguage();
-      
-      // First check if the user is active BEFORE signing in
-      // Using service-level query via RPC or direct query with email
-      const { data: profileCheck } = await supabase
-        .from('profiles')
-        .select('is_active')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
-      
-      if (profileCheck && !profileCheck.is_active) {
-        const deactivatedMsg = lang === 'ar' 
-          ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.' 
-          : 'Your account has been deactivated. Please contact administrator.';
-        toast.error(deactivatedMsg);
-        return { error: { message: deactivatedMsg } };
-      }
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) {
         toast.error(error.message);
         return { error };
       }
-      
-      // Double-check after login (in case email case differs)
+
+      // Check if user is active (important: enforce deactivation)
       if (data.user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_active')
           .eq('id', data.user.id)
-          .single();
-        
+          .maybeSingle();
+
+        if (profileError) {
+          // If we can't verify status, sign out to be safe
+          await supabase.auth.signOut();
+          const msg = lang === 'ar'
+            ? 'تعذر التحقق من حالة الحساب. حاول مرة أخرى.'
+            : 'Unable to verify account status. Please try again.';
+          toast.error(msg);
+          return { error: { message: msg } };
+        }
+
         if (profile && !profile.is_active) {
           await supabase.auth.signOut();
-          const deactivatedMsg = lang === 'ar' 
-            ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.' 
+          setIsActive(false);
+          const deactivatedMsg = lang === 'ar'
+            ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.'
             : 'Your account has been deactivated. Please contact administrator.';
           toast.error(deactivatedMsg);
           return { error: { message: deactivatedMsg } };
         }
+
+        setIsActive(true);
       }
-      
+
       toast.success(lang === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Signed in successfully');
       return { error: null };
     } catch (error: any) {
@@ -153,7 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isActive, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
