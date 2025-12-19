@@ -57,18 +57,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const lang = getLanguage();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success(lang === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Signed in successfully');
+        return { error };
       }
       
-      return { error };
+      // Check if user is active
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_active')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error checking user status:', profileError);
+        } else if (profile && !profile.is_active) {
+          // User is deactivated - sign them out
+          await supabase.auth.signOut();
+          const deactivatedMsg = lang === 'ar' 
+            ? 'تم تعطيل حسابك. يرجى التواصل مع المسؤول.' 
+            : 'Your account has been deactivated. Please contact administrator.';
+          toast.error(deactivatedMsg);
+          return { error: { message: deactivatedMsg } };
+        }
+      }
+      
+      toast.success(lang === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Signed in successfully');
+      return { error: null };
     } catch (error: any) {
       const lang = getLanguage();
       toast.error(lang === 'ar' ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in');
