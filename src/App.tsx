@@ -47,6 +47,9 @@ import SystemStats from './pages/admin/SystemStats';
 import PlatformDashboard from './pages/platform/PlatformDashboard';
 import TenantsManagement from './pages/platform/TenantsManagement';
 import TenantDetails from './pages/platform/TenantDetails';
+import SubscriptionPlans from './pages/platform/SubscriptionPlans';
+import InvoicesManagement from './pages/platform/InvoicesManagement';
+import MySubscription from './pages/tenant/MySubscription';
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 
@@ -411,6 +414,36 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <TenantDetails />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/platform/plans"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <SubscriptionPlans />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/platform/invoices"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <InvoicesManagement />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <MySubscription />
                     </AppLayout>
                   </ProtectedRoute>
                 }

@@ -27,6 +27,8 @@ import {
   Gauge,
   Crown,
   Building,
+  CreditCard,
+  Receipt,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -55,6 +57,7 @@ const mainItems = [
   { title: 'costs', titleAr: 'التكاليف', url: '/admin/costs', icon: DollarSign },
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History },
   { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound },
+  { title: 'subscription', titleAr: 'اشتراكي', url: '/subscription', icon: CreditCard },
   { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
 ];
 
@@ -73,6 +76,8 @@ const adminItems = [
 const platformItems = [
   { title: 'Platform Dashboard', titleAr: 'لوحة تحكم المنصة', url: '/platform/dashboard', icon: Crown },
   { title: 'Tenants', titleAr: 'المستأجرون', url: '/platform/tenants', icon: Building },
+  { title: 'Subscription Plans', titleAr: 'خطط الاشتراك', url: '/platform/plans', icon: CreditCard },
+  { title: 'Invoices', titleAr: 'الفواتير', url: '/platform/invoices', icon: Receipt },
 ];
 
 export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
