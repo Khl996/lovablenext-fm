@@ -104,7 +104,7 @@ export default function SystemStats() {
         // Work Orders
         supabase.from('work_orders').select('id, status, reported_at, updated_at'),
         // Inventory
-        supabase.from('inventory_items').select('id, current_quantity, min_quantity, unit_cost'),
+        supabase.from('inventory_items').select('id, current_stock, min_stock, unit_cost'),
         // Teams
         supabase.from('teams').select('id, status'),
         // SLA Breaches (open)
@@ -140,9 +140,9 @@ export default function SystemStats() {
 
       // Process inventory
       const inventory = inventoryResult.data || [];
-      const lowStockItems = inventory.filter(i => i.min_quantity && i.current_quantity <= i.min_quantity);
-      const inventoryValue = inventory.reduce((sum, item) => 
-        sum + ((item.current_quantity || 0) * (item.unit_cost || 0)), 0
+      const lowStockItems = inventory.filter(i => i.min_stock && i.current_stock <= i.min_stock);
+      const inventoryValue = inventory.reduce((sum, item) =>
+        sum + ((item.current_stock || 0) * (item.unit_cost || 0)), 0
       );
 
       // Process teams

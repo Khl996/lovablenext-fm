@@ -151,10 +151,10 @@ export default function Inventory() {
           [
             item.code,
             language === 'ar' ? item.name_ar : item.name,
-            item.current_quantity,
+            item.current_stock,
             language === 'ar' ? item.unit_of_measure_ar : item.unit_of_measure,
             item.unit_cost || 0,
-            (item.current_quantity * (item.unit_cost || 0)).toFixed(2),
+            (item.current_stock * (item.unit_cost || 0)).toFixed(2),
             language === 'ar' ? item.location_ar || '' : item.location || '',
           ].join(',')
         ),
@@ -184,7 +184,7 @@ export default function Inventory() {
   });
 
   const lowStockItems = items.filter(
-    (item) => item.current_quantity <= (item.min_quantity || 0)
+    (item) => item.current_stock <= (item.min_stock || 0)
   );
 
   if (userLoading) {
@@ -278,7 +278,7 @@ export default function Inventory() {
           <CardContent>
             <div className="text-2xl font-bold">
               {items
-                .reduce((sum, item) => sum + (item.current_quantity * (item.unit_cost || 0)), 0)
+                .reduce((sum, item) => sum + (item.current_stock * (item.unit_cost || 0)), 0)
                 .toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
                   style: 'currency',
                   currency: 'SAR',
@@ -314,7 +314,7 @@ export default function Inventory() {
             <div className="flex flex-wrap gap-2">
               {lowStockItems.map((item) => (
                 <Badge key={item.id} variant="destructive">
-                  {language === 'ar' ? item.name_ar : item.name} ({item.current_quantity.toString()})
+                  {language === 'ar' ? item.name_ar : item.name} ({item.current_stock.toString()})
                 </Badge>
               ))}
             </div>
@@ -368,7 +368,7 @@ export default function Inventory() {
                 </TableHeader>
                 <TableBody>
                   {filteredItems.map((item) => {
-                    const isLowStock = item.current_quantity <= (item.min_quantity || 0);
+                    const isLowStock = item.current_stock <= (item.min_stock || 0);
                     return (
                       <TableRow key={item.id} className={isLowStock ? 'bg-destructive/5' : ''}>
                         <TableCell>
@@ -395,11 +395,11 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={isLowStock ? 'text-destructive font-semibold' : ''}>
-                            {item.current_quantity.toString()}
+                            {item.current_stock.toString()}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          {item.min_quantity?.toString() || '-'}
+                          {item.min_stock?.toString() || '-'}
                         </TableCell>
                         <TableCell>
                           {language === 'ar' ? item.unit_of_measure_ar : item.unit_of_measure}
@@ -457,9 +457,9 @@ export default function Inventory() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteClick(item)}
-                                  disabled={item.current_quantity !== 0}
+                                  disabled={item.current_stock !== 0}
                                   title={
-                                    item.current_quantity !== 0
+                                    item.current_stock !== 0
                                       ? language === 'ar'
                                         ? 'لا يمكن الحذف - المخزون ليس صفراً'
                                         : 'Cannot delete - Stock is not zero'

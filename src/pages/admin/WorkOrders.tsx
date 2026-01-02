@@ -85,11 +85,9 @@ export default function WorkOrders() {
 
     if (hospitalId || isPlatformOwner) {
       loadWorkOrders();
-      if (hospitalId) {
-        loadTeams();
-        loadBuildings();
-        loadRooms();
-      }
+      loadTeams();
+      loadBuildings();
+      loadRooms();
     } else if (profile) {
       setLoading(false);
     }
@@ -137,13 +135,18 @@ export default function WorkOrders() {
   };
 
   const loadTeams = async () => {
-    if (!hospitalId) return;
     try {
-      const { data, error } = await supabase
+      const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
+      let query = supabase
         .from('teams')
         .select('id, name, name_ar')
-        .eq('hospital_id', hospitalId)
         .eq('status', 'active');
+
+      if (!isPlatformOwner && hospitalId) {
+        query = query.eq('hospital_id', hospitalId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setTeams(data || []);
     } catch (error) {
@@ -152,12 +155,17 @@ export default function WorkOrders() {
   };
 
   const loadBuildings = async () => {
-    if (!hospitalId) return;
     try {
-      const { data, error } = await supabase
+      const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
+      let query = supabase
         .from('buildings')
-        .select('id, name, name_ar')
-        .eq('hospital_id', hospitalId);
+        .select('id, name, name_ar');
+
+      if (!isPlatformOwner && hospitalId) {
+        query = query.eq('hospital_id', hospitalId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setBuildings(data || []);
     } catch (error) {
@@ -166,7 +174,6 @@ export default function WorkOrders() {
   };
 
   const loadRooms = async () => {
-    if (!hospitalId) return;
     try {
       const { data, error } = await supabase
         .from('rooms')

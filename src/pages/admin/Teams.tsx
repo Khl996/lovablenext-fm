@@ -95,13 +95,13 @@ export default function Teams() {
   const canManage = permissions.hasPermission('teams.manage', hospitalId);
 
   useEffect(() => {
-    if (hospitalId) {
+    if (hospitalId || isPlatformOwner) {
       loadTeams();
       loadSpecializations();
     } else {
       setLoading(false);
     }
-  }, [hospitalId]);
+  }, [hospitalId, isPlatformOwner]);
 
   useEffect(() => {
     if (teams.length > 0) {
@@ -118,14 +118,19 @@ export default function Teams() {
   }, [selectedTeam]);
 
   const loadTeams = async () => {
-    if (!hospitalId) return;
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('teams')
         .select('*')
-        .eq('hospital_id', hospitalId)
         .order('created_at', { ascending: false });
+
+      // If not platform owner, filter by hospital
+      if (!isPlatformOwner && hospitalId) {
+        query = query.eq('hospital_id', hospitalId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setTeams(data || []);
