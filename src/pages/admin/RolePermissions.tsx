@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
@@ -466,8 +466,8 @@ export default function RolePermissions() {
               </thead>
               <tbody>
                 {Object.entries(groupedPermissions).map(([category, perms]) => (
-                  <>
-                    <tr key={category} className="bg-muted/50">
+                  <Fragment key={category}>
+                    <tr className="bg-muted/50">
                       <td colSpan={lookupRoles.length + 1} className="p-3 font-semibold">
                         {category.toUpperCase()}
                       </td>
@@ -485,7 +485,7 @@ export default function RolePermissions() {
                         {lookupRoles.map((role) => {
                           const isOverride = hospitalOverrides.has(`${role.code}:${perm.key}`);
                           const isChecked = permissionMatrix[role.code]?.[perm.key] || false;
-                          
+
                           return (
                             <td key={`${role.code}-${perm.key}`} className="p-3 text-center">
                               <div className="flex items-center justify-center gap-2">
@@ -494,8 +494,8 @@ export default function RolePermissions() {
                                   onCheckedChange={() => togglePermission(role.code, perm.key)}
                                 />
                                 {isOverride && (
-                                  <span 
-                                    className="text-xs cursor-help" 
+                                  <span
+                                    className="text-xs cursor-help"
                                     title={language === 'ar' ? 'تخصيص للمستشفى' : 'Hospital override'}
                                   >
                                     🔸
@@ -516,7 +516,7 @@ export default function RolePermissions() {
                         })}
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
