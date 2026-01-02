@@ -55,20 +55,12 @@ export function usePermissions(
       setError(undefined);
 
       // استخدم دالة backend الموحدة للحصول على كل الصلاحيات الفعّالة
-      // تمرير hospital_id للحصول على الصلاحيات المرتبطة بالمستشفى فقط
-      const [effectivePermsResult, allUserOverridesResult] = await Promise.all([
-        supabase.rpc('get_effective_permissions', { 
-          _user_id: userId,
-          _hospital_id: hospitalId 
-        }),
-        supabase
-          .from('user_permissions')
-          .select('permission_key, effect, hospital_id')
-          .eq('user_id', userId), // جلب كل الـ overrides (global + hospital-specific)
-      ]);
+      const effectivePermsResult = await supabase.rpc('get_effective_permissions', {
+        _user_id: userId,
+        _hospital_id: hospitalId
+      });
 
       if (effectivePermsResult.error) throw effectivePermsResult.error;
-      if (allUserOverridesResult.error) throw allUserOverridesResult.error;
 
       // بناء الكاش الجديد
       const newCache: PermissionsCache = {
@@ -79,25 +71,9 @@ export function usePermissions(
 
       // أضف كل الصلاحيات الفعّالة القادمة من الدالة المخزّنة
       (effectivePermsResult.data || []).forEach((row: any) => {
-        const key = row.permission_key || row.perm || row.permission; // احتياط لأسماء أعمدة مختلفة
+        const key = row.permission_key || row.perm || row.permission;
         if (key) {
           newCache.permissions.add(key as PermissionKey);
-        }
-      });
-
-      // عالج user overrides - فصل global من hospital-specific
-      allUserOverridesResult.data?.forEach((up) => {
-        if (!up.hospital_id) {
-          // Global override - يطبق على كل المستشفيات
-          newCache.userOverrides.set(up.permission_key, up.effect as PermissionEffect);
-        } else {
-          // Hospital-specific override
-          if (!newCache.hospitalOverrides.has(up.hospital_id)) {
-            newCache.hospitalOverrides.set(up.hospital_id, new Map());
-          }
-          newCache.hospitalOverrides
-            .get(up.hospital_id)!
-            .set(up.permission_key, up.effect as PermissionEffect);
         }
       });
 

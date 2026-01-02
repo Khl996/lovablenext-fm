@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { useTenant } from '@/contexts/TenantContext';
 import {
   Building2,
   Users,
@@ -90,16 +91,26 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin, profile } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
   const { appName, appNameAr, logoUrl } = useSystemSettings();
+  const { selectedTenant } = useTenant();
 
   const isPlatformAdmin = profile?.is_super_admin ||
     profile?.role === 'platform_owner' ||
     profile?.role === 'platform_admin';
+
+  const isPlatformOwner = profile?.role === 'platform_owner';
+
+  // Use selected tenant ID for platform owners, otherwise use profile's hospital_id
+  const effectiveHospitalId = selectedTenant?.id || hospitalId;
 
   console.log('AppSidebar permissions debug', {
     allPermissions: permissions.allPermissions,
     loadingPermissions: permissions.loading,
     canAccessAdmin,
     roleConfig,
+    isPlatformOwner,
+    profile: profile?.role,
+    selectedTenant: selectedTenant?.id,
+    effectiveHospitalId,
   });
 
   const isActive = (path: string) => location.pathname === path;
@@ -107,8 +118,11 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
 
   // Helper function to check if user has view OR manage permission
   const hasModuleAccess = (moduleName: string) => {
-    return permissions.hasPermission(`${moduleName}.view`, hospitalId) || 
-           permissions.hasPermission(`${moduleName}.manage`, hospitalId);
+    // Platform Owner has access to everything
+    if (isPlatformOwner) return true;
+
+    return permissions.hasPermission(`${moduleName}.view`, effectiveHospitalId) ||
+           permissions.hasPermission(`${moduleName}.manage`, effectiveHospitalId);
   };
 
   // Filter main items based on NEW DATABASE PERMISSIONS
@@ -127,6 +141,8 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
       return hasModuleAccess('inventory');
     }
     if (item.url.includes('/work-orders')) {
+      // Platform Owner has full access
+      if (isPlatformOwner) return true;
       // Work orders use OLD perfect system - check roleConfig
       return roleConfig && roleConfig.modules.workOrders.view !== 'own';
     }
@@ -152,7 +168,7 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
       return hasModuleAccess('operations_log');
     }
     if (item.url.includes('/settings')) {
-      return permissions.hasPermission('settings.access', hospitalId);
+      return isPlatformOwner || permissions.hasPermission('settings.access', effectiveHospitalId);
     }
 
     // Default: show if no specific permission required
@@ -160,35 +176,38 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   });
 
   // Filter admin items based on NEW SYSTEM
-  const visibleAdminItems = canAccessAdmin
+  const visibleAdminItems = (canAccessAdmin || isPlatformOwner)
     ? adminItems.filter(item => {
+        // Platform Owner sees everything
+        if (isPlatformOwner) return true;
+
         // Check specific permissions for admin items
         if (item.url.includes('/system-stats')) {
-          return permissions.hasPermission('analytics.view', hospitalId) || isGlobalAdmin;
+          return permissions.hasPermission('analytics.view', effectiveHospitalId) || isGlobalAdmin;
         }
         if (item.url.includes('/hospitals')) {
-          return permissions.hasPermission('hospitals.view', hospitalId) || permissions.hasPermission('hospitals.manage', hospitalId);
+          return permissions.hasPermission('hospitals.view', effectiveHospitalId) || permissions.hasPermission('hospitals.manage', effectiveHospitalId);
         }
         if (item.url.includes('/companies')) {
-          return permissions.hasPermission('companies.view', hospitalId) || permissions.hasPermission('companies.manage', hospitalId);
+          return permissions.hasPermission('companies.view', effectiveHospitalId) || permissions.hasPermission('companies.manage', effectiveHospitalId);
         }
         if (item.url.includes('/users')) {
-          return permissions.hasPermission('users.manage', hospitalId) || permissions.hasPermission('users.view', hospitalId);
+          return permissions.hasPermission('users.manage', effectiveHospitalId) || permissions.hasPermission('users.view', effectiveHospitalId);
         }
         if (item.url.includes('/role-permissions')) {
-          return permissions.hasPermission('settings.role_permissions', hospitalId);
+          return permissions.hasPermission('settings.role_permissions', effectiveHospitalId);
         }
         if (item.url.includes('/locations')) {
-          return permissions.hasPermission('settings.locations', hospitalId);
+          return permissions.hasPermission('settings.locations', effectiveHospitalId);
         }
         if (item.url.includes('/issue-types')) {
-          return permissions.hasPermission('settings.issue_types', hospitalId);
+          return permissions.hasPermission('settings.issue_types', effectiveHospitalId);
         }
         if (item.url.includes('/specializations')) {
-          return permissions.hasPermission('settings.specializations', hospitalId);
+          return permissions.hasPermission('settings.specializations', effectiveHospitalId);
         }
         if (item.url.includes('/lookup-tables')) {
-          return permissions.hasPermission('settings.lookup_tables', hospitalId);
+          return permissions.hasPermission('settings.lookup_tables', effectiveHospitalId);
         }
         return true;
       })

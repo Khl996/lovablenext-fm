@@ -110,16 +110,16 @@ export default function Dashboard() {
           .eq('status', 'active'),
         supabase
           .from('inventory_items')
-          .select('current_quantity, min_quantity'),
+          .select('quantity, min_quantity'),
         supabase
           .from('work_orders')
-          .select('created_at, assigned_at')
-          .not('assigned_at', 'is', null)
+          .select('created_at, updated_at, assigned_to')
+          .not('assigned_to', 'is', null)
           .limit(100),
       ]);
 
       const lowStock = inventoryItems.data?.filter(
-        item => item.min_quantity && item.current_quantity <= item.min_quantity
+        item => item.min_quantity && item.quantity <= item.min_quantity
       ).length || 0;
 
       const totalOrders = (activeOrders.count || 0) + (completedOrders.count || 0);
@@ -128,8 +128,8 @@ export default function Dashboard() {
         : 0;
 
       const avgResponse = allOrders.data?.reduce((acc, order) => {
-        if (order.assigned_at) {
-          const diff = new Date(order.assigned_at).getTime() - new Date(order.created_at).getTime();
+        if (order.assigned_to && order.updated_at) {
+          const diff = new Date(order.updated_at).getTime() - new Date(order.created_at).getTime();
           return acc + diff / (1000 * 60 * 60);
         }
         return acc;

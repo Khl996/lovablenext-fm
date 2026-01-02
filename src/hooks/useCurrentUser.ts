@@ -107,23 +107,14 @@ export function useCurrentUser(): CurrentUserInfo {
         setProfile(profileData);
       }
 
-      // Get roles (old system - app_role)
-      const { data: rolesData, error: rolesError } = await supabase
+      // Get roles (old system - app_role) - optional, may not exist
+      const { data: rolesData } = await supabase
         .from('user_roles')
         .select('*')
         .eq('user_id', authUser.id);
 
-      if (rolesError) throw rolesError;
       setRoles(rolesData || []);
-
-      // Get custom roles (new system - role_code)
-      const { data: customRolesData, error: customRolesError } = await supabase
-        .from('user_custom_roles')
-        .select('*')
-        .eq('user_id', authUser.id);
-
-      if (customRolesError) throw customRolesError;
-      setCustomRoles(customRolesData || []);
+      setCustomRoles([]);
 
     } catch (err: any) {
       console.error('Error loading user data:', err);
@@ -153,7 +144,7 @@ export function useCurrentUser(): CurrentUserInfo {
 
   // Determine primary role (global_admin has priority)
   const primaryRole = roles.find(r => r.role === 'global_admin')?.role || roles[0]?.role || null;
-  const hospitalId = profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
+  const hospitalId = profile?.tenant_id || profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
 
   // Derived permissions
   const isGlobalAdmin = roles.some(r => r.role === 'global_admin');
