@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useTenant } from '@/contexts/TenantContext';
+import { useTenantModules } from '@/hooks/useTenantModules';
 import {
   Building2,
   Users,
@@ -102,6 +103,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   // Use selected tenant ID for platform owners, otherwise use profile's hospital_id
   const effectiveHospitalId = selectedTenant?.id || hospitalId;
 
+  // Load tenant modules to check if modules are enabled
+  const { isModuleEnabled, loading: modulesLoading } = useTenantModules(effectiveHospitalId);
+
   console.log('AppSidebar permissions debug', {
     allPermissions: permissions.allPermissions,
     loadingPermissions: permissions.loading,
@@ -120,6 +124,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const hasModuleAccess = (moduleName: string) => {
     // Platform Owner has access to everything
     if (isPlatformOwner) return true;
+
+    // Check if module is enabled for this tenant
+    if (!isModuleEnabled(moduleName)) return false;
 
     return permissions.hasPermission(`${moduleName}.view`, effectiveHospitalId) ||
            permissions.hasPermission(`${moduleName}.manage`, effectiveHospitalId);
@@ -143,6 +150,8 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
     if (item.url.includes('/work-orders')) {
       // Platform Owner has full access
       if (isPlatformOwner) return true;
+      // Check if work_orders module is enabled
+      if (!isModuleEnabled('work_orders')) return false;
       // Work orders use OLD perfect system - check roleConfig
       return roleConfig && roleConfig.modules.workOrders.view !== 'own';
     }
@@ -168,7 +177,17 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
       return hasModuleAccess('operations_log');
     }
     if (item.url.includes('/settings')) {
-      return isPlatformOwner || permissions.hasPermission('settings.access', effectiveHospitalId);
+      if (isPlatformOwner) return true;
+      if (!isModuleEnabled('settings')) return false;
+      return permissions.hasPermission('settings.access', effectiveHospitalId);
+    }
+
+    if (item.url.includes('/subscription')) {
+      return isModuleEnabled('subscription');
+    }
+
+    if (item.url.includes('/modules')) {
+      return isModuleEnabled('modules');
     }
 
     // Default: show if no specific permission required
