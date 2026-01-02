@@ -43,16 +43,23 @@ export default function RolePermissions() {
     try {
       setLoading(true);
 
-      // Load system roles only (not team roles)
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('system_roles')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
+      // Get distinct roles from role_permissions
+      const { data: rolePermsData, error: rolePermsError } = await supabase
+        .from('role_permissions')
+        .select('role')
+        .not('role', 'is', null);
 
-      if (rolesError) throw rolesError;
+      if (rolePermsError) throw rolePermsError;
 
-      const systemRoles = rolesData || [];
+      // Extract unique roles
+      const uniqueRoles = Array.from(new Set((rolePermsData || []).map(rp => rp.role)));
+      const systemRoles = uniqueRoles.map(role => ({
+        code: role,
+        name: role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        name_ar: role,
+        is_active: true,
+        display_order: 0,
+      }));
       setLookupRoles(systemRoles);
 
       const [permsResult, rolePermsResult] = await Promise.all([
@@ -168,27 +175,26 @@ export default function RolePermissions() {
       // Validate inputs
       const validatedData = roleSchema.parse(newRole);
 
-      // Check if code already exists
+      // Check if role already exists
       const { data: existing } = await supabase
-        .from('system_roles')
-        .select('code')
-        .eq('code', validatedData.code)
-        .single();
+        .from('role_permissions')
+        .select('role')
+        .eq('role', validatedData.code)
+        .limit(1)
+        .maybeSingle();
 
       if (existing) {
-        toast.error(language === 'ar' ? 'الكود موجود مسبقاً' : 'Code already exists');
+        toast.error(language === 'ar' ? 'الدور موجود مسبقاً' : 'Role already exists');
         return;
       }
 
-      // Insert new role
+      // Create a default permission for this role so it appears in the list
       const { error } = await supabase
-        .from('system_roles')
+        .from('role_permissions')
         .insert([{
-          code: validatedData.code,
-          name: validatedData.name,
-          name_ar: validatedData.name_ar,
-          description: validatedData.description || null,
-          display_order: lookupRoles.length + 1,
+          role: validatedData.code,
+          permission_key: 'work_orders.view',
+          allowed: false,
         }]);
 
       if (error) throw error;

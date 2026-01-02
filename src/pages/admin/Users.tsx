@@ -22,8 +22,8 @@ interface UserData {
   full_name_ar: string | null;
   email: string;
   phone: string | null;
-  hospital_id: string | null;
-  hospital_name?: string;
+  tenant_id: string | null;
+  tenant_name?: string;
   last_activity_at?: string | null;
   is_active: boolean;
   roles: Array<{
@@ -95,10 +95,9 @@ export default function Users() {
           full_name_ar,
           email,
           phone,
-          hospital_id,
+          tenant_id,
           last_activity_at,
-          is_active,
-          hospitals(name, name_ar)
+          is_active
         `);
 
       if (profilesError) throw profilesError;
@@ -169,8 +168,8 @@ export default function Users() {
           full_name_ar: profile.full_name_ar,
           email: profile.email,
           phone: profile.phone,
-          hospital_id: profile.hospital_id,
-          hospital_name: profile.hospitals ? (language === 'ar' ? profile.hospitals.name_ar : profile.hospitals.name) : null,
+          tenant_id: profile.tenant_id,
+          tenant_name: null,
           last_activity_at: profile.last_activity_at,
           is_active: profile.is_active,
           roles: [...systemRoles, ...customRolesList],
@@ -179,9 +178,9 @@ export default function Users() {
       });
 
       // Filter users based on permissions
-      const filteredUsers = isGlobalAdmin 
-        ? usersWithRoles 
-        : usersWithRoles.filter((u: any) => u.hospital_id === currentUserHospitalId);
+      const filteredUsers = isGlobalAdmin
+        ? usersWithRoles
+        : usersWithRoles.filter((u: any) => u.tenant_id === currentUserHospitalId);
 
       setUsers(filteredUsers);
     } catch (error) {
@@ -208,19 +207,28 @@ export default function Users() {
 
   const loadLookupRoles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_roles')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
+      // Get distinct roles from role_permissions
+      const { data: rolePermsData, error } = await supabase
+        .from('role_permissions')
+        .select('role')
+        .not('role', 'is', null);
 
       if (error) throw error;
-      
-      // Filter out global_admin from the list (it's handled separately)
-      const filteredRoles = (data || []).filter(r => r.code !== 'global_admin');
-      setLookupRoles(filteredRoles);
+
+      // Extract unique roles and convert to expected format
+      const uniqueRoles = Array.from(new Set((rolePermsData || []).map(rp => rp.role)));
+      const rolesData = uniqueRoles
+        .filter(role => role !== 'global_admin')
+        .map(role => ({
+          code: role,
+          name: role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+          name_ar: role,
+          is_active: true,
+          display_order: 0,
+        }));
+      setLookupRoles(rolesData);
     } catch (error) {
-      console.error('Error loading system roles:', error);
+      console.error('Error loading roles:', error);
     }
   };
 
