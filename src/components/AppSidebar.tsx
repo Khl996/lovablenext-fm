@@ -25,6 +25,8 @@ import {
   FileSignature,
   Timer,
   Gauge,
+  Crown,
+  Building,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -68,14 +70,23 @@ const adminItems = [
   { title: 'lookupTables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database },
 ];
 
+const platformItems = [
+  { title: 'Platform Dashboard', titleAr: 'لوحة تحكم المنصة', url: '/platform/dashboard', icon: Crown },
+  { title: 'Tenants', titleAr: 'المستأجرون', url: '/platform/tenants', icon: Building },
+];
+
 export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { state } = useSidebar();
   const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin } = useCurrentUser();
+  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin, profile } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
   const { appName, appNameAr, logoUrl } = useSystemSettings();
+
+  const isPlatformAdmin = profile?.is_super_admin ||
+    profile?.role === 'platform_owner' ||
+    profile?.role === 'platform_admin';
 
   console.log('AppSidebar permissions debug', {
     allPermissions: permissions.allPermissions,
@@ -246,6 +257,31 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                       >
                         <item.icon className="h-4 w-4" />
                         {!isCollapsed && <span>{language === 'ar' ? item.titleAr : t(item.title as any)}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Platform Admin Navigation */}
+        {isPlatformAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'إدارة المنصة' : 'Platform Administration')}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {platformItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-muted/50"
+                        activeClassName="bg-muted text-primary font-medium"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{language === 'ar' ? item.titleAr : item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

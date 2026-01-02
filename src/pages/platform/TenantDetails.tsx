@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Ban, CheckCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SubscriptionBadge } from '@/components/subscription/SubscriptionBadge';
 import { UsageIndicator } from '@/components/subscription/UsageIndicator';
 import { toast } from '@/hooks/use-toast';
@@ -78,7 +78,24 @@ export default function TenantDetails() {
   };
 
   if (loading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (!tenant) {

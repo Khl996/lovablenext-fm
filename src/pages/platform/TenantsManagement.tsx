@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Eye, Edit, Ban, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SubscriptionBadge } from '@/components/subscription/SubscriptionBadge';
 import { toast } from '@/hooks/use-toast';
 
@@ -68,7 +68,23 @@ export default function TenantsManagement() {
   };
 
   if (loading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-full" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

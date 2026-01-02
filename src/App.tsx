@@ -44,6 +44,9 @@ import Contracts from './pages/admin/Contracts';
 import SLA from './pages/admin/SLA';
 import Calibration from './pages/admin/Calibration';
 import SystemStats from './pages/admin/SystemStats';
+import PlatformDashboard from './pages/platform/PlatformDashboard';
+import TenantsManagement from './pages/platform/TenantsManagement';
+import TenantDetails from './pages/platform/TenantDetails';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -370,15 +373,45 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/admin/system-stats" 
+              <Route
+                path="/admin/system-stats"
                 element={
                   <ProtectedRoute>
                     <AppLayout>
                       <SystemStats />
                     </AppLayout>
                   </ProtectedRoute>
-                } 
+                }
+              />
+              <Route
+                path="/platform/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PlatformDashboard />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/platform/tenants"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <TenantsManagement />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/platform/tenants/:tenantId"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <TenantDetails />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
               />
               <Route path="*" element={<NotFound />} />
             </Routes>

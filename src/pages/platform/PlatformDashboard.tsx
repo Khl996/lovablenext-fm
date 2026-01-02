@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SubscriptionBadge } from '@/components/subscription/SubscriptionBadge';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ interface PlatformStats {
   totalRevenue: number;
   monthlyRevenue: number;
   totalUsers: number;
-  expiringS oon: number;
+  expiringSoon: number;
 }
 
 export default function PlatformDashboard() {
@@ -102,7 +102,23 @@ export default function PlatformDashboard() {
   };
 
   if (loading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const statCards = [
