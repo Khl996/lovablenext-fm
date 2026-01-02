@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SubscriptionBadge } from '@/components/subscription/SubscriptionBadge';
+import { AddTenantDialog } from '@/components/platform/AddTenantDialog';
 import { toast } from '@/hooks/use-toast';
 
 export default function TenantsManagement() {
@@ -19,6 +20,7 @@ export default function TenantsManagement() {
   const [filteredTenants, setFilteredTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   useEffect(() => {
     fetchTenants();
@@ -100,9 +102,9 @@ export default function TenantsManagement() {
               : 'Manage all tenants and their subscriptions'}
           </p>
         </div>
-        <Button onClick={() => navigate('/platform/tenants/new')}>
+        <Button onClick={() => setShowAddDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          {language === 'ar' ? 'مستأجر جديد' : 'New Tenant'}
+          {language === 'ar' ? 'مؤسسة جديدة' : 'New Tenant'}
         </Button>
       </div>
 
@@ -172,6 +174,12 @@ export default function TenantsManagement() {
           )}
         </CardContent>
       </Card>
+
+      <AddTenantDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSuccess={fetchTenants}
+      />
     </div>
   );
 }

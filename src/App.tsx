@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/AppSidebar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NotificationBell } from "./components/NotificationBell";
 import { UserMenu } from "./components/UserMenu";
+import { TenantSelector } from "./components/TenantSelector";
 import { Languages } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { useLanguage } from "./contexts/LanguageContext";
@@ -77,7 +79,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             
             <div className="flex-1"></div>
-            
+
+            {/* Tenant Selector */}
+            <TenantSelector />
+
             {/* Notification Bell */}
             <NotificationBell />
 
@@ -110,10 +115,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <TenantProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -463,6 +469,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </TenantProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
