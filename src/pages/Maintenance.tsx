@@ -221,7 +221,9 @@ export default function Maintenance() {
     );
   }
 
-  if (!hospitalId) {
+  const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
+
+  if (!hospitalId && !isPlatformOwner) {
     return (
       <div className="space-y-6 p-6">
         <Card>
@@ -231,8 +233,8 @@ export default function Maintenance() {
               {language === 'ar' ? 'لا يوجد مستشفى مرتبط' : 'No Hospital Linked'}
             </h3>
             <p className="text-muted-foreground text-center">
-              {language === 'ar' 
-                ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.' 
+              {language === 'ar'
+                ? 'لا يوجد مستشفى مرتبط بحسابك. يرجى التواصل مع المسؤول.'
                 : 'No hospital is linked to your account. Please contact the administrator.'}
             </p>
           </CardContent>

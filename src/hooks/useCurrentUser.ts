@@ -6,14 +6,19 @@ import { getUserRoleConfig, type RoleConfig } from '@/lib/rolePermissions';
 
 type Profile = {
   id: string;
+  tenant_id: string | null;
   full_name: string;
   full_name_ar: string | null;
   email: string;
   phone: string | null;
-  hospital_id: string | null;
+  hospital_id?: string | null;
   avatar_url: string | null;
+  role: string;
+  is_super_admin: boolean | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
+  last_activity_at: string | null;
 };
 
 type UserRole = {

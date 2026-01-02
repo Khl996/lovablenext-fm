@@ -118,7 +118,9 @@ export default function OperationsLog() {
     );
   }
 
-  if (!hospitalId) {
+  const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
+
+  if (!hospitalId && !isPlatformOwner) {
     return (
       <div className="p-8">
         <Card>

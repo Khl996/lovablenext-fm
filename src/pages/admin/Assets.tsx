@@ -72,7 +72,8 @@ interface Asset {
 
 export default function Assets() {
   const { t, language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { profile, hospitalId, permissions } = useCurrentUser();
+  const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
   const { toast } = useToast();
 
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -356,7 +357,7 @@ export default function Assets() {
     );
   }
 
-  if (!hospitalId) {
+  if (!hospitalId && !isPlatformOwner) {
     return (
       <div className="p-8">
         <Card>

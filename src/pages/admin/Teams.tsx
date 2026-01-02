@@ -51,7 +51,8 @@ type Specialization = {
 
 export default function Teams() {
   const { t, language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { profile, hospitalId, permissions } = useCurrentUser();
+  const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
   const { toast } = useToast();
   const { lookups, loading: lookupsLoading } = useLookupTables(['team_roles']);
 
@@ -510,7 +511,7 @@ export default function Teams() {
     );
   }
 
-  if (!hospitalId) {
+  if (!hospitalId && !isPlatformOwner) {
     return (
       <div className="p-8">
         <Card>
