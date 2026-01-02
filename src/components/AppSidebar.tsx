@@ -29,6 +29,7 @@ import {
   Building,
   CreditCard,
   Receipt,
+  Puzzle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -58,6 +59,7 @@ const mainItems = [
   { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History },
   { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound },
   { title: 'subscription', titleAr: 'اشتراكي', url: '/subscription', icon: CreditCard },
+  { title: 'modules', titleAr: 'الوحدات', url: '/modules', icon: Puzzle },
   { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
 ];
 
