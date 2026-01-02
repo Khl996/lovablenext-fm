@@ -19,7 +19,10 @@ type RolePermission = Database['public']['Tables']['role_permissions']['Row'];
 
 export default function RolePermissions() {
   const { language, t } = useLanguage();
-  const { isGlobalAdmin, isHospitalAdmin, hospitalId } = useCurrentUser();
+  const { permissions: userPermissions, hospitalId } = useCurrentUser();
+  const canManageRolePermissions = userPermissions.hasPermission('settings.role_permissions');
+  const isGlobalAdmin = userPermissions.hasPermission('tenants.manage_roles') && !hospitalId;
+  const isHospitalAdmin = userPermissions.hasPermission('settings.role_permissions') && hospitalId;
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [lookupRoles, setLookupRoles] = useState<any[]>([]);
@@ -294,7 +297,7 @@ export default function RolePermissions() {
     }
   };
 
-  if (!isGlobalAdmin && !isHospitalAdmin) {
+  if (!canManageRolePermissions) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="max-w-md">
