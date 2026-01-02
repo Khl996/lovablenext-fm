@@ -357,6 +357,164 @@ export interface NotificationPreferences {
   updated_at: string | null;
 }
 
+// Subscription System Types
+export type SubscriptionStatus = 'trial' | 'active' | 'suspended' | 'cancelled' | 'expired';
+export type BillingCycle = 'monthly' | 'yearly' | 'custom';
+export type PaymentMethod = 'bank_transfer' | 'stripe' | 'cash' | 'check' | 'other';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'refunded';
+
+export interface SubscriptionPlan {
+  id: string;
+  code: string;
+  name: string;
+  name_ar: string;
+  description: string | null;
+  description_ar: string | null;
+  price_monthly: number;
+  price_yearly: number;
+  is_featured: boolean;
+  display_order: number;
+  included_users: number | null;
+  included_assets: number | null;
+  included_storage_mb: number | null;
+  included_work_orders: number | null;
+  features: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantSubscription {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  subscription_status: SubscriptionStatus;
+  plan_id: string | null;
+  subscription_starts_at: string | null;
+  subscription_ends_at: string | null;
+  trial_ends_at: string | null;
+  grace_period_days: number;
+  grace_period_started_at: string | null;
+  billing_cycle: BillingCycle;
+  payment_method: PaymentMethod | null;
+  last_payment_date: string | null;
+  next_billing_date: string | null;
+  auto_renew: boolean;
+  base_price: number;
+  custom_pricing: Record<string, any>;
+  discount_percentage: number;
+  discount_fixed_amount: number;
+  max_users: number;
+  max_assets: number;
+  max_work_orders_per_month: number;
+  max_storage_mb: number;
+  custom_limits: Record<string, any>;
+  enabled_modules: string[];
+  module_configurations: Record<string, any>;
+  workflow_customizations: Record<string, any>;
+  primary_color: string;
+  secondary_color: string;
+  custom_domain: string | null;
+  email_signature_template: string | null;
+  technical_contact_name: string | null;
+  technical_contact_email: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspension_reason: string | null;
+  notes: string | null;
+  logo_url: string | null;
+  settings: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionHistory {
+  id: string;
+  tenant_id: string;
+  old_plan_id: string | null;
+  new_plan_id: string | null;
+  old_status: string | null;
+  new_status: string | null;
+  old_price: number | null;
+  new_price: number | null;
+  changed_by: string | null;
+  change_reason: string | null;
+  notes: string | null;
+  changed_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  tenant_id: string;
+  invoice_date: string;
+  due_date: string | null;
+  paid_at: string | null;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  status: InvoiceStatus;
+  payment_method: string | null;
+  transaction_id: string | null;
+  notes: string | null;
+  pdf_url: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string | null;
+  tenant_id: string;
+  payment_date: string;
+  amount: number;
+  payment_method: PaymentMethod;
+  transaction_reference: string | null;
+  processed_by: string | null;
+  notes: string | null;
+  receipt_url: string | null;
+  created_at: string;
+}
+
+export interface TenantModule {
+  id: string;
+  tenant_id: string;
+  module_code: string;
+  is_enabled: boolean;
+  configuration: Record<string, any>;
+  enabled_at: string;
+  enabled_by: string | null;
+  disabled_at: string | null;
+  disabled_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantUsage {
+  users_count: number;
+  assets_count: number;
+  work_orders_this_month: number;
+  storage_used_mb: number;
+}
+
+export interface SubscriptionInfo {
+  tenant_id: string;
+  tenant_name: string;
+  subscription_status: SubscriptionStatus;
+  plan_name: string | null;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
+  is_active: boolean;
+  days_remaining: number;
+}
+
 // Common utility types
 export interface TableFilters<T = any> {
   searchQuery: string;
