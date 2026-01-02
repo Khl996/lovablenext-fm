@@ -25,7 +25,7 @@ interface CompanyData {
 
 export default function Companies() {
   const { language, t } = useLanguage();
-  const { user, hospitalId } = useCurrentUser();
+  const { profile, user, hospitalId } = useCurrentUser();
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

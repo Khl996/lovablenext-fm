@@ -38,7 +38,7 @@ type WorkOrder = {
 export default function WorkOrders() {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { loading: userLoading, permissions } = useCurrentUser();
+  const { profile, hospitalId, loading: userLoading, permissions } = useCurrentUser();
   const { lookups, loading: lookupsLoading } = useLookupTables(['priorities', 'work_order_statuses']);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -79,8 +79,6 @@ export default function WorkOrders() {
     assignedTeam: language === 'ar' ? 'الفريق المكلف' : 'Assigned Team',
     notAssigned: language === 'ar' ? 'غير مكلف' : 'Not Assigned',
   };
-
-  const { hospitalId } = useCurrentUser();
 
   useEffect(() => {
     if (hospitalId) {

@@ -51,6 +51,7 @@ type MaintenancePlan = {
 export default function Maintenance() {
   const { t, language } = useLanguage();
   const {
+    profile,
     hospitalId,
     permissions,
     loading: userLoading,

@@ -19,7 +19,7 @@ interface FacilityData {
 
 export default function Facilities() {
   const { language } = useLanguage();
-  const { hospitalId } = useCurrentUser();
+  const { profile, hospitalId } = useCurrentUser();
   const navigate = useNavigate();
   const [facilities, setFacilities] = useState<FacilityData[]>([]);
   const [loading, setLoading] = useState(true);

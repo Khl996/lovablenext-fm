@@ -33,7 +33,7 @@ type OperationLog = {
 
 export default function OperationsLog() {
   const { t, language } = useLanguage();
-  const { hospitalId, permissions } = useCurrentUser();
+  const { profile, hospitalId, permissions } = useCurrentUser();
   const { toast } = useToast();
 
   const [operations, setOperations] = useState<OperationLog[]>([]);
