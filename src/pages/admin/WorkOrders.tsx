@@ -81,38 +81,47 @@ export default function WorkOrders() {
   };
 
   useEffect(() => {
-    if (hospitalId) {
+    const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
+
+    if (hospitalId || isPlatformOwner) {
       loadWorkOrders();
-      loadTeams();
-      loadBuildings();
-      loadRooms();
-    } else {
+      if (hospitalId) {
+        loadTeams();
+        loadBuildings();
+        loadRooms();
+      }
+    } else if (profile) {
       setLoading(false);
     }
-  }, [hospitalId]);
+  }, [hospitalId, profile]);
 
   const loadWorkOrders = async () => {
     try {
       setLoading(true);
-      
+
       // Get current user for supervisor filtering
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      // Check if user is a supervisor with building assignments
-      const { data: assignedBuildings } = await supabase
-        .from('supervisor_buildings')
-        .select('building_id')
-        .eq('user_id', currentUser?.id || '');
+
+      const isPlatformOwner = profile?.role === 'platform_owner' || profile?.role === 'platform_admin';
 
       let query = supabase
         .from('work_orders')
         .select('*')
         .order('reported_at', { ascending: false });
 
-      // If supervisor with assigned buildings, filter by those buildings
-      if (assignedBuildings && assignedBuildings.length > 0) {
-        const buildingIds = assignedBuildings.map(b => b.building_id);
-        query = query.in('building_id', buildingIds);
+      // If not platform owner, apply filters
+      if (!isPlatformOwner && hospitalId) {
+        // Check if user is a supervisor with building assignments
+        const { data: assignedBuildings } = await supabase
+          .from('supervisor_buildings')
+          .select('building_id')
+          .eq('user_id', currentUser?.id || '');
+
+        // If supervisor with assigned buildings, filter by those buildings
+        if (assignedBuildings && assignedBuildings.length > 0) {
+          const buildingIds = assignedBuildings.map(b => b.building_id);
+          query = query.in('building_id', buildingIds);
+        }
       }
 
       const { data, error } = await query;
