@@ -108,15 +108,13 @@ export default function Users() {
           id,
           user_id,
           role,
-          hospital_id,
-          hospitals(name, name_ar)
+          hospital_id
         `),
-        supabase.from('user_custom_roles').select(`
+        supabase.from('custom_user_roles').select(`
           id,
           user_id,
           role_code,
-          hospital_id,
-          hospitals(name, name_ar)
+          hospital_id
         `),
         supabase.from('team_members').select(`
           user_id,
@@ -138,7 +136,7 @@ export default function Users() {
             id: r.id,
             role: r.role,
             hospital_id: r.hospital_id,
-            hospital_name: r.hospitals ? (language === 'ar' ? r.hospitals.name_ar : r.hospitals.name) : null,
+            hospital_name: null,
             isSystemRole: true,
           }));
 
@@ -148,7 +146,7 @@ export default function Users() {
             id: r.id,
             role: r.role_code,
             hospital_id: r.hospital_id,
-            hospital_name: r.hospitals ? (language === 'ar' ? r.hospitals.name_ar : r.hospitals.name) : null,
+            hospital_name: null,
             isSystemRole: false,
           }));
 

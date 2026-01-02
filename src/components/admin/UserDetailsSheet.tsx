@@ -102,16 +102,24 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
 
   const loadSystemRoles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_roles')
-        .select('code, name, name_ar')
-        .eq('is_active', true)
-        .order('display_order');
-      
+      // Get distinct roles from role_permissions
+      const { data: rolePermsData, error } = await supabase
+        .from('role_permissions')
+        .select('role')
+        .not('role', 'is', null);
+
       if (error) throw error;
-      setSystemRoles(data || []);
+
+      // Extract unique roles and convert to expected format
+      const uniqueRoles = Array.from(new Set((rolePermsData || []).map(rp => rp.role)));
+      const rolesData = uniqueRoles.map(role => ({
+        code: role,
+        name: role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        name_ar: role,
+      }));
+      setSystemRoles(rolesData);
     } catch (error) {
-      console.error('Error loading system roles:', error);
+      console.error('Error loading roles:', error);
     }
   };
 

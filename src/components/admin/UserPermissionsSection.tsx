@@ -68,78 +68,52 @@ export function UserPermissionsSection({ userId, hospitals, userHospitalId, isGl
       const [oldRolesResult, customRolesResult] = await Promise.all([
         supabase
           .from('user_roles')
-          .select(`
-            role,
-            role_permissions!inner(permission_key, allowed)
-          `)
+          .select('role')
           .eq('user_id', userId),
         supabase
-          .from('user_custom_roles')
-          .select(`
-            role_code,
-            system_roles!inner(name, name_ar),
-            role_permissions!role_permissions_role_code_fkey!inner(permission_key, allowed)
-          `)
+          .from('custom_user_roles')
+          .select('role_code')
           .eq('user_id', userId),
       ]);
+
+      // Get all role permissions for user's roles
+      const allUserRoles = [
+        ...(oldRolesResult.data || []).map(r => r.role),
+        ...(customRolesResult.data || []).map(r => r.role_code),
+      ];
+
+      const rolePermsResult = allUserRoles.length > 0
+        ? await supabase
+            .from('role_permissions')
+            .select('role, permission_key, allowed')
+            .in('role', allUserRoles)
+        : { data: [], error: null };
 
       // Build effective permissions map
       const effectiveMap = new Map<string, EffectivePermission>();
 
-      // Process old system roles permissions
-      if (oldRolesResult.data) {
-        oldRolesResult.data.forEach((ur: any) => {
-          const rolePerms = ur.role_permissions || [];
-          rolePerms.forEach((rp: any) => {
-            if (rp.allowed) {
-              const key = rp.permission_key;
-              if (!effectiveMap.has(key)) {
-                const perm = allPermissions.find((p) => p.key === key);
-                if (perm) {
-                  effectiveMap.set(key, {
-                    ...perm,
-                    source: 'role',
-                    effect: 'grant',
-                    roleNames: [ur.role],
-                  });
-                }
-              } else {
-                const existing = effectiveMap.get(key)!;
-                if (existing.roleNames && !existing.roleNames.includes(ur.role)) {
-                  existing.roleNames.push(ur.role);
-                }
+      // Process role permissions
+      if (rolePermsResult.data) {
+        rolePermsResult.data.forEach((rp: any) => {
+          if (rp.allowed) {
+            const key = rp.permission_key;
+            if (!effectiveMap.has(key)) {
+              const perm = allPermissions.find((p) => p.key === key);
+              if (perm) {
+                effectiveMap.set(key, {
+                  ...perm,
+                  source: 'role',
+                  effect: 'grant',
+                  roleNames: [rp.role],
+                });
+              }
+            } else {
+              const existing = effectiveMap.get(key)!;
+              if (existing.roleNames && !existing.roleNames.includes(rp.role)) {
+                existing.roleNames.push(rp.role);
               }
             }
-          });
-        });
-      }
-
-      // Process custom roles permissions
-      if (customRolesResult.data) {
-        customRolesResult.data.forEach((cr: any) => {
-          const rolePerms = cr.role_permissions || [];
-          const roleName = language === 'ar' ? cr.system_roles?.name_ar : cr.system_roles?.name;
-          rolePerms.forEach((rp: any) => {
-            if (rp.allowed) {
-              const key = rp.permission_key;
-              if (!effectiveMap.has(key)) {
-                const perm = allPermissions.find((p) => p.key === key);
-                if (perm) {
-                  effectiveMap.set(key, {
-                    ...perm,
-                    source: 'role',
-                    effect: 'grant',
-                    roleNames: [roleName || cr.role_code],
-                  });
-                }
-              } else {
-                const existing = effectiveMap.get(key)!;
-                if (existing.roleNames && !existing.roleNames.includes(roleName || cr.role_code)) {
-                  existing.roleNames.push(roleName || cr.role_code);
-                }
-              }
-            }
-          });
+          }
         });
       }
 
