@@ -33,7 +33,7 @@ export function RecentAlertsCard() {
       // Check urgent/high priority work orders
       const { data: urgentWorkOrders } = await supabase
         .from('work_orders')
-        .select('id, code, title, title_ar, created_at, lookup_priorities(name, name_ar)')
+        .select('id, code, title, created_at, priority')
         .in('priority', ['urgent', 'high'])
         .not('status', 'in', '(completed,cancelled,auto_closed)')
         .limit(3);
@@ -43,7 +43,7 @@ export function RecentAlertsCard() {
           id: wo.id,
           type: 'critical',
           title: `Urgent work order: ${wo.code} - ${wo.title}`,
-          title_ar: `أمر عمل عاجل: ${wo.code} - ${wo.title_ar}`,
+          title_ar: `أمر عمل عاجل: ${wo.code} - ${wo.title}`,
           timestamp: wo.created_at,
           severity: 'high',
         });
@@ -71,12 +71,12 @@ export function RecentAlertsCard() {
       // Check low stock items
       const { data: lowStockItems } = await supabase
         .from('inventory_items')
-        .select('id, name, name_ar, current_quantity, min_quantity, updated_at')
-        .not('min_quantity', 'is', null)
+        .select('id, name, name_ar, current_stock, min_stock, updated_at')
+        .not('min_stock', 'is', null)
         .limit(3);
 
       lowStockItems?.forEach((item) => {
-        if (item.min_quantity && item.current_quantity <= item.min_quantity) {
+        if (item.min_stock && item.current_stock <= item.min_stock) {
           alertsList.push({
             id: item.id,
             type: 'low_stock',

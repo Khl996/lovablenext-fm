@@ -183,10 +183,12 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
     }
 
     if (item.url.includes('/subscription')) {
+      if (isPlatformOwner) return true;
       return isModuleEnabled('subscription');
     }
 
     if (item.url.includes('/modules')) {
+      if (isPlatformOwner) return true;
       return isModuleEnabled('modules');
     }
 

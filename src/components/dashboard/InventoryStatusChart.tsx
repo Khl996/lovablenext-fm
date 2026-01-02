@@ -25,16 +25,16 @@ export function InventoryStatusChart() {
 
       const { data: items, error } = await supabase
         .from('inventory_items')
-        .select('current_quantity, min_quantity, max_quantity');
+        .select('current_stock, min_stock, max_stock');
 
       if (error) throw error;
 
       const lowStock = items?.filter(
-        item => item.min_quantity && item.current_quantity <= item.min_quantity
+        item => item.min_stock && item.current_stock <= item.min_stock
       ).length || 0;
 
       const overStock = items?.filter(
-        item => item.max_quantity && item.current_quantity >= item.max_quantity
+        item => item.max_stock && item.current_stock >= item.max_stock
       ).length || 0;
 
       const optimal = (items?.length || 0) - lowStock - overStock;

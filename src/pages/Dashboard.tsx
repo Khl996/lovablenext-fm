@@ -110,7 +110,7 @@ export default function Dashboard() {
           .eq('status', 'active'),
         supabase
           .from('inventory_items')
-          .select('quantity, min_quantity'),
+          .select('current_stock, min_stock'),
         supabase
           .from('work_orders')
           .select('created_at, updated_at, assigned_to')
@@ -119,7 +119,7 @@ export default function Dashboard() {
       ]);
 
       const lowStock = inventoryItems.data?.filter(
-        item => item.min_quantity && item.quantity <= item.min_quantity
+        item => item.min_stock && item.current_stock <= item.min_stock
       ).length || 0;
 
       const totalOrders = (activeOrders.count || 0) + (completedOrders.count || 0);
