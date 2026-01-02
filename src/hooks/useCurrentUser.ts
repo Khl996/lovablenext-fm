@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { usePermissions, type UserPermissionsInfo } from './usePermissions';
 import { getUserRoleConfig, type RoleConfig } from '@/lib/rolePermissions';
-import { useTenant } from '@/contexts/TenantContext';
 
 type Profile = {
   id: string;
@@ -60,9 +59,6 @@ export function useCurrentUser(): CurrentUserInfo {
   const [customRoles, setCustomRoles] = useState<CustomUserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
-
-  // Get selected tenant from context for platform owners
-  const { selectedTenant } = useTenant();
 
   const loadUserData = async () => {
     try {
@@ -148,12 +144,7 @@ export function useCurrentUser(): CurrentUserInfo {
 
   // Determine primary role (global_admin has priority)
   const primaryRole = roles.find(r => r.role === 'global_admin')?.role || roles[0]?.role || null;
-
-  // For platform owners, use selected tenant ID if available
-  const isPlatformOwner = profile?.role === 'platform_owner';
-  const hospitalId = isPlatformOwner && selectedTenant
-    ? selectedTenant.id
-    : (profile?.tenant_id || profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null);
+  const hospitalId = profile?.tenant_id || profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
 
   // Derived permissions
   const isGlobalAdmin = roles.some(r => r.role === 'global_admin');
