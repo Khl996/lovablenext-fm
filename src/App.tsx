@@ -47,6 +47,7 @@ import SystemStats from './pages/admin/SystemStats';
 import PlatformDashboard from './pages/platform/PlatformDashboard';
 import TenantsManagement from './pages/platform/TenantsManagement';
 import TenantDetails from './pages/platform/TenantDetails';
+import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -112,6 +113,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/setup" element={<Setup />} />
               <Route path="/install" element={<Install />} />
               <Route 
                 path="/dashboard"
