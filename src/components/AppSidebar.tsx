@@ -1,10 +1,16 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTenantModules } from '@/hooks/useTenantModules';
+import {
+  getRoleConfig,
+  canViewSidebarItem,
+  canViewPlatformSidebarItem,
+  isPlatformRole,
+} from '@/lib/rolePermissions';
 import {
   Building2,
   Users,
@@ -16,7 +22,6 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Download,
-  FileText,
   UsersRound,
   History,
   GitBranch,
@@ -31,6 +36,7 @@ import {
   CreditCard,
   Receipt,
   Puzzle,
+  PieChart,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -41,199 +47,158 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
 
-const mainItems = [
-  { title: 'dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2 },
-  { title: 'assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package },
-  { title: 'inventory', titleAr: 'المخزون', url: '/admin/inventory', icon: Database },
-  { title: 'workOrders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList },
-  { title: 'maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: Wrench },
-  { title: 'calibration', titleAr: 'المعايرة', url: '/admin/calibration', icon: Gauge },
-  { title: 'contracts', titleAr: 'العقود', url: '/admin/contracts', icon: FileSignature },
-  { title: 'sla', titleAr: 'اتفاقيات الخدمة', url: '/admin/sla', icon: Timer },
-  { title: 'costs', titleAr: 'التكاليف', url: '/admin/costs', icon: DollarSign },
-  { title: 'operations', titleAr: 'سجل العمليات', url: '/operations-log', icon: History },
-  { title: 'teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound },
-  { title: 'subscription', titleAr: 'اشتراكي', url: '/subscription', icon: CreditCard },
-  { title: 'modules', titleAr: 'الوحدات', url: '/modules', icon: Puzzle },
-  { title: 'settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings },
+interface SidebarItem {
+  key: string;
+  title: string;
+  titleAr: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permissionModule?: string;
+}
+
+const mainItems: SidebarItem[] = [
+  { key: 'dashboard', title: 'Dashboard', titleAr: 'لوحة التحكم', url: '/dashboard', icon: LayoutDashboard },
+  { key: 'facilities', title: 'Facilities', titleAr: 'المرافق', url: '/facilities', icon: Building2, permissionModule: 'facilities' },
+  { key: 'assets', title: 'Assets', titleAr: 'الأصول', url: '/admin/assets', icon: Package, permissionModule: 'assets' },
+  { key: 'inventory', title: 'Inventory', titleAr: 'المخزون', url: '/admin/inventory', icon: Database, permissionModule: 'inventory' },
+  { key: 'workOrders', title: 'Work Orders', titleAr: 'أوامر العمل', url: '/admin/work-orders', icon: ClipboardList, permissionModule: 'workOrders' },
+  { key: 'maintenance', title: 'Maintenance', titleAr: 'الصيانة', url: '/maintenance', icon: Wrench, permissionModule: 'maintenance' },
+  { key: 'calibration', title: 'Calibration', titleAr: 'المعايرة', url: '/admin/calibration', icon: Gauge, permissionModule: 'calibration' },
+  { key: 'contracts', title: 'Contracts', titleAr: 'العقود', url: '/admin/contracts', icon: FileSignature, permissionModule: 'contracts' },
+  { key: 'sla', title: 'SLA', titleAr: 'اتفاقيات الخدمة', url: '/admin/sla', icon: Timer, permissionModule: 'sla' },
+  { key: 'costs', title: 'Costs', titleAr: 'التكاليف', url: '/admin/costs', icon: DollarSign, permissionModule: 'costs' },
+  { key: 'operations', title: 'Operations Log', titleAr: 'سجل العمليات', url: '/operations-log', icon: History, permissionModule: 'operationsLog' },
+  { key: 'teams', title: 'Teams', titleAr: 'الفرق', url: '/admin/teams', icon: UsersRound, permissionModule: 'teams' },
+  { key: 'subscription', title: 'My Subscription', titleAr: 'اشتراكي', url: '/subscription', icon: CreditCard },
+  { key: 'modules', title: 'Modules', titleAr: 'الوحدات', url: '/modules', icon: Puzzle },
+  { key: 'settings', title: 'Settings', titleAr: 'الإعدادات', url: '/settings', icon: Settings, permissionModule: 'settings' },
 ];
 
-const adminItems = [
-  { title: 'systemStats', titleAr: 'إحصائيات النظام', url: '/admin/system-stats', icon: BarChart3 },
-  { title: 'organizations', titleAr: 'المؤسسات', url: '/admin/hospitals', icon: Building },
-  { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2 },
-  { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
-  { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/role-permissions', icon: ShieldCheck },
-  { title: 'facilityLocations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2 },
-  { title: 'issueTypes', titleAr: 'أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch },
-  { title: 'specializations', titleAr: 'التخصصات الفنية', url: '/admin/specializations', icon: Award },
-  { title: 'lookupTables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database },
+const adminItems: SidebarItem[] = [
+  { key: 'systemStats', title: 'System Stats', titleAr: 'إحصائيات النظام', url: '/admin/system-stats', icon: BarChart3, permissionModule: 'analytics' },
+  { key: 'organizations', title: 'Organizations', titleAr: 'المؤسسات', url: '/admin/hospitals', icon: Building },
+  { key: 'companies', title: 'Companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2 },
+  { key: 'users', title: 'Users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users, permissionModule: 'users' },
+  { key: 'rolePermissions', title: 'Role Permissions', titleAr: 'صلاحيات الأدوار', url: '/admin/role-permissions', icon: ShieldCheck, permissionModule: 'roles' },
+  { key: 'facilityLocations', title: 'Locations', titleAr: 'مواقع المرافق', url: '/admin/locations', icon: Building2 },
+  { key: 'issueTypes', title: 'Issue Types', titleAr: 'أنواع البلاغات', url: '/admin/issue-types', icon: GitBranch },
+  { key: 'specializations', title: 'Specializations', titleAr: 'التخصصات الفنية', url: '/admin/specializations', icon: Award },
+  { key: 'lookupTables', title: 'Lookup Tables', titleAr: 'الجداول المرجعية', url: '/admin/lookup-tables', icon: Database },
 ];
 
-const platformItems = [
-  { title: 'Platform Dashboard', titleAr: 'لوحة تحكم المنصة', url: '/platform/dashboard', icon: Crown },
-  { title: 'Tenants', titleAr: 'المستأجرون', url: '/platform/tenants', icon: Building },
-  { title: 'Subscription Plans', titleAr: 'خطط الاشتراك', url: '/platform/plans', icon: CreditCard },
-  { title: 'Invoices', titleAr: 'الفواتير', url: '/platform/invoices', icon: Receipt },
+const platformItems: SidebarItem[] = [
+  { key: 'platformDashboard', title: 'Platform Dashboard', titleAr: 'لوحة تحكم المنصة', url: '/platform/dashboard', icon: Crown },
+  { key: 'tenants', title: 'Tenants', titleAr: 'المستأجرون', url: '/platform/tenants', icon: Building },
+  { key: 'plans', title: 'Subscription Plans', titleAr: 'خطط الاشتراك', url: '/platform/plans', icon: CreditCard },
+  { key: 'invoices', title: 'Invoices', titleAr: 'الفواتير', url: '/platform/invoices', icon: Receipt },
+  { key: 'financials', title: 'Financial Reports', titleAr: 'التقارير المالية', url: '/platform/financials', icon: PieChart },
 ];
 
 export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   const { state } = useSidebar();
   const { language, t } = useLanguage();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, isGlobalAdmin, isHospitalAdmin, profile } = useCurrentUser();
+  const { permissions, loading, roleConfig, canAccessAdmin, hospitalId, profile } = useCurrentUser();
   const { isInstalled } = usePWAInstall();
   const { appName, appNameAr, logoUrl } = useSystemSettings();
   const { selectedTenant } = useTenant();
 
-  const isPlatformAdmin = profile?.is_super_admin ||
-    profile?.role === 'platform_owner' ||
-    profile?.role === 'platform_admin';
+  const userRole = profile?.role || '';
+  const isSuperAdmin = profile?.is_super_admin === true;
+  const isPlatformUser = isPlatformRole(userRole) || isSuperAdmin;
+  const isPlatformOwner = userRole === 'platform_owner' || isSuperAdmin;
+  const isPlatformAdmin = isPlatformUser;
 
-  const isPlatformOwner = profile?.role === 'platform_owner';
-
-  // Use selected tenant ID for platform owners, otherwise use profile's hospital_id
   const effectiveHospitalId = selectedTenant?.id || hospitalId;
-
-  // Load tenant modules to check if modules are enabled
   const { isModuleEnabled, loading: modulesLoading } = useTenantModules(effectiveHospitalId);
 
-  console.log('AppSidebar permissions debug', {
-    allPermissions: permissions.allPermissions,
-    loadingPermissions: permissions.loading,
-    canAccessAdmin,
-    roleConfig,
-    isPlatformOwner,
-    profile: profile?.role,
-    selectedTenant: selectedTenant?.id,
-    effectiveHospitalId,
-  });
-
-  const isActive = (path: string) => location.pathname === path;
+  const currentRoleConfig = getRoleConfig(userRole);
   const isCollapsed = state === 'collapsed';
 
-  // Helper function to check if user has view OR manage permission
-  const hasModuleAccess = (moduleName: string) => {
-    // Platform Owner has access to everything
+  const canViewItem = (item: SidebarItem): boolean => {
     if (isPlatformOwner) return true;
+    if (item.key === 'dashboard') return true;
+    if (item.key === 'subscription' || item.key === 'modules') {
+      return !isPlatformUser;
+    }
 
-    // Check if module is enabled for this tenant
-    if (!isModuleEnabled(moduleName)) return false;
+    if (item.permissionModule) {
+      if (!isModuleEnabled(item.permissionModule)) return false;
 
-    return permissions.hasPermission(`${moduleName}.view`, effectiveHospitalId) ||
-           permissions.hasPermission(`${moduleName}.manage`, effectiveHospitalId);
+      if (currentRoleConfig) {
+        return canViewSidebarItem(currentRoleConfig, item.key);
+      }
+
+      const viewPerm = `${item.permissionModule}.view`;
+      const managePerm = `${item.permissionModule}.manage`;
+      return permissions.hasPermission(viewPerm, effectiveHospitalId) ||
+             permissions.hasPermission(managePerm, effectiveHospitalId);
+    }
+
+    return true;
   };
 
-  // Filter main items based on NEW DATABASE PERMISSIONS
-  const visibleMainItems = mainItems.filter(item => {
-    // Dashboard is visible to all authenticated users
-    if (item.url === '/dashboard') return true;
+  const canViewAdminItem = (item: SidebarItem): boolean => {
+    if (isPlatformOwner) return true;
 
-    // Check database permissions for each module (view OR manage)
-    if (item.url.includes('/facilities')) {
-      return hasModuleAccess('facilities');
-    }
-    if (item.url.includes('/assets')) {
-      return hasModuleAccess('assets');
-    }
-    if (item.url.includes('/inventory')) {
-      return hasModuleAccess('inventory');
-    }
-    if (item.url.includes('/work-orders')) {
-      // Platform Owner has full access
-      if (isPlatformOwner) return true;
-      // Check if work_orders module is enabled
-      if (!isModuleEnabled('work_orders')) return false;
-      // Work orders use OLD perfect system - check roleConfig
-      return roleConfig && roleConfig.modules.workOrders.view !== 'own';
-    }
-    if (item.url.includes('/maintenance')) {
-      return hasModuleAccess('maintenance');
-    }
-    if (item.url.includes('/calibration')) {
-      return hasModuleAccess('calibration');
-    }
-    if (item.url.includes('/contracts')) {
-      return hasModuleAccess('contracts');
-    }
-    if (item.url.includes('/sla')) {
-      return hasModuleAccess('sla');
-    }
-    if (item.url.includes('/costs')) {
-      return hasModuleAccess('costs');
-    }
-    if (item.url.includes('/teams')) {
-      return hasModuleAccess('teams');
-    }
-    if (item.url.includes('/operations-log')) {
-      return hasModuleAccess('operations_log');
-    }
-    if (item.url.includes('/settings')) {
-      if (isPlatformOwner) return true;
-      if (!isModuleEnabled('settings')) return false;
-      return permissions.hasPermission('settings.access', effectiveHospitalId);
+    if (!canAccessAdmin && !currentRoleConfig?.canAccessAdmin) return false;
+
+    if (item.permissionModule) {
+      if (currentRoleConfig) {
+        return canViewSidebarItem(currentRoleConfig, item.key);
+      }
+
+      const viewPerm = `${item.permissionModule}.view`;
+      const managePerm = `${item.permissionModule}.manage`;
+      return permissions.hasPermission(viewPerm, effectiveHospitalId) ||
+             permissions.hasPermission(managePerm, effectiveHospitalId);
     }
 
-    if (item.url.includes('/subscription')) {
-      if (isPlatformOwner) return true;
-      return isModuleEnabled('subscription');
+    if (item.key === 'organizations') {
+      return permissions.hasPermission('hospitals.view', effectiveHospitalId) ||
+             permissions.hasPermission('hospitals.manage', effectiveHospitalId);
+    }
+    if (item.key === 'companies') {
+      return permissions.hasPermission('companies.view', effectiveHospitalId) ||
+             permissions.hasPermission('companies.manage', effectiveHospitalId);
+    }
+    if (item.key === 'facilityLocations') {
+      return permissions.hasPermission('settings.locations', effectiveHospitalId);
+    }
+    if (item.key === 'issueTypes') {
+      return permissions.hasPermission('settings.issue_types', effectiveHospitalId);
+    }
+    if (item.key === 'specializations') {
+      return permissions.hasPermission('settings.specializations', effectiveHospitalId);
+    }
+    if (item.key === 'lookupTables') {
+      return permissions.hasPermission('settings.lookup_tables', effectiveHospitalId);
     }
 
-    if (item.url.includes('/modules')) {
-      if (isPlatformOwner) return true;
-      return isModuleEnabled('modules');
-    }
-
-    // Default: show if no specific permission required
     return true;
-  });
+  };
 
-  // Filter admin items based on NEW SYSTEM
-  const visibleAdminItems = (canAccessAdmin || isPlatformOwner)
-    ? adminItems.filter(item => {
-        // Platform Owner sees everything
-        if (isPlatformOwner) return true;
+  const canViewPlatformItem = (item: SidebarItem): boolean => {
+    if (!isPlatformAdmin) return false;
+    if (isPlatformOwner) return true;
 
-        // Check specific permissions for admin items
-        if (item.url.includes('/system-stats')) {
-          return permissions.hasPermission('analytics.view', effectiveHospitalId) || isGlobalAdmin;
-        }
-        if (item.url.includes('/hospitals')) {
-          return permissions.hasPermission('hospitals.view', effectiveHospitalId) || permissions.hasPermission('hospitals.manage', effectiveHospitalId);
-        }
-        if (item.url.includes('/companies')) {
-          return permissions.hasPermission('companies.view', effectiveHospitalId) || permissions.hasPermission('companies.manage', effectiveHospitalId);
-        }
-        if (item.url.includes('/users')) {
-          return permissions.hasPermission('users.manage', effectiveHospitalId) || permissions.hasPermission('users.view', effectiveHospitalId);
-        }
-        if (item.url.includes('/role-permissions')) {
-          return permissions.hasPermission('settings.role_permissions', effectiveHospitalId);
-        }
-        if (item.url.includes('/locations')) {
-          return permissions.hasPermission('settings.locations', effectiveHospitalId);
-        }
-        if (item.url.includes('/issue-types')) {
-          return permissions.hasPermission('settings.issue_types', effectiveHospitalId);
-        }
-        if (item.url.includes('/specializations')) {
-          return permissions.hasPermission('settings.specializations', effectiveHospitalId);
-        }
-        if (item.url.includes('/lookup-tables')) {
-          return permissions.hasPermission('settings.lookup_tables', effectiveHospitalId);
-        }
-        return true;
-      })
-    : [];
+    if (currentRoleConfig?.platformModules) {
+      return canViewPlatformSidebarItem(currentRoleConfig, item.key);
+    }
 
-  if (loading) {
+    return permissions.hasPermission(`platform.view_${item.key}`) ||
+           permissions.hasPermission(`platform.manage_${item.key}`);
+  };
+
+  const visibleMainItems = mainItems.filter(canViewItem);
+  const visibleAdminItems = adminItems.filter(canViewAdminItem);
+  const visiblePlatformItems = platformItems.filter(canViewPlatformItem);
+
+  if (loading || modulesLoading) {
     return (
       <Sidebar side={side} className={isCollapsed ? 'w-14' : 'w-60'}>
         <SidebarContent>
@@ -248,12 +213,11 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
   return (
     <Sidebar side={side} className={isCollapsed ? 'w-14' : 'w-60'}>
       <SidebarContent>
-        {/* Logo Header */}
         <div className="p-4 border-b flex items-center gap-3">
-          <img 
-            src={logoUrl || '/mutqan-logo.png'} 
-            alt="App Logo" 
-            className="h-8 w-8 flex-shrink-0 object-contain" 
+          <img
+            src={logoUrl || '/mutqan-logo.png'}
+            alt="App Logo"
+            className="h-8 w-8 flex-shrink-0 object-contain"
           />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
@@ -264,9 +228,10 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
           )}
         </div>
 
-        {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu')}</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {!isCollapsed && (language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu')}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleMainItems.map((item) => (
@@ -278,7 +243,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                       activeClassName="bg-muted text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{language === 'ar' ? item.titleAr : t(item.title as any)}</span>}
+                      {!isCollapsed && (
+                        <span>{language === 'ar' ? item.titleAr : item.title}</span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -287,10 +254,11 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Admin Navigation */}
         {visibleAdminItems.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'الإدارة' : 'Administration')}</SidebarGroupLabel>
+            <SidebarGroupLabel>
+              {!isCollapsed && (language === 'ar' ? 'الإدارة' : 'Administration')}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {visibleAdminItems.map((item) => (
@@ -302,7 +270,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                         activeClassName="bg-muted text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{language === 'ar' ? item.titleAr : t(item.title as any)}</span>}
+                        {!isCollapsed && (
+                          <span>{language === 'ar' ? item.titleAr : item.title}</span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -312,13 +282,14 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
           </SidebarGroup>
         )}
 
-        {/* Platform Admin Navigation */}
-        {isPlatformAdmin && (
+        {visiblePlatformItems.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>{!isCollapsed && (language === 'ar' ? 'إدارة المنصة' : 'Platform Administration')}</SidebarGroupLabel>
+            <SidebarGroupLabel>
+              {!isCollapsed && (language === 'ar' ? 'إدارة المنصة' : 'Platform')}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {platformItems.map((item) => (
+                {visiblePlatformItems.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild>
                       <NavLink
@@ -327,7 +298,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                         activeClassName="bg-muted text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{language === 'ar' ? item.titleAr : item.title}</span>}
+                        {!isCollapsed && (
+                          <span>{language === 'ar' ? item.titleAr : item.title}</span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -337,7 +310,6 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
           </SidebarGroup>
         )}
 
-        {/* Install App Link */}
         {!isInstalled && (
           <SidebarGroup>
             <SidebarGroupContent>
@@ -350,7 +322,9 @@ export function AppSidebar({ side = 'left' }: { side?: 'left' | 'right' }) {
                       activeClassName="bg-muted text-primary font-medium"
                     >
                       <Download className="h-4 w-4" />
-                      {!isCollapsed && <span>{language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}</span>}
+                      {!isCollapsed && (
+                        <span>{language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}</span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
