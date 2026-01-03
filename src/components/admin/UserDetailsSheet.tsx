@@ -362,7 +362,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
                             <SelectValue placeholder={t('selectHospital')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">{language === 'ar' ? 'بدون مستشفى' : 'No Hospital'}</SelectItem>
+                            <SelectItem value="none">{language === 'ar' ? 'بدون مؤسسة' : 'No Organization'}</SelectItem>
                             {hospitals.map((hospital) => (
                               <SelectItem key={hospital.id} value={hospital.id}>
                                 {language === 'ar' ? hospital.name_ar : hospital.name}

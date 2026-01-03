@@ -102,7 +102,7 @@ export function AddTenantDialog({ open, onOpenChange, onSuccess }: AddTenantDial
       toast.success(
         language === 'ar'
           ? 'تم إنشاء المؤسسة بنجاح'
-          : 'Tenant created successfully'
+          : 'Organization created successfully'
       );
 
       setFormData({
@@ -120,7 +120,7 @@ export function AddTenantDialog({ open, onOpenChange, onSuccess }: AddTenantDial
       console.error('Error creating tenant:', error);
       toast.error(
         error.message ||
-        (language === 'ar' ? 'فشل إنشاء المؤسسة' : 'Failed to create tenant')
+        (language === 'ar' ? 'فشل إنشاء المؤسسة' : 'Failed to create organization')
       );
     } finally {
       setLoading(false);
@@ -147,12 +147,12 @@ export function AddTenantDialog({ open, onOpenChange, onSuccess }: AddTenantDial
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
-            {language === 'ar' ? 'إضافة مؤسسة جديدة' : 'Add New Tenant'}
+            {language === 'ar' ? 'إضافة مؤسسة جديدة' : 'Add New Organization'}
           </DialogTitle>
           <DialogDescription>
             {language === 'ar'
               ? 'أدخل معلومات المؤسسة الجديدة. سيتم إنشاء فترة تجريبية لمدة 30 يوم.'
-              : 'Enter the new tenant information. A 30-day trial period will be created.'}
+              : 'Enter the new organization information. A 30-day trial period will be created.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -260,7 +260,7 @@ export function AddTenantDialog({ open, onOpenChange, onSuccess }: AddTenantDial
             <p className="text-xs text-muted-foreground">
               {language === 'ar'
                 ? 'ستبدأ المؤسسة بفترة تجريبية 30 يوم ثم تتحول للخطة المختارة'
-                : 'Tenant will start with 30-day trial then switch to selected plan'}
+                : 'Organization will start with 30-day trial then switch to selected plan'}
             </p>
           </div>
 
@@ -275,7 +275,7 @@ export function AddTenantDialog({ open, onOpenChange, onSuccess }: AddTenantDial
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {language === 'ar' ? 'إنشاء المؤسسة' : 'Create Tenant'}
+              {language === 'ar' ? 'إنشاء المؤسسة' : 'Create Organization'}
             </Button>
           </DialogFooter>
         </form>

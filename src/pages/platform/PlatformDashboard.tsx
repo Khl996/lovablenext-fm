@@ -123,14 +123,14 @@ export default function PlatformDashboard() {
 
   const statCards = [
     {
-      title: language === 'ar' ? 'إجمالي المستأجرين' : 'Total Tenants',
+      title: language === 'ar' ? 'إجمالي المؤسسات' : 'Total Organizations',
       value: stats.totalTenants,
       icon: Building2,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
-      title: language === 'ar' ? 'المستأجرون النشطون' : 'Active Tenants',
+      title: language === 'ar' ? 'المؤسسات النشطة' : 'Active Organizations',
       value: stats.activeTenants,
       icon: CheckCircle,
       color: 'text-green-600',
@@ -174,8 +174,8 @@ export default function PlatformDashboard() {
         </h1>
         <p className="text-gray-600">
           {language === 'ar'
-            ? 'نظرة عامة على جميع المستأجرين والاشتراكات'
-            : 'Overview of all tenants and subscriptions'}
+            ? 'نظرة عامة على جميع المؤسسات والاشتراكات'
+            : 'Overview of all organizations and subscriptions'}
         </p>
       </div>
 
@@ -203,7 +203,7 @@ export default function PlatformDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {language === 'ar' ? 'المستأجرون الجدد' : 'Recent Tenants'}
+            {language === 'ar' ? 'المؤسسات الجديدة' : 'Recent Organizations'}
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -57,7 +57,7 @@ export default function TenantsManagement() {
       console.error('Error fetching tenants:', error);
       toast({
         title: language === 'ar' ? 'خطأ' : 'Error',
-        description: language === 'ar' ? 'فشل تحميل المستأجرين' : 'Failed to load tenants',
+        description: language === 'ar' ? 'فشل تحميل المؤسسات' : 'Failed to load organizations',
         variant: 'destructive',
       });
     } finally {
@@ -94,17 +94,17 @@ export default function TenantsManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold mb-2">
-            {language === 'ar' ? 'إدارة المستأجرين' : 'Tenants Management'}
+            {language === 'ar' ? 'إدارة المؤسسات' : 'Organizations Management'}
           </h1>
           <p className="text-gray-600">
             {language === 'ar'
-              ? 'إدارة جميع المستأجرين واشتراكاتهم'
-              : 'Manage all tenants and their subscriptions'}
+              ? 'إدارة جميع المؤسسات واشتراكاتها'
+              : 'Manage all organizations and their subscriptions'}
           </p>
         </div>
         <Button onClick={() => setShowAddDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          {language === 'ar' ? 'مؤسسة جديدة' : 'New Tenant'}
+          {language === 'ar' ? 'مؤسسة جديدة' : 'New Organization'}
         </Button>
       </div>
 

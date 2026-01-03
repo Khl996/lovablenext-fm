@@ -13,7 +13,6 @@ import {
   Wrench,
   BarChart3,
   Settings,
-  Hospital,
   LayoutDashboard,
   ShieldCheck,
   Download,
@@ -67,7 +66,7 @@ const mainItems = [
 
 const adminItems = [
   { title: 'systemStats', titleAr: 'إحصائيات النظام', url: '/admin/system-stats', icon: BarChart3 },
-  { title: 'hospitals', titleAr: 'المستشفيات', url: '/admin/hospitals', icon: Hospital },
+  { title: 'organizations', titleAr: 'المؤسسات', url: '/admin/hospitals', icon: Building },
   { title: 'companies', titleAr: 'الشركات', url: '/admin/companies', icon: Building2 },
   { title: 'users', titleAr: 'المستخدمين', url: '/admin/users', icon: Users },
   { title: 'rolePermissions', titleAr: 'صلاحيات الأدوار', url: '/admin/role-permissions', icon: ShieldCheck },

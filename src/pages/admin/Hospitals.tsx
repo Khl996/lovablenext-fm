@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Hospital, Ban, CheckCircle, Trash2 } from 'lucide-react';
+import { Plus, Building2, Ban, CheckCircle, Trash2 } from 'lucide-react';
 
 interface HospitalData {
   id: string;
@@ -252,7 +252,7 @@ export default function Hospitals() {
         })
         .eq('id', selectedHospital.id);
       if (error) throw error;
-      toast.success(language === 'ar' ? 'تم تعليق المستشفى' : 'Hospital suspended');
+      toast.success(language === 'ar' ? 'تم تعليق المؤسسة' : 'Organization suspended');
       setSuspendDialogOpen(false);
       setSuspensionReason('');
       loadHospitals();
@@ -274,7 +274,7 @@ export default function Hospitals() {
         })
         .eq('id', hospital.id);
       if (error) throw error;
-      toast.success(language === 'ar' ? 'تم تفعيل المستشفى' : 'Hospital activated');
+      toast.success(language === 'ar' ? 'تم تفعيل المؤسسة' : 'Organization activated');
       loadHospitals();
     } catch (error) {
       console.error('Error activating hospital:', error);
@@ -290,7 +290,7 @@ export default function Hospitals() {
         .delete()
         .eq('id', selectedHospital.id);
       if (error) throw error;
-      toast.success(language === 'ar' ? 'تم حذف المستشفى' : 'Hospital deleted');
+      toast.success(language === 'ar' ? 'تم حذف المؤسسة' : 'Organization deleted');
       setDeleteDialogOpen(false);
       loadHospitals();
     } catch (error) {
@@ -315,9 +315,9 @@ export default function Hospitals() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">{language === 'ar' ? 'المستشفيات' : 'Hospitals'}</h1>
+          <h1 className="text-3xl font-semibold">{language === 'ar' ? 'المؤسسات' : 'Organizations'}</h1>
           <p className="text-muted-foreground mt-1">
-            {language === 'ar' ? 'إدارة المستشفيات في النظام' : 'Manage hospitals in the system'}
+            {language === 'ar' ? 'إدارة المؤسسات في النظام' : 'Manage organizations in the system'}
           </p>
         </div>
 
@@ -335,13 +335,13 @@ export default function Hospitals() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="code">{language === 'ar' ? 'رمز المستشفى' : 'Hospital Code'}</Label>
+                <Label htmlFor="code">{language === 'ar' ? 'رمز المؤسسة' : 'Organization Code'}</Label>
                 <Input
                   id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   required
-                  placeholder={language === 'ar' ? 'مثال: HOS001' : 'Example: HOS001'}
+                  placeholder={language === 'ar' ? 'مثال: ORG001' : 'Example: ORG001'}
                 />
               </div>
 
@@ -366,12 +366,12 @@ export default function Hospitals() {
               </div>
 
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'شعار المستشفى' : 'Hospital Logo'}</Label>
+                <Label>{language === 'ar' ? 'شعار المؤسسة' : 'Organization Logo'}</Label>
                 {formData.logo_url && (
                   <div className="flex items-center justify-center p-4 border-2 border-dashed rounded-lg bg-muted">
-                    <img 
-                      src={formData.logo_url} 
-                      alt="Hospital logo" 
+                    <img
+                      src={formData.logo_url}
+                      alt="Organization logo"
                       className="max-h-24 object-contain"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -461,7 +461,7 @@ export default function Hospitals() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="bg-primary/5 p-3 rounded-lg border border-border">
-                    <Hospital className="h-6 w-6 text-primary" />
+                    <Building2 className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg truncate">
@@ -536,9 +536,9 @@ export default function Hospitals() {
       {hospitals.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
-            <Hospital className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {language === 'ar' ? 'لا توجد مستشفيات' : 'No hospitals yet'}
+              {language === 'ar' ? 'لا توجد مؤسسات' : 'No organizations yet'}
             </p>
           </CardContent>
         </Card>
@@ -547,11 +547,11 @@ export default function Hospitals() {
       <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{language === 'ar' ? 'تعليق المستشفى' : 'Suspend Hospital'}</AlertDialogTitle>
+            <AlertDialogTitle>{language === 'ar' ? 'تعليق المؤسسة' : 'Suspend Organization'}</AlertDialogTitle>
             <AlertDialogDescription>
-              {language === 'ar' 
-                ? 'الرجاء إدخال سبب تعليق هذا المستشفى'
-                : 'Please enter the reason for suspending this hospital'}
+              {language === 'ar'
+                ? 'الرجاء إدخال سبب تعليق هذه المؤسسة'
+                : 'Please enter the reason for suspending this organization'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
@@ -574,11 +574,11 @@ export default function Hospitals() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{language === 'ar' ? 'حذف المستشفى' : 'Delete Hospital'}</AlertDialogTitle>
+            <AlertDialogTitle>{language === 'ar' ? 'حذف المؤسسة' : 'Delete Organization'}</AlertDialogTitle>
             <AlertDialogDescription>
-              {language === 'ar' 
-                ? 'هل أنت متأكد من حذف هذا المستشفى؟ لا يمكن التراجع عن هذا الإجراء.'
-                : 'Are you sure you want to delete this hospital? This action cannot be undone.'}
+              {language === 'ar'
+                ? 'هل أنت متأكد من حذف هذه المؤسسة؟ لا يمكن التراجع عن هذا الإجراء.'
+                : 'Are you sure you want to delete this organization? This action cannot be undone.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
