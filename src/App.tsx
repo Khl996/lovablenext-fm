@@ -53,6 +53,8 @@ import SubscriptionPlans from './pages/platform/SubscriptionPlans';
 import InvoicesManagement from './pages/platform/InvoicesManagement';
 import MySubscription from './pages/tenant/MySubscription';
 import ModulesManagement from './pages/tenant/ModulesManagement';
+import CustomFieldsManagement from './pages/tenant/CustomFieldsManagement';
+import FinancialReports from './pages/platform/FinancialReports';
 import Setup from "./pages/Setup";
 import NotFound from "./pages/NotFound";
 
@@ -461,6 +463,26 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <ModulesManagement />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/custom-fields"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <CustomFieldsManagement />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/platform/financial-reports"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <FinancialReports />
                     </AppLayout>
                   </ProtectedRoute>
                 }
