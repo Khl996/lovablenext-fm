@@ -181,9 +181,9 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
     try {
       const roleHospitalId = newRole === 'global_admin' ? null : (newRoleHospital || currentUser.hospitalId);
 
-      // Add to user_custom_roles (new system)
+      // Add to custom_user_roles (new system)
       const { error } = await supabase
-        .from('user_custom_roles')
+        .from('custom_user_roles')
         .insert([{
           user_id: user.id,
           role_code: newRole,
@@ -267,7 +267,7 @@ export function UserDetailsSheet({ user, open, onOpenChange, hospitals, onUpdate
   const handleDeleteRole = async (roleId: string, isSystemRole: boolean) => {
     setLoading(true);
     try {
-      const tableName = isSystemRole ? 'user_roles' : 'user_custom_roles';
+      const tableName = isSystemRole ? 'user_roles' : 'custom_user_roles';
       const { error } = await supabase
         .from(tableName)
         .delete()

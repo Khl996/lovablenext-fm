@@ -1,9 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 interface CreateUserRequest {
@@ -14,12 +15,15 @@ interface CreateUserRequest {
   phone?: string;
   hospitalId?: string;
   roles?: Array<{ role: string; hospitalId?: string }>;
-  customRoles?: Array<{ roleCode: string; hospitalId?: string }>; // Support for custom role codes
+  customRoles?: Array<{ roleCode: string; hospitalId?: string }>;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -38,7 +42,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify the requesting user is authenticated and is an admin
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
@@ -48,13 +51,17 @@ serve(async (req) => {
       );
     }
 
-    // Check if user has admin role
-    const { data: userRoles, error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
+    const { data: userProfile, error: profileCheckError } = await supabaseClient
+      .from('profiles')
+      .select('role, is_super_admin')
+      .eq('id', user.id)
+      .maybeSingle();
 
-    if (rolesError || !userRoles?.some(r => r.role === 'global_admin' || r.role === 'hospital_admin')) {
+    const allowedRoles = ['platform_owner', 'platform_admin', 'tenant_admin', 'maintenance_manager', 'global_admin', 'hospital_admin'];
+    const hasAdminAccess = userProfile?.is_super_admin ||
+                           (userProfile?.role && allowedRoles.includes(userProfile.role));
+
+    if (profileCheckError || !hasAdminAccess) {
       return new Response(
         JSON.stringify({ error: 'Forbidden: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -63,11 +70,10 @@ serve(async (req) => {
 
     const { email, password, fullName, fullNameAr, phone, hospitalId, roles, customRoles } = await req.json() as CreateUserRequest;
 
-    // Create user using admin client
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
       user_metadata: {
         full_name: fullName,
       }
@@ -80,7 +86,6 @@ serve(async (req) => {
       );
     }
 
-    // Create profile
     const { error: profileError } = await adminClient
       .from('profiles')
       .upsert({
@@ -89,14 +94,14 @@ serve(async (req) => {
         full_name: fullName,
         full_name_ar: fullNameAr,
         phone,
-        hospital_id: hospitalId,
+        tenant_id: hospitalId,
+        role: roles?.[0]?.role || 'technician',
       });
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
     }
 
-    // Assign roles if provided (old system - app_role)
     if (roles && roles.length > 0) {
       const roleInserts = roles.map(r => ({
         user_id: newUser.user.id,
@@ -113,7 +118,6 @@ serve(async (req) => {
       }
     }
 
-    // Assign custom roles if provided (new system - role_code)
     if (customRoles && customRoles.length > 0) {
       const customRoleInserts = customRoles.map(r => ({
         user_id: newUser.user.id,
@@ -122,7 +126,7 @@ serve(async (req) => {
       }));
 
       const { error: customRolesError } = await adminClient
-        .from('user_custom_roles')
+        .from('custom_user_roles')
         .insert(customRoleInserts);
 
       if (customRolesError) {

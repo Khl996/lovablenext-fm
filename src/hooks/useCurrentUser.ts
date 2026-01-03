@@ -11,7 +11,6 @@ type Profile = {
   full_name_ar: string | null;
   email: string;
   phone: string | null;
-  hospital_id?: string | null;
   avatar_url: string | null;
   role: string;
   is_super_admin: boolean | null;
@@ -147,9 +146,9 @@ export function useCurrentUser(): CurrentUserInfo {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Determine primary role (global_admin has priority)
-  const primaryRole = roles.find(r => r.role === 'global_admin')?.role || roles[0]?.role || null;
-  const hospitalId = profile?.tenant_id || profile?.hospital_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
+  // Determine primary role (from profile.role or roles table)
+  const primaryRole = profile?.role || roles.find(r => r.role === 'global_admin')?.role || roles[0]?.role || null;
+  const hospitalId = profile?.tenant_id || roles[0]?.hospital_id || customRoles[0]?.hospital_id || null;
 
   // Derived permissions
   const isGlobalAdmin = roles.some(r => r.role === 'global_admin');

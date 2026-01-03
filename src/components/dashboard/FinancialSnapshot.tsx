@@ -22,12 +22,12 @@ export function FinancialSnapshot() {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-      // Fetch costs for current month
+      // Fetch costs for current month from work_order_costs table
       const { data: costs, error } = await supabase
-        .from('costs')
+        .from('work_order_costs')
         .select('total_cost, unit_cost, quantity')
-        .gte('cost_date', startOfMonth.split('T')[0])
-        .lte('cost_date', endOfMonth.split('T')[0]);
+        .gte('created_at', startOfMonth)
+        .lte('created_at', endOfMonth);
 
       if (error) throw error;
 

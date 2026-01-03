@@ -125,7 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
       const roleCodes = rolePermissions.map(rp => rp.role_code).filter(Boolean);
 
       const { data: userRoles } = await supabase
-        .from("user_custom_roles")
+        .from("custom_user_roles")
         .select("user_id")
         .in("role_code", roleCodes)
         .eq("hospital_id", hospitalId);

@@ -71,7 +71,7 @@ export async function getUserPermissions(userId: string): Promise<PermissionKey[
   try {
     // Get permissions from custom roles
     const { data: customRolesData, error: customRolesError } = await supabase
-      .from('user_custom_roles')
+      .from('custom_user_roles')
       .select(`
         role_code,
         role_permissions!role_permissions_role_code_fkey(permission_key, allowed)
