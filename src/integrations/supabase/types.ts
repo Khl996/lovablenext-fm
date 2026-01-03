@@ -149,7 +149,7 @@ export type Database = {
             foreignKeyName: "assets_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -204,7 +204,7 @@ export type Database = {
             foreignKeyName: "buildings_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -294,7 +294,7 @@ export type Database = {
             foreignKeyName: "calibration_records_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -386,7 +386,7 @@ export type Database = {
             foreignKeyName: "calibration_schedules_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -450,7 +450,7 @@ export type Database = {
             foreignKeyName: "companies_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -563,7 +563,7 @@ export type Database = {
             foreignKeyName: "contracts_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -617,7 +617,7 @@ export type Database = {
             foreignKeyName: "cost_categories_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -714,7 +714,7 @@ export type Database = {
             foreignKeyName: "costs_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -805,63 +805,6 @@ export type Database = {
           },
         ]
       }
-      hospitals: {
-        Row: {
-          address: string | null
-          code: string
-          created_at: string
-          email: string | null
-          id: string
-          logo_url: string | null
-          name: string
-          name_ar: string
-          notes: string | null
-          phone: string | null
-          status: string
-          suspended_at: string | null
-          suspended_by: string | null
-          suspension_reason: string | null
-          type: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          code: string
-          created_at?: string
-          email?: string | null
-          id?: string
-          logo_url?: string | null
-          name: string
-          name_ar: string
-          notes?: string | null
-          phone?: string | null
-          status?: string
-          suspended_at?: string | null
-          suspended_by?: string | null
-          suspension_reason?: string | null
-          type?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          code?: string
-          created_at?: string
-          email?: string | null
-          id?: string
-          logo_url?: string | null
-          name?: string
-          name_ar?: string
-          notes?: string | null
-          phone?: string | null
-          status?: string
-          suspended_at?: string | null
-          suspended_by?: string | null
-          suspension_reason?: string | null
-          type?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       inventory_categories: {
         Row: {
           code: string
@@ -907,7 +850,7 @@ export type Database = {
             foreignKeyName: "inventory_categories_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1010,7 +953,7 @@ export type Database = {
             foreignKeyName: "inventory_items_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1069,7 +1012,7 @@ export type Database = {
             foreignKeyName: "inventory_transactions_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1117,7 +1060,7 @@ export type Database = {
             foreignKeyName: "issue_type_team_mapping_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1177,7 +1120,7 @@ export type Database = {
             foreignKeyName: "lookup_asset_categories_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1227,7 +1170,7 @@ export type Database = {
             foreignKeyName: "lookup_asset_statuses_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1277,7 +1220,7 @@ export type Database = {
             foreignKeyName: "lookup_priorities_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1327,7 +1270,7 @@ export type Database = {
             foreignKeyName: "lookup_team_roles_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1377,7 +1320,7 @@ export type Database = {
             foreignKeyName: "lookup_work_order_statuses_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1424,7 +1367,7 @@ export type Database = {
             foreignKeyName: "lookup_work_types_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1486,7 +1429,7 @@ export type Database = {
             foreignKeyName: "maintenance_plans_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1575,6 +1518,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      modules: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_core: boolean | null
+          name: string
+          name_ar: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_core?: boolean | null
+          name: string
+          name_ar: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_core?: boolean | null
+          name?: string
+          name_ar?: string
+        }
+        Relationships: []
       }
       notification_preferences: {
         Row: {
@@ -1786,7 +1765,7 @@ export type Database = {
             foreignKeyName: "operations_log_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1797,6 +1776,318 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      org_modules: {
+        Row: {
+          created_at: string | null
+          feature_flags: Json | null
+          id: string
+          is_enabled: boolean | null
+          module_code: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature_flags?: Json | null
+          id?: string
+          is_enabled?: boolean | null
+          module_code: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feature_flags?: Json | null
+          id?: string
+          is_enabled?: boolean | null
+          module_code?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_modules_module_code_fkey"
+            columns: ["module_code"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      org_role_permissions: {
+        Row: {
+          allowed: boolean | null
+          created_at: string | null
+          id: string
+          org_role_id: string
+          permission_key: string
+        }
+        Insert: {
+          allowed?: boolean | null
+          created_at?: string | null
+          id?: string
+          org_role_id: string
+          permission_key: string
+        }
+        Update: {
+          allowed?: boolean | null
+          created_at?: string | null
+          id?: string
+          org_role_id?: string
+          permission_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_role_permissions_org_role_id_fkey"
+            columns: ["org_role_id"]
+            isOneToOne: false
+            referencedRelation: "org_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_roles: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          name_ar: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          name_ar: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          name_ar?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      org_settings: {
+        Row: {
+          created_at: string | null
+          dashboard_config: Json | null
+          id: string
+          notification_settings: Json | null
+          organization_id: string
+          theme: Json | null
+          updated_at: string | null
+          workflow_settings: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_config?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          organization_id: string
+          theme?: Json | null
+          updated_at?: string | null
+          workflow_settings?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_config?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          organization_id?: string
+          theme?: Json | null
+          updated_at?: string | null
+          workflow_settings?: Json | null
+        }
+        Relationships: []
+      }
+      org_usage: {
+        Row: {
+          api_calls: number | null
+          assets_count: number | null
+          created_at: string | null
+          id: string
+          month: string
+          organization_id: string
+          storage_used_gb: number | null
+          updated_at: string | null
+          users_count: number | null
+          work_orders_count: number | null
+        }
+        Insert: {
+          api_calls?: number | null
+          assets_count?: number | null
+          created_at?: string | null
+          id?: string
+          month: string
+          organization_id: string
+          storage_used_gb?: number | null
+          updated_at?: string | null
+          users_count?: number | null
+          work_orders_count?: number | null
+        }
+        Update: {
+          api_calls?: number | null
+          assets_count?: number | null
+          created_at?: string | null
+          id?: string
+          month?: string
+          organization_id?: string
+          storage_used_gb?: number | null
+          updated_at?: string | null
+          users_count?: number | null
+          work_orders_count?: number | null
+        }
+        Relationships: []
+      }
+      org_users: {
+        Row: {
+          created_at: string | null
+          custom_permissions: Json | null
+          id: string
+          is_active: boolean | null
+          is_org_admin: boolean | null
+          org_role_id: string | null
+          organization_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          custom_permissions?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_org_admin?: boolean | null
+          org_role_id?: string | null
+          organization_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          custom_permissions?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_org_admin?: boolean | null
+          org_role_id?: string | null
+          organization_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_users_org_role_id_fkey"
+            columns: ["org_role_id"]
+            isOneToOne: false
+            referencedRelation: "org_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          billing_contact: string | null
+          billing_email: string | null
+          code: string
+          created_at: string
+          custom_pricing: Json | null
+          email: string | null
+          enabled_modules: string[] | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          max_assets: number | null
+          max_storage_gb: number | null
+          max_users: number | null
+          max_work_orders_per_month: number | null
+          name: string
+          name_ar: string
+          notes: string | null
+          phone: string | null
+          settings: Json | null
+          status: string
+          subscription_status: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
+          trial_ends_at: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          billing_contact?: string | null
+          billing_email?: string | null
+          code: string
+          created_at?: string
+          custom_pricing?: Json | null
+          email?: string | null
+          enabled_modules?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          max_assets?: number | null
+          max_storage_gb?: number | null
+          max_users?: number | null
+          max_work_orders_per_month?: number | null
+          name: string
+          name_ar: string
+          notes?: string | null
+          phone?: string | null
+          settings?: Json | null
+          status?: string
+          subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
+          trial_ends_at?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          billing_contact?: string | null
+          billing_email?: string | null
+          code?: string
+          created_at?: string
+          custom_pricing?: Json | null
+          email?: string | null
+          enabled_modules?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          max_assets?: number | null
+          max_storage_gb?: number | null
+          max_users?: number | null
+          max_work_orders_per_month?: number | null
+          name?: string
+          name_ar?: string
+          notes?: string | null
+          phone?: string | null
+          settings?: Json | null
+          status?: string
+          subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
+          trial_ends_at?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       permissions: {
         Row: {
@@ -1830,6 +2121,127 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      platform_role_permissions: {
+        Row: {
+          allowed: boolean | null
+          created_at: string | null
+          id: string
+          permission_key: string
+          role_code: string | null
+        }
+        Insert: {
+          allowed?: boolean | null
+          created_at?: string | null
+          id?: string
+          permission_key: string
+          role_code?: string | null
+        }
+        Update: {
+          allowed?: boolean | null
+          created_at?: string | null
+          id?: string
+          permission_key?: string
+          role_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_role_permissions_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "platform_roles"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      platform_roles: {
+        Row: {
+          can_access_all_orgs: boolean | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          name_ar: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_access_all_orgs?: boolean | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          name_ar: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_access_all_orgs?: boolean | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          name_ar?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      platform_user_org_access: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          permissions: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          permissions?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          permissions?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_code: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_code: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_user_roles_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "platform_roles"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1876,7 +2288,7 @@ export type Database = {
             foreignKeyName: "profiles_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1941,7 +2353,7 @@ export type Database = {
             foreignKeyName: "role_permissions_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -2060,7 +2472,7 @@ export type Database = {
             foreignKeyName: "sla_breaches_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -2155,7 +2567,7 @@ export type Database = {
             foreignKeyName: "sla_definitions_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2199,7 +2611,7 @@ export type Database = {
             foreignKeyName: "specializations_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2241,7 +2653,7 @@ export type Database = {
             foreignKeyName: "supervisor_buildings_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2401,7 +2813,7 @@ export type Database = {
             foreignKeyName: "teams_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2433,7 +2845,7 @@ export type Database = {
             foreignKeyName: "user_custom_roles_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2468,7 +2880,7 @@ export type Database = {
             foreignKeyName: "user_permissions_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -2507,7 +2919,7 @@ export type Database = {
             foreignKeyName: "user_roles_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2811,7 +3223,7 @@ export type Database = {
             foreignKeyName: "work_orders_hospital_id_fkey"
             columns: ["hospital_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -2829,6 +3241,10 @@ export type Database = {
     }
     Functions: {
       auto_close_pending_work_orders: { Args: never; Returns: undefined }
+      can_access_organization: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       delete_user: { Args: { user_id: string }; Returns: undefined }
       get_asset_financial_info: {
         Args: { _asset_id: string }
@@ -2855,6 +3271,7 @@ export type Database = {
         }[]
       }
       get_user_hospital: { Args: { _user_id: string }; Returns: string }
+      get_user_organization: { Args: { _user_id: string }; Returns: string }
       get_work_order_feedback: {
         Args: { _work_order_id: string }
         Returns: {
@@ -2883,6 +3300,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_platform_role: {
+        Args: { _role_code: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2898,6 +3319,7 @@ export type Database = {
         Args: { _building_id: string; _user_id: string }
         Returns: boolean
       }
+      is_platform_user: { Args: { _user_id: string }; Returns: boolean }
       is_team_member: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
